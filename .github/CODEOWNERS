@@ -1,8 +1,9 @@
 # Automate frontend directory reviews for your 70% staff pool
-/frontend/       @lcs-cohort-17/frontend-team
+    /frontend/       @lcs-cohort-17/frontend-team-scrum-masters
 
-# Automate backend directory reviews for your 30% staff pool
-/backend/        @lcs-cohort-17/backend-team
+    # Automate backend directory reviews for your 30% staff pool
+    /backend/        @lcs-cohort-17/backend-team-scrum-masters
 
-# CI/CD and repository configurations require lead architect approval
-/.github/        @lcs-cohort-17/lead-architects
+    # CI/CD and repository configurations require lead architect approval
+    /.github/        @lcs-cohort-17/lead-architects-scrum-masters
+
