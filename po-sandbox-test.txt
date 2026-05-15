@@ -1,1 +1,0 @@
-This is an isolated PO stress test file.
