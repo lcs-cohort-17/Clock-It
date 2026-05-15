@@ -6,8 +6,9 @@ To keep our codebase from breaking, everyone must follow this Git workflow.
 
 ## 1. Branch Naming Rules
 Never branch off or push directly to `main`. Always create a branch from `main` using these naming rules based on your team assignment:
-* **For UI/Frontend features:** `frontend/ticket-title`
-* **For API/Backend features:** `backend/ticket-title`
+* **For UI/Frontend features:** `name/frontend/ticket-title`
+* **For API/Backend features:** `name/backend/ticket-title`
+* **Scrum-Masters:** `name/SM-team/branch`
 * **For bug fixes:** `bugfix/ticket-title`
 
 ---
