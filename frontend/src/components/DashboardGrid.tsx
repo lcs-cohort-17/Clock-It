@@ -42,7 +42,7 @@ function DashboardGrid() {
         </button>
 
         <p className="mt-3 text-center text-xs text-slate-400">
-          Scan the QR at your site. Works offline — syncs later.
+          Scan the QR at your site. Works offline - syncs later.
         </p>
       </div>
 
@@ -84,6 +84,7 @@ function DashboardGrid() {
           </p>
         </div>
       </div>
+
     </section>
   )
 }

@@ -1,27 +1,35 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { AuthLogo } from './components/auth/AuthLogo'
-import { ConnectionStatus } from './components/auth/ConnectionStatus'
-import { DemoAccounts, type DemoAccount } from './components/auth/DemoAccounts'
-import { FormTextField } from './components/auth/FormTextField'
-import { PromoPanel } from './components/auth/PromoPanel'
-
+import { useState } from 'react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
-import DashboardGrid from './components/DashboardGrid' 
+import DashboardGrid from './components/DashboardGrid'
+import { UserProfilePage, type UserProfileData } from './pages/user_profile_section'
+
+type AppView = 'dashboard' | 'profile'
+
+const currentUser: UserProfileData = {
+  email: 'sibahle@clockit.app',
+  employeeId: 'CLK-014',
+  fullName: 'Sibahle',
+  role: 'Staff',
+}
 
 function App() {
-  return(
+  const [activeView, setActiveView] = useState<AppView>('dashboard')
+
+  return (
     <>
-    <Header />
-    
-    <main className="flex">
-    <Sidebar />
-    <DashboardGrid />
-    </main>
+      <Header />
+
+      <main className="flex">
+        <Sidebar
+          activeView={activeView}
+          onDashboardClick={() => setActiveView('dashboard')}
+          onProfileClick={() => setActiveView('profile')}
+        />
+        {activeView === 'profile' ? <UserProfilePage user={currentUser} /> : <DashboardGrid />}
+      </main>
     </>
-  
   )
 }
 
-export default App  
-  
+export default App
