@@ -2,7 +2,8 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import App from './App'
+import App from '../App'
+import mockUsers from './mock_data/users.json'
 
 function setNavigatorOnline(isOnline: boolean) {
   Object.defineProperty(window.navigator, 'onLine', {
@@ -27,9 +28,25 @@ describe('Clock It login page', () => {
     expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
     expect(screen.getByText('Use the credentials provided by your administrator.')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Connected')
-    expect(screen.getByLabelText('Email')).toHaveValue('admin@clockit.app')
+    expect(screen.getByLabelText('Email')).toHaveValue('taaraa.yang.banhg@clockit.app')
     expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password')
     expect(screen.getByText('Demo Accounts')).toBeInTheDocument()
+    expect(screen.getByText('Taaraa Yang Banhg')).toBeInTheDocument()
+  })
+
+  it('loads unique mock users from JSON data', () => {
+    const mockUserNames = mockUsers.map((user) => user.name)
+    const mockPasswords = mockUsers.map((user) => user.password)
+
+    expect(mockUsers.length).toBeGreaterThan(1)
+    expect(mockUserNames).toContain('Taaraa Yang Banhg')
+    expect(new Set(mockUserNames).size).toBe(mockUsers.length)
+    expect(new Set(mockPasswords).size).toBe(mockUsers.length)
+    expect(
+      mockUsers.every((user) =>
+        user.password.toLowerCase().includes(user.name.split(' ')[0].toLowerCase()),
+      ),
+    ).toBe(true)
   })
 
   it('shows required-field validation errors', async () => {
@@ -78,10 +95,12 @@ describe('Clock It login page', () => {
     await user.click(rememberMe)
 
     expect(rememberMe).toBeChecked()
-    expect(screen.getByRole('link', { name: 'Forgot password?' })).toHaveAttribute(
-      'href',
-      '#forgot-password',
-    )
+    const forgotPasswordLink = screen.getByRole('link', { name: 'Forgot password?' })
+    const forgotPasswordHref = forgotPasswordLink.getAttribute('href')
+
+    expect(forgotPasswordHref).toContain('mailto:support@clockit.app')
+    expect(forgotPasswordHref).toContain('password%20reset')
+    expect(forgotPasswordHref).toContain('taaraa.yang.banhg%40clockit.app')
   })
 
   it('updates the internet connection indicator', () => {

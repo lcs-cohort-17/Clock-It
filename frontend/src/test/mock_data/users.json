@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "name": "Taaraa Yang Banhg",
+    "email": "taaraa.yang.banhg@clockit.app",
+    "password": "taaraa-yang-banhg-pass",
+    "role": "Admin"
+  },
+  {
+    "id": 2,
+    "name": "Joshua Jacobs",
+    "email": "joshua.jacobs@clockit.app",
+    "password": "joshua-jacobs-pass",
+    "role": "Admin"
+  },
+  {
+    "id": 3,
+    "name": "Marco Fisher",
+    "email": "marco.fisher@clockit.app",
+    "password": "marco-fisher-pass",
+    "role": "Staff"
+  },
+  {
+    "id": 4,
+    "name": "Gazelle Pearson",
+    "email": "gazelle.pearson@clockit.app",
+    "password": "gazelle-pearson-pass",
+    "role": "Staff"
+  }
+]

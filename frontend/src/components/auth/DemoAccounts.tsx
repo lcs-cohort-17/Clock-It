@@ -1,7 +1,9 @@
 export type DemoAccount = {
+  id: number
+  name: string
   email: string
   password: string
-  role: 'Admin' | 'Staff'
+  role: string
 }
 
 type DemoAccountsProps = {
@@ -17,9 +19,12 @@ export function DemoAccounts({ accounts }: DemoAccountsProps) {
       </h2>
       <div className="mt-3 space-y-2 font-mono text-[13px] leading-tight text-[#002b49] sm:text-[14px]">
         {accounts.map((account) => (
-          <p key={account.email}>
-            {account.email} / {account.password} ({account.role})
-          </p>
+          <div key={account.id}>
+            <p className="font-semibold">{account.name}</p>
+            <p>
+              {account.email} / {account.password} ({account.role})
+            </p>
+          </div>
         ))}
       </div>
     </section>

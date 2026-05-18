@@ -4,6 +4,10 @@ import { ConnectionStatus } from './components/auth/ConnectionStatus'
 import { DemoAccounts, type DemoAccount } from './components/auth/DemoAccounts'
 import { FormTextField } from './components/auth/FormTextField'
 import { PromoPanel } from './components/auth/PromoPanel'
+import mockUsers from './test/mock_data/users.json'
+import ForgotPassword from './pages/ForgotPassword'
+import VerifyCode from './pages/VerifyCode'
+import ResetPassword from './pages/ResetPassword'
 
 type LoginErrors = Partial<Record<'email' | 'password' | 'form', string>>
 
@@ -11,20 +15,16 @@ type LoginErrors = Partial<Record<'email' | 'password' | 'form', string>>
 const LOGIN_COPY = {
   heading: 'Sign in',
   subheading: 'Use the credentials provided by your administrator.',
-  forgotPasswordHref: '#forgot-password',
 }
-
-// Update these demo accounts when backend-approved test credentials change.
-const DEMO_ACCOUNTS: DemoAccount[] = [
-  { email: 'admin@clockit.app', password: 'admin123', role: 'Admin' },
-  { email: 'sarah@clockit.app', password: 'sarah123', role: 'Staff' },
-]
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const LOGIN_DELAY_MS = 650
 
+// Start from the static mock users; allow demo-only overrides stored in localStorage
+const initialAccounts = mockUsers as DemoAccount[]
+
 function useOnlineStatus() {
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true))
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine)
@@ -59,11 +59,100 @@ function validateLogin(email: string, password: string): LoginErrors {
 
 function App() {
   const isOnline = useOnlineStatus()
-  const [email, setEmail] = useState(DEMO_ACCOUNTS[0].email)
-  const [password, setPassword] = useState(DEMO_ACCOUNTS[0].password)
+
+  const loadAccountOverrides = (): Record<string, string> => {
+    try {
+      return JSON.parse(localStorage.getItem('demo_accounts_overrides') || '{}')
+    } catch {
+      return {}
+    }
+  }
+
+  const mergeAccounts = (): DemoAccount[] => {
+    const overrides = loadAccountOverrides()
+    return initialAccounts.map((a) => ({ ...a, password: overrides[a.email] ?? a.password }))
+  }
+
+  const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>(() => mergeAccounts())
+  const [email, setEmail] = useState(demoAccounts[0]?.email ?? '')
+  const [password, setPassword] = useState(demoAccounts[0]?.password ?? '')
   const [rememberMe, setRememberMe] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<LoginErrors>({})
+
+  const getLocation = () => window.location.pathname + window.location.search
+  const [route, setRoute] = useState(getLocation)
+
+  useEffect(() => {
+    const onPop = () => setRoute(getLocation())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const navigate = (path: string) => {
+    if (path !== getLocation()) {
+      window.history.pushState({}, '', path)
+      setRoute(getLocation())
+    }
+  }
+
+  const saveAccountOverride = (emailToSave: string, newPassword: string) => {
+    const overrides = loadAccountOverrides()
+    overrides[emailToSave] = newPassword
+    localStorage.setItem('demo_accounts_overrides', JSON.stringify(overrides))
+    setDemoAccounts(mergeAccounts())
+  }
+
+  const sendVerificationCode = (targetEmail: string) => {
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const expiresAt = Date.now() + 10 * 60 * 1000 // 10 minutes
+    sessionStorage.setItem(`verification_code:${targetEmail}`, JSON.stringify({ code, expiresAt }))
+    // Simulate send — for demo only
+    // eslint-disable-next-line no-console
+    console.log(`Verification code for ${targetEmail}: ${code}`)
+    navigate(`/verify-code?email=${encodeURIComponent(targetEmail)}`)
+  }
+
+  const verifyCode = (targetEmail: string, code: string) => {
+    const raw = sessionStorage.getItem(`verification_code:${targetEmail}`)
+    if (!raw) return false
+    try {
+      const { code: realCode, expiresAt } = JSON.parse(raw)
+      if (Date.now() > expiresAt) return false
+      return code === realCode
+    } catch {
+      return false
+    }
+  }
+
+  const sendResetLink = (targetEmail: string) => {
+    const token = Math.random().toString(36).slice(2)
+    const expiresAt = Date.now() + 60 * 60 * 1000 // 1 hour
+    sessionStorage.setItem(`reset_token:${token}`, JSON.stringify({ email: targetEmail, expiresAt }))
+    // In a real app this would be emailed. For demo we navigate directly.
+    // eslint-disable-next-line no-console
+    console.log(`Reset link for ${targetEmail}: /reset-password?token=${token}`)
+    navigate(`/reset-password?token=${token}`)
+  }
+
+  const resetPasswordByToken = (token: string, newPassword: string) => {
+    const raw = sessionStorage.getItem(`reset_token:${token}`)
+    if (!raw) return false
+    try {
+      const { email: targetEmail, expiresAt } = JSON.parse(raw)
+      if (Date.now() > expiresAt) return false
+      saveAccountOverride(targetEmail, newPassword)
+      sessionStorage.removeItem(`reset_token:${token}`)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const resetPasswordByEmail = (targetEmail: string, newPassword: string) => {
+    saveAccountOverride(targetEmail, newPassword)
+    return true
+  }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -78,7 +167,7 @@ function App() {
     setIsSubmitting(true)
 
     window.setTimeout(() => {
-      const isApprovedCredential = DEMO_ACCOUNTS.some(
+      const isApprovedCredential = demoAccounts.some(
         (account) => account.email === email.trim() && account.password === password,
       )
 
@@ -90,6 +179,39 @@ function App() {
         })
       }
     }, LOGIN_DELAY_MS)
+  }
+
+  // Route rendering
+  if (route.startsWith('/forgot-password')) {
+    return (
+      <main className="min-h-screen bg-[#f7f7f7] text-[#002b49] flex items-center justify-center">
+        <ForgotPassword
+          navigate={navigate}
+          onSendVerificationCode={sendVerificationCode}
+          onSendResetLink={sendResetLink}
+        />
+      </main>
+    )
+  }
+
+  if (route.startsWith('/verify-code')) {
+    return (
+      <main className="min-h-screen bg-[#f7f7f7] text-[#002b49] flex items-center justify-center">
+        <VerifyCode navigate={navigate} onVerifyCode={verifyCode} />
+      </main>
+    )
+  }
+
+  if (route.startsWith('/reset-password')) {
+    return (
+      <main className="min-h-screen bg-[#f7f7f7] text-[#002b49] flex items-center justify-center">
+        <ResetPassword
+          navigate={navigate}
+          onResetPasswordByToken={resetPasswordByToken}
+          onResetPasswordByEmail={resetPasswordByEmail}
+        />
+      </main>
+    )
   }
 
   return (
@@ -114,7 +236,7 @@ function App() {
             <AuthLogo />
           </div>
 
-          <form noValidate onSubmit={handleSubmit}>
+          <form noValidate onSubmit={handleSubmit} aria-busy={isSubmitting}>
             <h1 className="text-[31px] font-bold leading-tight text-[#002b49]">
               {LOGIN_COPY.heading}
             </h1>
@@ -129,6 +251,7 @@ function App() {
               inputMode="email"
               label="Email"
               name="email"
+              disabled={isSubmitting}
               onChange={(event) => {
                 setEmail(event.target.value)
                 setErrors((currentErrors) => ({ ...currentErrors, email: undefined, form: undefined }))
@@ -143,6 +266,7 @@ function App() {
               id="password"
               label="Password"
               name="password"
+              disabled={isSubmitting}
               onChange={(event) => {
                 setPassword(event.target.value)
                 setErrors((currentErrors) => ({
@@ -156,9 +280,10 @@ function App() {
             />
 
             <div className="mt-5 flex items-center justify-between gap-4">
-              <label className="flex cursor-pointer items-center gap-3 text-[18px] text-[#002b49]">
+                <label className="flex cursor-pointer items-center gap-3 text-[18px] text-[#002b49]">
                 <input
                   checked={rememberMe}
+                  disabled={isSubmitting}
                   className="size-5 appearance-none rounded-full border border-[#0d4a6c] bg-transparent transition checked:border-[#0d4a6c] checked:bg-[#0d4a6c] focus:outline-none focus:ring-2 focus:ring-[#285f82]/20"
                   onChange={(event) => setRememberMe(event.target.checked)}
                   type="checkbox"
@@ -167,7 +292,13 @@ function App() {
               </label>
               <a
                 className="text-[14px] font-medium text-[#003f64] hover:underline"
-                href={LOGIN_COPY.forgotPasswordHref}
+                href="/forgot-password"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (isSubmitting) return
+                  navigate('/forgot-password')
+                }}
+                aria-disabled={isSubmitting}
               >
                 Forgot password?
               </a>
@@ -184,11 +315,21 @@ function App() {
               disabled={isSubmitting}
               type="submit"
             >
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  <span>Signing in...</span>
+                </span>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </form>
 
-          <DemoAccounts accounts={DEMO_ACCOUNTS} />
+          <DemoAccounts accounts={demoAccounts} />
         </div>
       </section>
     </main>
