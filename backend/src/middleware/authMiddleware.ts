@@ -1,1 +1,1 @@
-//authMiddleware.ts
+//authMiddleware.ts file
