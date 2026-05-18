@@ -1,12 +1,9 @@
 
+import AdminSettingsPage from './pages/AdminSettingsPage'
 
-function App() {
 
-  return (
-    <>
 
-    </>
-  )
+   function App() {
+  return <AdminSettingsPage />
 }
-
 export default App
