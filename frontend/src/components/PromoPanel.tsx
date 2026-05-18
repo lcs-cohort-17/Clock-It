@@ -1,4 +1,4 @@
-import { AuthLogo } from './AuthLogo'
+import { AuthLogo } from './auth/AuthLogo'
 
 const PROMO_STATS = [
   { value: '<2s', label: 'Clock-in time' },

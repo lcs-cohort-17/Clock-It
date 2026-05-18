@@ -3,7 +3,7 @@ import { AuthLogo } from './components/auth/AuthLogo'
 import { ConnectionStatus } from './components/auth/ConnectionStatus'
 import { DemoAccounts, type DemoAccount } from './components/auth/DemoAccounts'
 import { FormTextField } from './components/auth/FormTextField'
-import { PromoPanel } from './components/auth/PromoPanel'
+// import { PromoPanel } from './components/PromoPanel'
 
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
