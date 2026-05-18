@@ -1,1 +1,1 @@
-/* Page-level CSS can stay here if a future design change cannot be handled cleanly with Tailwind utilities. */
+@import "tailwindcss";
