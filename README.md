@@ -8,12 +8,12 @@ To keep our codebase from breaking, everyone must strictly follow this Git workf
 Never branch off or push directly to `main`. Always create your branch from an up-to-date `main` using these exact naming rules:
 
 
-| Your Role / Task | Branch Name Format | Real-World Example |
-| :--- | :--- | :--- |
-| **Frontend Features** | `your-name/frontend/ticket-title` | `jake/frontend/sidebar-icons` |
-| **Backend Features**  | `your-name/backend/ticket-title`  | `jacob/backend/auth-middleware` |
-| **Scrum Masters**     | `your-name/SM-team/branch-purpose` | `sarah/SM-team/repo-cleanup` |
-| **Bug Fixes**         | `bugfix/ticket-title`        | `bugfix/vite-config-crash` |
+| Your Role / Task            | Branch Name Format                 | Real-World Example |
+| :--- | :---                 | :---                               |
+| **Frontend Features**       | `your-name/frontend/ticket-title`  | `jake/frontend/sidebar-icons` |
+| **Backend Features**        | `your-name/backend/ticket-title`   | `jacob/backend/auth-middleware` |
+| **Scrum Masters**           | `your-name/SM-team/branch-purpose` | `sarah/SM-team/repo-cleanup` |
+| **Bug Fixes**               | `bugfix/ticket-title`              | `bugfix/vite-config-crash` |
 
 ---
 
