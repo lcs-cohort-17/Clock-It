@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "nodemon --exec \"node --loader ts-node/esm --no-warnings index.ts\" --ext ts",
     "start": "node dist/index.js",
-    "build": "tsc",
+    "build": "tsc --project tsconfig.build.json",
     "test": "vitest"
   },
   "keywords": [],
