@@ -10,9 +10,9 @@ Never branch off or push directly to `main`. Always create your branch from an u
 
 | Your Role / Task | Branch Name Format | Real-World Example |
 | :--- | :--- | :--- |
-| **Frontend Features** | `name/frontend/ticket-title` | `dom/frontend/sidebar-icons` |
-| **Backend Features**  | `name/backend/ticket-title`  | `dom/backend/auth-middleware` |
-| **Scrum Masters**     | `name/SM-team/branch-purpose` | `sarah/SM-team/repo-cleanup` |
+| **Frontend Features** | `your-name/frontend/ticket-title` | `jake/frontend/sidebar-icons` |
+| **Backend Features**  | `your-name/backend/ticket-title`  | `jacob/backend/auth-middleware` |
+| **Scrum Masters**     | `your-name/SM-team/branch-purpose` | `sarah/SM-team/repo-cleanup` |
 | **Bug Fixes**         | `bugfix/ticket-title`        | `bugfix/vite-config-crash` |
 
 ---
