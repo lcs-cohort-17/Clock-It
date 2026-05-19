@@ -3,7 +3,7 @@ import {rateLimit} from 'express-rate-limit'
 import type { Request, Response } from 'express'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-const statsRateLimiter = rateLimit({
+const defaultRateLimiter = rateLimit({
   windowMs: 1_000,
   max: 1,
   standardHeaders: true,
@@ -82,10 +82,13 @@ async function fetchDashboardStats(supabase: SupabaseClient) {
   }
 }
 
-export function buildAdminDashboardRouter(supabase: SupabaseClient) {
+export function buildAdminDashboardRouter(
+  supabase: SupabaseClient, 
+  rateLimiter = defaultRateLimiter //default parameter
+) {
   const router = express.Router()
 
-  router.get('/stats', statsRateLimiter, async (req: Request, res: Response) => {
+  router.get('/stats', rateLimiter, async (req: Request, res: Response) => {
     if (Date.now() < statsCache.expiresAt && statsCache.data) {
       return res.json(statsCache.data)
     }
@@ -98,6 +101,11 @@ export function buildAdminDashboardRouter(supabase: SupabaseClient) {
     } catch (error) {
       return res.status(500).json({ error: String(error ?? 'Unable to fetch dashboard statistics') })
     }
+  })
+
+  // Add 404 handler
+  router.use((_req: Request, res: Response) => {
+    res.status(404).json({ error: 'Not found' })
   })
 
   return router
