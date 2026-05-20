@@ -35,9 +35,7 @@ export function makeSupabaseMock(results: QueryResult[]): SupabaseClient {
   } as unknown as SupabaseClient
 }
 
-// ─── Shared fixtures
-
-/** Happy-path results in the order fetchDashboardStats runs the queries. */
+/** Results in the order fetchDashboardStats runs the queries. */
 export const DEFAULT_COUNTS: QueryResult[] = [
   { count: 5,  error: null }, // activeSessions
   { count: 12, error: null }, // clockInsToday
@@ -53,10 +51,10 @@ export const NULL_COUNTS: QueryResult[] = [
 ]
 
 /**
- * Re-imports adminDashboard with a clean module registry so the module-level
+ * Re-imports the admin dashboard routes with a clean module registry so the module-level
  * `statsCache` object is reset between test files / describe blocks.
  */
 export async function importFresh() {
   vi.resetModules()
-  return import('../../adminDashboard.ts')
+  return import('../../src/routes/adminDashboardRoutes.ts')
 }
