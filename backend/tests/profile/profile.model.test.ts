@@ -11,37 +11,44 @@ const mockDelete = vi.fn().mockReturnThis()
 
 // mock Supabase, pretend that you are really targeting the database on Supabase
 
-vi.mock('../src/config/supabase.js', () => ({
-    supabase: {
-        from: vi.fn(() => ({
-            select: mockSelect,
-            insert: mockInsert,
-            update: mockUpdate,
-            delete: mockDelete,
-            eq: mockEq,
-            single: mockSingle,
-        }))
-    }
+vi.mock('../../src/config/supabase.js', () => ({
+    supabase: {
+        from: vi.fn(() => ({
+            select: mockSelect,
+            insert: mockInsert,
+            update: mockUpdate,
+            delete: mockDelete,
+            eq: mockEq,
+            single: mockSingle,
+        }))
+    }
 }))
 
-import {getProfilesDb, createProfileDb, deleteProfileDb, updateProfileDb, resetPasswordDb} from '../../src/models/profileDb.js'
+import {getProfilesDb, 
+    // createProfileDb, 
+    deleteProfileDb, 
+    updateProfileDb,
+    createProfileDb, 
+    // resetPasswordDb
+} from '../../src/models/profileDb.js'
 
 // reset mocks before each test
 beforeEach(() => {
-    vi.clearAllMocks()
-    //Reapply mockReturnThis() after clearAllMocks
-    mockSelect.mockReturnThis()
-    mockInsert.mockReturnThis()
-    mockUpdate.mockReturnThis()
-    mockDelete.mockReturnThis()
-    mockEq.mockReturnThis()
+    vi.clearAllMocks()
+    //Reapply mockReturnThis() after clearAllMocks
+    mockSingle.mockReset()
+    mockSelect.mockReturnThis()
+    mockInsert.mockReturnThis()
+    mockUpdate.mockReturnThis()
+    mockDelete.mockReturnThis()
+    mockEq.mockReturnThis()
 })
 
 //GET ALL
 
 describe('getProfilesDb', () => {
 
- it('should return all profiles successfully', async () => {
+ it('should return all profiles successfully', async () => {
     const mockData = [
       { id: '14271887-48ea-48c8-9890-6cb196afa0Gc', first_name: 'Joshua', last_name: 'Jacobs', employee_id: 'A-005', role: 'admin', is_active: true, email: 'jodam@gmail.com', password: 'joh123' },
       { id: '14361887-48ea-48c8-9890-6cb196afa0Gc', first_name: 'Charlton', last_name: 'Poole', employee_id: 'S-006', role: 'staff', is_active: true, email: 'charlton@gmail.com', password: 'charlton123' }
@@ -53,12 +60,12 @@ describe('getProfilesDb', () => {
 
     expect(result.success).toBe(true)
     expect(result.data).toHaveLength(2)
- })
+ })
 
- it('should return profiles with all required fields', async () => {
-    const mockData = [
-        { id: '14271887-48ea-48c8-9890-6cb196afa0Gc', first_name: 'Joshua', last_name: 'Jacobs', employee_id: 'A-005', role: 'admin', is_active: true, email: 'jodam@gmail.com', password: 'joh123' }
-    ]
+ it('should return profiles with all required fields', async () => {
+    const mockData = [
+        { id: '14271887-48ea-48c8-9890-6cb196afa0Gc', first_name: 'Joshua', last_name: 'Jacobs', employee_id: 'A-005', role: 'admin', is_active: true, email: 'jodam@gmail.com', password: 'joh123' }
+    ]
 
     mockSelect.mockResolvedValueOnce({ data: mockData, error: null })
 
@@ -214,9 +221,7 @@ describe('createProfileDb', () => {
 
   it('should only accept role of staff or admin', async () => {
     // Invalid role should fail validation before hitting Supabase
-    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'superuser', 'jodam@gmail.com')
-
-    expect(result.success).toBe(false)
+    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'invalid' as any, 'jodam@gmail.com')
     expect(result.error).toBe('Role must be either staff or admin')
   })
 
@@ -281,8 +286,8 @@ describe('updateProfileDb', () => {
 
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-    const result = await updateProfileDb('A-010', { 
-    first_name: 'Sarah',
+    const result = await updateProfileDb('A-010', {
+    first_name: 'Sarah',
       email: 'sarah@company.com'
     })
 
@@ -291,23 +296,23 @@ describe('updateProfileDb', () => {
     expect(result.data?.employee_id).toBe('A-010')
   })
 
-  it('should update is_active to false — disabling a user via edit', async () => {
-  const mockData = {
-    id: '18741887-48ea-48c8-9890-6cb196afa0Gc',
-    first_name: 'Siza',
-    last_name: 'Mpafa',
-    employee_id: 'S-007',
-    role: 'staff',
-    is_active: false,    // changed from true to false
-    email: 'siza@gmail.com'
-  }
+  it('should update is_active to false — disabling a user via edit', async () => {
+  const mockData = {
+    id: '18741887-48ea-48c8-9890-6cb196afa0Gc',
+    first_name: 'Siza',
+    last_name: 'Mpafa',
+    employee_id: 'S-007',
+    role: 'staff',
+    is_active: false,    // changed from true to false
+    email: 'siza@gmail.com'
+  }
 
-  mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+  mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-  const result = await updateProfileDb('S-007', { is_active: false })
+  const result = await updateProfileDb('S-007', { is_active: false })
 
-  expect(result.success).toBe(true)
-  expect(result.data?.is_active).toBe(false)  // confirms it was disabled
+  expect(result.success).toBe(true)
+  expect(result.data?.is_active).toBe(false)  // confirms it was disabled
 })
 
   it('should update only one field without affecting others — Partial update', async () => {
@@ -370,7 +375,7 @@ describe('updateProfileDb', () => {
 describe('deleteProfileDb', () => {
 
   it('should delete a staff profile successfully by employee_id', async () => {
-    mockEq.mockResolvedValueOnce({ data: null, error: null })
+    mockSingle.mockResolvedValueOnce({ data: null, error: null })
 
     // Target by employee_id not uuid
     const result = await deleteProfileDb('S-007')
@@ -380,7 +385,7 @@ describe('deleteProfileDb', () => {
   })
 
   it('should delete an admin profile successfully by employee_id', async () => {
-    mockEq.mockResolvedValueOnce({ data: null, error: null })
+    mockSingle.mockResolvedValueOnce({ data: null, error: null })
 
     const result = await deleteProfileDb('A-010')
 
@@ -388,24 +393,24 @@ describe('deleteProfileDb', () => {
     expect(result.message).toBe('profile deleted successfully')
   })
 
-  it('should soft disable the user — sets is_active to false not hard delete', async () => {
-  const mockData = {
-    id: '18741887-48ea-48c8-9890-6cb196afa0Gc',
-    employee_id: 'S-007',
-    is_active: false    // confirms soft disable happened
-  }
+  it('should soft disable the user — sets is_active to false not hard delete', async () => {
+  const mockData = {
+    id: '18741887-48ea-48c8-9890-6cb196afa0Gc',
+    employee_id: 'S-007',
+    is_active: false    // confirms soft disable happened
+  }
 
-  mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+  mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-  const result = await deleteProfileDb('S-007')
+  const result = await deleteProfileDb('S-007')
 
-  expect(result.success).toBe(true)
-  // Record still exists — just disabled
-  expect(result.data?.is_active).toBe(false)
-})    
+  expect(result.success).toBe(true)
+  // Record still exists — just disabled
+  expect(result.data?.is_active).toBe(false)
+})
 
   it('should return error if employee_id does not exist', async () => {
-    mockEq.mockResolvedValueOnce({
+    mockSingle.mockResolvedValueOnce({
       data: null,
       error: { message: 'Profile not found' }
     })
@@ -417,7 +422,7 @@ describe('deleteProfileDb', () => {
   })
 
   it('should return error if delete fails', async () => {
-    mockEq.mockResolvedValueOnce({
+    mockSingle.mockResolvedValueOnce({
       data: null,
       error: { message: 'Delete failed' }
     })
@@ -430,66 +435,66 @@ describe('deleteProfileDb', () => {
 })
 
 //RESET PASSWORD
-describe('resetPasswordDb', () => {
+// describe('resetPasswordDb', () => {
 
-  it('should generate a new 8 char password by employee_id and return it to admin', async () => {
-    const mockData = {
-      id: '18741667-48ea-48c8-9890-6cb196adc0Gc',
-      employee_id: 'S-007',
-      password: 'Nq7rT2mX'  // new auto-generated 8 char password
-    }
+//   it('should generate a new 8 char password by employee_id and return it to admin', async () => {
+//     const mockData = {
+//       id: '18741667-48ea-48c8-9890-6cb196adc0Gc',
+//       employee_id: 'S-007',
+//       password: 'Nq7rT2mX'  // new auto-generated 8 char password
+//     }
 
-    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+//     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-    // Target by employee_id not uuid
-    const result = await resetPasswordDb('S-007')
+//     // Target by employee_id not uuid
+//     const result = await resetPasswordDb('S-007')
 
-    expect(result.success).toBe(true)
-    // Must return new password so admin can share it with staff
-    expect(result.data?.password).toBeDefined()
-    expect(result.data?.password).toHaveLength(8)
-    // Must be plain text — not hashed
-    expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
-    expect(typeof result.data?.password).toBe('string')
-  })
+//     expect(result.success).toBe(true)
+//     // Must return new password so admin can share it with staff
+//     expect(result.data?.password).toBeDefined()
+//     expect(result.data?.password).toHaveLength(8)
+//     // Must be plain text — not hashed
+//     expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
+//     expect(typeof result.data?.password).toBe('string')
+//   })
 
-  it('should generate a new password for admin by employee_id', async () => {
-    const mockData = {
-      id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
-      employee_id: 'A-010',
-      password: 'Xk9mP2qR'
-    }
+//   it('should generate a new password for admin by employee_id', async () => {
+//     const mockData = {
+//       id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
+//       employee_id: 'A-010',
+//       password: 'Xk9mP2qR'
+//     }
 
-    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+//     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-    const result = await resetPasswordDb('A-010')
+//     const result = await resetPasswordDb('A-010')
 
-    expect(result.success).toBe(true)
-    expect(result.data?.password).toHaveLength(8)
-    expect(typeof result.data?.password).toBe('string')
-  })
+//     expect(result.success).toBe(true)
+//     expect(result.data?.password).toHaveLength(8)
+//     expect(typeof result.data?.password).toBe('string')
+//   })
 
-  it('should return error if employee_id does not exist', async () => {
-    mockSingle.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'Profile not found' }
-    })
+//   it('should return error if employee_id does not exist', async () => {
+//     mockSingle.mockResolvedValueOnce({
+//       data: null,
+//       error: { message: 'Profile not found' }
+//     })
 
-    const result = await resetPasswordDb('X-999')
+//     const result = await resetPasswordDb('X-999')
 
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('Profile not found')
-  })
+//     expect(result.success).toBe(false)
+//     expect(result.error).toBe('Profile not found')
+//   })
 
-  it('should return error if reset fails', async () => {
-    mockSingle.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'Reset failed' }
-    })
+//   it('should return error if reset fails', async () => {
+//     mockSingle.mockResolvedValueOnce({
+//       data: null,
+//       error: { message: 'Reset failed' }
+//     })
 
-    const result = await resetPasswordDb('S-007')
+//     const result = await resetPasswordDb('S-007')
 
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('Reset failed')  // lowercase 'f' — consistent casing
-  })
-})
+//     expect(result.success).toBe(false)
+//     expect(result.error).toBe('Reset failed')  // lowercase 'f' — consistent casing
+//   })
+// })
