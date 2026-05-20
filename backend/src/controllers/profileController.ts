@@ -3,10 +3,10 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import {
   getProfilesDb,
-//   createProfileDb,
-//   loginProfileDb,
   updateProfileDb,
   deleteProfileDb,
+  loginProfileDb,
+  createProfileDb,
 //   resetPasswordDb
 } from '../models/profileDb.js'
 
@@ -28,101 +28,101 @@ export const getProfilesCon = async (req: Request, res: Response) => {
 // ─── CREATE ──────────────────────────────────────────────────
 // Admin creates staff or other admin
 // Password is auto-generated — plain text returned to admin (ticket 031)
-// export const createProfileCon = async (req: Request, res: Response) => {
-//   try {
-//     const { first_name, last_name, employee_id, role, email } = req.body
+export const createProfileCon = async (req: Request, res: Response) => {
+  try {
+    const { first_name, last_name, employee_id, role, email } = req.body
 
-//     if (!first_name || !last_name || !employee_id || !role || !email) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'All fields are required'
-//       })
-//     }
+    if (!first_name || !last_name || !employee_id || !role || !email) {
+      return res.status(400).json({
+        success: false,
+        error: 'All fields are required'
+      })
+    }
 
-//     const result = await createProfileDb(
-//       first_name,
-//       last_name,
-//       employee_id,
-//       role,
-//       email
-//     )
+    const result = await createProfileDb(
+      first_name,
+      last_name,
+      employee_id,
+      role,
+      email
+    )
 
-//     if (!result.success) {
-//       return res.status(400).json(result)
-//     }
+    if (!result.success) {
+      return res.status(400).json(result)
+    }
 
-//     // Return plain text password to admin — they share it with staff
-//     return res.status(201).json(result)
-//   } catch (error: any) {
-//     return res.status(500).json({ success: false, error: error.message })
-//   }
-// }
+    // Return plain text password to admin — they share it with staff
+    return res.status(201).json(result)
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message })
+  }
+}
 
 // ─── LOGIN ───────────────────────────────────────────────────
 // bcrypt.compare lives here — controller handles auth logic
 // Model just fetches the user from DB
-// export const loginProfileCon = async (req: Request, res: Response) => {
-//   try {
-//     const { email, password } = req.body
+export const loginProfileCon = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body
 
-//     if (!email || !password) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'Email and password are required'
-//       })
-//     }
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and password are required'
+      })
+    }
 
-//     // Get user from DB — model returns hashed password
-//     const result = await loginProfileDb(email)
+    // Get user from DB — model returns hashed password
+    const result = await loginProfileDb(email)
 
-//     if (!result.success) {
-//       // Don't expose whether email exists — security best practice
-//       return res.status(401).json({
-//         success: false,
-//         error: 'Invalid email or password'
-//       })
-//     }
+    if (!result.success) {
+      // Don't expose whether email exists — security best practice
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
+      })
+    }
 
-//     // Compare plain text input against hashed password in DB
-//     const passwordMatch = await bcrypt.compare(password, result.data!.password)
+    // Compare plain text input against hashed password in DB
+    const passwordMatch = await bcrypt.compare(password, result.data!.password)
 
-//     if (!passwordMatch) {
-//       return res.status(401).json({
-//         success: false,
-//         error: 'Invalid email or password'
-//       })
-//     }
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
+      })
+    }
 
-//     // Generate JWT token — expires in 2 hours
-//     const token = jwt.sign(
-//       {
-//         userId: result.data!.id,
-//         email: result.data!.email,
-//         role: result.data!.role,
-//         employee_id: result.data!.employee_id
-//       },
-//       process.env.JWT_SECRET!,
-//       { expiresIn: '2h' }
-//     )
+    // Generate JWT token — expires in 2 hours
+    const token = jwt.sign(
+      {
+        userId: result.data!.id,
+        email: result.data!.email,
+        role: result.data!.role,
+        employee_id: result.data!.employee_id
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '2h' }
+    )
 
-//     // Return token and user info — never return password
-//     return res.status(200).json({
-//       success: true,
-//       token,
-//       user: {
-//         id: result.data!.id,
-//         first_name: result.data!.first_name,
-//         last_name: result.data!.last_name,
-//         email: result.data!.email,
-//         employee_id: result.data!.employee_id,
-//         role: result.data!.role
-//         // password intentionally omitted
-//       }
-//     })
-//   } catch (error: any) {
-//     return res.status(500).json({ success: false, error: error.message })
-//   }
-// }
+    // Return token and user info — never return password
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: result.data!.id,
+        first_name: result.data!.first_name,
+        last_name: result.data!.last_name,
+        email: result.data!.email,
+        employee_id: result.data!.employee_id,
+        role: result.data!.role
+        // password intentionally omitted
+      }
+    })
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message })
+  }
+}
 
 // ─── UPDATE ──────────────────────────────────────────────────
 export const updateProfileCon = async (req: Request, res: Response) => {

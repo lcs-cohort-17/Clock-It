@@ -27,7 +27,8 @@ vi.mock('../../src/config/supabase.js', () => ({
 import {getProfilesDb, 
     // createProfileDb, 
     deleteProfileDb, 
-    updateProfileDb, 
+    updateProfileDb,
+    createProfileDb, 
     // resetPasswordDb
 } from '../../src/models/profileDb.js'
 
@@ -102,142 +103,140 @@ describe('getProfilesDb', () => {
   })
 })
 
-// describe('createProfileDb', () => {
+describe('createProfileDb', () => {
 
-//   it('should create a staff profile successfully with auto-generated 8 char password', async () => {
-//     const mockData = {
-//       id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
-//       first_name: 'Joshua',
-//       last_name: 'Jacobs',
-//       employee_id: 'S-005',
-//       role: 'staff',
-//       is_active: true,
-//       email: 'jodam@gmail.com',
-//       password: 'Xk9mP2qR'  // auto-generated 8 char plain text
-//     }
+  it('should create a staff profile successfully with auto-generated 8 char password', async () => {
+    const mockData = {
+      id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
+      first_name: 'Joshua',
+      last_name: 'Jacobs',
+      employee_id: 'S-005',
+      role: 'staff',
+      is_active: true,
+      email: 'jodam@gmail.com',
+      password: 'Xk9mP2qR'  // auto-generated 8 char plain text
+    }
 
-//     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-//     const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
+    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
 
-//     expect(result.success).toBe(true)
-//     expect(result.data?.first_name).toBe('Joshua')
-//     expect(result.data?.last_name).toBe('Jacobs')
-//     expect(result.data?.employee_id).toBe('S-005')
-//     expect(result.data?.role).toBe('staff')
-//     expect(result.data?.is_active).toBe(true)
-//     expect(result.data?.email).toBe('jodam@gmail.com')
+    expect(result.success).toBe(true)
+    expect(result.data?.first_name).toBe('Joshua')
+    expect(result.data?.last_name).toBe('Jacobs')
+    expect(result.data?.employee_id).toBe('S-005')
+    expect(result.data?.role).toBe('staff')
+    expect(result.data?.is_active).toBe(true)
+    expect(result.data?.email).toBe('jodam@gmail.com')
 
-//     // Password must be auto-generated, 8 chars, plain text — returned to admin
-//     expect(result.data?.password).toBeDefined()
-//     expect(result.data?.password).toHaveLength(8)
-//     expect(typeof result.data?.password).toBe('string')
-//   })
+    // Password must be auto-generated, 8 chars, plain text — returned to admin
+    expect(result.data?.password).toBeDefined()
+    expect(result.data?.password).toHaveLength(8)
+    expect(typeof result.data?.password).toBe('string')
+  })
 
-//   it('should create an admin profile successfully with auto-generated 8 char password', async () => {
-//     // Admin can create OTHER admins too
-//     const mockData = {
-//       id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
-//       first_name: 'Sarah',
-//       last_name: 'Johnson',
-//       employee_id: 'A-010',
-//       role: 'admin',           // role is admin this time
-//       is_active: true,
-//       email: 'sarah@company.com',
-//       password: 'Nq7rT2mX'   // auto-generated 8 char plain text
-//     }
+  it('should create an admin profile successfully with auto-generated 8 char password', async () => {
+    // Admin can create OTHER admins too
+    const mockData = {
+      id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
+      first_name: 'Sarah',
+      last_name: 'Johnson',
+      employee_id: 'A-010',
+      role: 'admin',           // role is admin this time
+      is_active: true,
+      email: 'sarah@company.com',
+      password: 'Nq7rT2mX'   // auto-generated 8 char plain text
+    }
 
-//     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-//     const result = await createProfileDb('Sarah', 'Johnson', 'A-010', 'admin', 'sarah@company.com')
+    const result = await createProfileDb('Sarah', 'Johnson', 'A-010', 'admin', 'sarah@company.com')
 
-//     expect(result.success).toBe(true)
-//     expect(result.data?.role).toBe('admin')          // confirms admin can create admins
-//     expect(result.data?.password).toBeDefined()
-//     expect(result.data?.password).toHaveLength(8)
-//     expect(typeof result.data?.password).toBe('string')
-//   })
+    expect(result.success).toBe(true)
+    expect(result.data?.role).toBe('admin')          // confirms admin can create admins
+    expect(result.data?.password).toBeDefined()
+    expect(result.data?.password).toHaveLength(8)
+    expect(typeof result.data?.password).toBe('string')
+  })
 
-//   it('should auto-generate a different password each time', async () => {
-//     // Two creates should not return the same password
-//     const mockData1 = {
-//       id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
-//       first_name: 'Joshua',
-//       last_name: 'Jacobs',
-//       employee_id: 'S-005',
-//       role: 'staff',
-//       is_active: true,
-//       email: 'jodam@gmail.com',
-//       password: 'Xk9mP2qR'
-//     }
+  it('should auto-generate a different password each time', async () => {
+    // Two creates should not return the same password
+    const mockData1 = {
+      id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
+      first_name: 'Joshua',
+      last_name: 'Jacobs',
+      employee_id: 'S-005',
+      role: 'staff',
+      is_active: true,
+      email: 'jodam@gmail.com',
+      password: 'Xk9mP2qR'
+    }
 
-//     const mockData2 = {
-//       id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
-//       first_name: 'Sarah',
-//       last_name: 'Johnson',
-//       employee_id: 'S-006',
-//       role: 'staff',
-//       is_active: true,
-//       email: 'sarah@company.com',
-//       password: 'Nq7rT2mX'   // different password
-//     }
+    const mockData2 = {
+      id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
+      first_name: 'Sarah',
+      last_name: 'Johnson',
+      employee_id: 'S-006',
+      role: 'staff',
+      is_active: true,
+      email: 'sarah@company.com',
+      password: 'Nq7rT2mX'   // different password
+    }
 
-//     mockSingle.mockResolvedValueOnce({ data: mockData1, error: null })
-//     mockSingle.mockResolvedValueOnce({ data: mockData2, error: null })
+    mockSingle.mockResolvedValueOnce({ data: mockData1, error: null })
+    mockSingle.mockResolvedValueOnce({ data: mockData2, error: null })
 
-//     const result1 = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
-//     const result2 = await createProfileDb('Sarah', 'Johnson', 'S-006', 'staff', 'sarah@company.com')
+    const result1 = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
+    const result2 = await createProfileDb('Sarah', 'Johnson', 'S-006', 'staff', 'sarah@company.com')
 
-//     // Passwords must be different — not the same every time
-//     expect(result1.data?.password).not.toBe(result2.data?.password)
-//   })
+    // Passwords must be different — not the same every time
+    expect(result1.data?.password).not.toBe(result2.data?.password)
+  })
 
-//   it('should return the password in plain text so admin can share it with staff', async () => {
-//     const mockData = {
-//       id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
-//       first_name: 'Joshua',
-//       last_name: 'Jacobs',
-//       employee_id: 'S-005',
-//       role: 'staff',
-//       is_active: true,
-//       email: 'jodam@gmail.com',
-//       password: 'Xk9mP2qR'
-//     }
+  it('should return the password in plain text so admin can share it with staff', async () => {
+    const mockData = {
+      id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
+      first_name: 'Joshua',
+      last_name: 'Jacobs',
+      employee_id: 'S-005',
+      role: 'staff',
+      is_active: true,
+      email: 'jodam@gmail.com',
+      password: 'Xk9mP2qR'
+    }
 
-//     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-//     const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
+    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
 
-//     // Password must be in the response — admin needs to see it and share with staff
-//     expect(result.data?.password).toBeDefined()
+    // Password must be in the response — admin needs to see it and share with staff
+    expect(result.data?.password).toBeDefined()
 
-//     // Must not be hashed — hashed passwords look like '$2b$10$...' (bcrypt format)
-//     expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
+    // Must not be hashed — hashed passwords look like '$2b$10$...' (bcrypt format)
+    expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
 
-//     // Must be exactly 8 characters — not a hash which is 60 chars
-//     expect(result.data?.password).toHaveLength(8)
-//   })
+    // Must be exactly 8 characters — not a hash which is 60 chars
+    expect(result.data?.password).toHaveLength(8)
+  })
 
-//   it('should only accept role of staff or admin', async () => {
-//     // Invalid role should fail validation before hitting Supabase
-//     const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'superuser', 'jodam@gmail.com')
+  it('should only accept role of staff or admin', async () => {
+    // Invalid role should fail validation before hitting Supabase
+    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'invalid' as any, 'jodam@gmail.com')
+    expect(result.error).toBe('Role must be either staff or admin')
+  })
 
-//     expect(result.success).toBe(false)
-//     expect(result.error).toBe('Role must be either staff or admin')
-//   })
+  it('should return error if creation fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Creation failed' }
+    })
 
-//   it('should return error if creation fails', async () => {
-//     mockSingle.mockResolvedValueOnce({
-//       data: null,
-//       error: { message: 'Creation failed' }
-//     })
+    const result = await createProfileDb('Joshua', 'Jacobs', 'A-005', 'admin', 'jodam@gmail.com')
 
-//     const result = await createProfileDb('Joshua', 'Jacobs', 'A-005', 'admin', 'jodam@gmail.com')
-
-//     expect(result.success).toBe(false)
-//     expect(result.error).toBe('Creation failed')
-//   })
-// })
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Creation failed')
+  })
+})
 
 //UPDATE
 describe('updateProfileDb', () => {
