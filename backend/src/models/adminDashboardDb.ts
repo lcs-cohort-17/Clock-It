@@ -1,32 +1,21 @@
-import express from 'express'
-import {rateLimit} from 'express-rate-limit'
-import type { Request, Response } from 'express'
 import type { SupabaseClient } from '@supabase/supabase-js'
-
-const defaultRateLimiter = rateLimit({
-  windowMs: 1_000,
-  max: 1,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests. Max 1 request per second.' },
-})
-
-const statsCache = {
-  data: null as null | Record<string, unknown>,
-  expiresAt: 0,
-}
-const cacheTtlMs = 5000
 
 function getTodayRange() {
   const now = new Date()
-  const start = new Date(now)
-  start.setHours(0, 0, 0, 0)
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   const end = new Date(start)
-  end.setDate(end.getDate() + 1)
+  end.setUTCDate(end.getUTCDate() + 1)
   return { start: start.toISOString(), end: end.toISOString() }
 }
 
-async function fetchDashboardStats(supabase: SupabaseClient) {
+export interface DashboardStats {
+  currentlyOnsite: { value: number; icon: string }
+  totalClockedInToday: { value: number; icon: string }
+  pendingSync: { value: number; icon: string }
+  totalEventsToday: { value: number; icon: string }
+}
+
+export async function fetchDashboardStats(supabase: SupabaseClient): Promise<DashboardStats> {
   const { start, end } = getTodayRange()
 
   const [activeSessions, clockInsToday, pendingSync, totalEventsToday] = await Promise.all([
@@ -80,33 +69,4 @@ async function fetchDashboardStats(supabase: SupabaseClient) {
       icon: 'event',
     },
   }
-}
-
-export function buildAdminDashboardRouter(
-  supabase: SupabaseClient, 
-  rateLimiter = defaultRateLimiter //default parameter
-) {
-  const router = express.Router()
-
-  router.get('/stats', rateLimiter, async (req: Request, res: Response) => {
-    if (Date.now() < statsCache.expiresAt && statsCache.data) {
-      return res.json(statsCache.data)
-    }
-
-    try {
-      const responsePayload = await fetchDashboardStats(supabase)
-      statsCache.data = responsePayload
-      statsCache.expiresAt = Date.now() + cacheTtlMs
-      return res.json(responsePayload)
-    } catch (error) {
-      return res.status(500).json({ error: String(error ?? 'Unable to fetch dashboard statistics') })
-    }
-  })
-
-  // Add 404 handler
-  router.use((_req: Request, res: Response) => {
-    res.status(404).json({ error: 'Not found' })
-  })
-
-  return router
 }
