@@ -3,8 +3,6 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import {
   getProfilesDb,
-//   createProfileDb,
-//   loginProfileDb,
   updateProfileDb,
   deleteProfileDb,
   loginProfileDb,
