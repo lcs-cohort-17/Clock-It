@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import {
   getProfilesDb,
+  getProfileByIdDb,
 //   createProfileDb,
 //   loginProfileDb,
   updateProfileDb,
@@ -23,6 +24,37 @@ export const getProfilesCon = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message })
   }
+}
+
+export const getProfileByIdCon = async (req: Request, res: Response) => {
+  try {
+    const employee_id = req.params.employee_id as string
+
+    const result = await getProfileByIdDb(employee_id)
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      })
+    }
+
+    // SO THAT SENSITIVE FIELDS ARE NOT SENT
+    const safeData = { ...result.data }
+    delete (safeData as any).password
+    delete (safeData as any).password_hash
+    delete (safeData as any).reset_token
+
+    return res.status(200).json({
+      success: true,
+      data: safeData
+    })
+  } catch (error: any) {
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    })
+  }
 }
 
 // ─── CREATE ──────────────────────────────────────────────────
