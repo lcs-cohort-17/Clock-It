@@ -9,7 +9,8 @@ vi.mock('../../src/models/profileDb.js', () => ({
   updateProfileDb: vi.fn(),
   deleteProfileDb: vi.fn(),
   resetPasswordDb: vi.fn(),
-  loginProfileDb: vi.fn()
+  loginProfileDb: vi.fn(),
+  getProfileByIdDb: vi.fn()
 }))
 
 // ─── MOCK BCRYPT ─────────────────────────────────────────────
@@ -21,6 +22,7 @@ vi.mock('bcrypt', () => ({
 }))
 
 import {
+  getProfileByIdDb,
   getProfilesDb,
   // createProfileDb,
   updateProfileDb,
@@ -33,6 +35,7 @@ import bcrypt from 'bcrypt'
 
 import {
   getProfilesCon,
+  getProfileByIdCon,
   // createProfileCon,
   updateProfileCon,
   deleteProfileCon,
@@ -50,6 +53,8 @@ app.patch('/profiles/:employee_id', updateProfileCon)
 app.delete('/profiles/:employee_id', deleteProfileCon)
 // app.patch('/profiles/:employee_id/reset-password', resetPasswordCon)
 // app.post('/profiles/login', loginProfileCon)
+
+app.get('/profiles/:employee_id', getProfileByIdCon)
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -377,3 +382,97 @@ describe('deleteProfileCon', () => {
 //     expect(response.status).toBe(500)
 //   })
 // })
+
+//ZAHRAA'S CODE
+describe('getProfileByIdCon', () => {
+  it('should return 200 with one profile', async () => {
+    vi.mocked(getProfileByIdDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: 'user-123',
+        first_name: 'Sarah',
+        last_name: 'Johnson',
+        employee_id: 'S-006',
+        email: 'sarah@company.com',
+        role: 'staff',
+        is_active: true,
+        password: 'hashed'
+      }
+    })
+
+    const response = await request(app).get('/profiles/S-006')
+
+    expect(response.status).toBe(200)
+    expect(response.body.success).toBe(true)
+    expect(response.body.data.first_name).toBe('Sarah')
+    expect(response.body.data.last_name).toBe('Johnson')
+    expect(response.body.data.email).toBe('sarah@company.com')
+    expect(response.body.data.role).toBe('staff')
+  })
+
+  it('should call the model with employee_id from params', async () => {
+    vi.mocked(getProfileByIdDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: 'user-123',
+        first_name: 'Sarah',
+        last_name: 'Johnson',
+        employee_id: 'S-006',
+        email: 'sarah@company.com',
+        role: 'staff',
+        is_active: true,
+        password: 'hashed'
+      }
+    })
+
+    await request(app).get('/profiles/S-006')
+
+    expect(getProfileByIdDb).toHaveBeenCalledWith('S-006')
+  })
+
+  it('should return 400 when profile is not found', async () => {
+    vi.mocked(getProfileByIdDb).mockResolvedValueOnce({
+      success: false,
+      error: 'Profile not found'
+    })
+
+    const response = await request(app).get('/profiles/X-999')
+
+    expect(response.status).toBe(400)
+    expect(response.body.success).toBe(false)
+    expect(response.body.error).toBe('Profile not found')
+  })
+
+  it('should return 500 on unexpected crash', async () => {
+    vi.mocked(getProfileByIdDb).mockRejectedValueOnce(new Error('Database connection failed'))
+
+    const response = await request(app).get('/profiles/S-006')
+
+    expect(response.status).toBe(500)
+    expect(response.body.success).toBe(false)
+    expect(response.body.error).toBe('Database connection failed')
+  })
+
+  it('should handle null first_name from database', async () => {
+    vi.mocked(getProfileByIdDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: 'user-789',
+        first_name: null,
+        last_name: 'Smith',
+        employee_id: 'S-789',
+        email: 'jane@company.com',
+        role: 'staff',
+        is_active: true,
+        password: 'hashed'
+      } as any
+    })
+
+    const response = await request(app).get('/profiles/S-789')
+
+    expect(response.status).toBe(200)
+    expect(response.body.data.first_name).toBeNull()
+  })
+})
+
+//END OF ZAHRAA'S CODE
