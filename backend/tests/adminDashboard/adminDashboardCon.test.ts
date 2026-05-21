@@ -112,6 +112,16 @@ describe('AdminDashboard Controller', () => {
           profiles: [{ first_name: 'John', last_name: 'Doe' }],
         },
       ];
+      const expectedData = [
+  {
+    profile_id: 'some-uuid-123',
+    event_time: '2025-05-19T10:00:00Z',
+    event_type: 'clock-in',
+    sync_status: 'synced',
+    device_info: 'mobile',
+    profiles: { first_name: 'John', last_name: 'Doe' },  // object
+  },
+];
 
       vi.mocked(adminDashboardDb.fetchRecentActivity).mockResolvedValue(mockData);
 
@@ -119,7 +129,7 @@ describe('AdminDashboard Controller', () => {
 
       expect(res.json).toHaveBeenCalledWith({
         status: 'success',
-        data: mockData,
+        data: expectedData,
       });
     });
 
@@ -187,6 +197,23 @@ describe('AdminDashboard Controller', () => {
           profiles: [{ first_name: 'Jane', last_name: 'Smith' }],
         },
       ];
+      const expectedData = [
+  {
+    profile_id: 'some-uuid-123',
+    event_time: '2025-05-19T10:00:00Z',
+    event_type: 'clock-in',
+    location: 'Office',
+    profiles: { first_name: 'John', last_name: 'Doe' },  // object
+  },
+  {
+    profile_id: 'some-uuid-456',
+    event_time: '2025-05-19T09:00:00Z',
+    event_type: 'clock-in',
+    location: 'Office',
+    profiles: { first_name: 'Jane', last_name: 'Smith' },  // object
+  },
+];
+
 
       vi.mocked(adminDashboardDb.fetchCurrentlyOnsite).mockResolvedValue(mockData);
 
@@ -194,7 +221,7 @@ describe('AdminDashboard Controller', () => {
 
       expect(res.json).toHaveBeenCalledWith({
         status: 'success',
-        data: mockData,
+        data: expectedData,
       });
     });
 
