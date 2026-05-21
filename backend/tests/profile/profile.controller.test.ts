@@ -24,11 +24,11 @@ vi.mock('bcrypt', () => ({
 import {
   getProfileByIdDb,
   getProfilesDb,
-  // createProfileDb,
+  createProfileDb,
   updateProfileDb,
   deleteProfileDb,
+  loginProfileDb,
   // resetPasswordDb,
-  // loginProfileDb
 } from '../../src/models/profileDb.js'
 
 import bcrypt from 'bcrypt'
@@ -36,11 +36,11 @@ import bcrypt from 'bcrypt'
 import {
   getProfilesCon,
   getProfileByIdCon,
-  // createProfileCon,
+  createProfileCon,
   updateProfileCon,
   deleteProfileCon,
+  loginProfileCon,
   // resetPasswordCon,
-  // loginProfileCon
 } from '../../src/controllers/profileController.js'
 
 // ─── MINI APP ────────────────────────────────────────────────
@@ -48,16 +48,17 @@ const app = express()
 app.use(express.json())
 
 app.get('/profiles', getProfilesCon)
-// app.post('/profiles', createProfileCon)
+app.post('/profiles', createProfileCon)
 app.patch('/profiles/:employee_id', updateProfileCon)
 app.delete('/profiles/:employee_id', deleteProfileCon)
 // app.patch('/profiles/:employee_id/reset-password', resetPasswordCon)
-// app.post('/profiles/login', loginProfileCon)
+app.post('/profiles/login', loginProfileCon)
 
 app.get('/profiles/:employee_id', getProfileByIdCon)
 
 beforeEach(() => {
   vi.clearAllMocks()
+  process.env.JWT_SECRET = 'test-secret'
 })
 
 // ─── GET ALL ─────────────────────────────────────────────────
@@ -101,149 +102,204 @@ describe('getProfilesCon', () => {
 })
 
 // ─── CREATE ──────────────────────────────────────────────────
-// describe('createProfileCon', () => {
+describe('createProfileCon', () => {
 
-//   it('should return 201 with new profile and plain text password', async () => {
-//     vi.mocked(createProfileDb).mockResolvedValueOnce({
-//       success: true,
-//       data: {
-//         id: '1',
-//         first_name: 'Joshua',
-//         last_name: 'Jacobs',
-//         employee_id: 'S-005',
-//         role: 'staff',
-//         is_active: true,
-//         email: 'jodam@gmail.com',
-//         password: 'Xk9mP2qR'  // plain text returned to admin
-//       }
-//     })
+  it('should return 201 with new profile and plain text password', async () => {
+    vi.mocked(createProfileDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: '1',
+        first_name: 'Joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005',
+        role: 'staff',
+        is_active: true,
+        email: 'jodam@gmail.com',
+        password: 'Xk9mP2qR'  // plain text returned to admin
+      }
+    })
 
-//     const response = await request(app)
-//       .post('/profiles')
-//       .send({
-//         first_name: 'Joshua',
-//         last_name: 'Jacobs',
-//         employee_id: 'S-005',
-//         role: 'staff',
-//         email: 'jodam@gmail.com'
-//       })
+    const response = await request(app)
+      .post('/profiles')
+      .send({
+        first_name: 'Joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005',
+        role: 'staff',
+        email: 'jodam@gmail.com'
+      })
 
-//     expect(response.status).toBe(201)
-//     expect(response.body.success).toBe(true)
-//     // Plain text password must be in response for admin to share
-//     expect(response.body.data.password).toHaveLength(8)
-//   })
+    expect(response.status).toBe(201)
+    expect(response.body.success).toBe(true)
+    // Plain text password must be in response for admin to share
+    expect(response.body.data.password).toHaveLength(8)
+  })
 
-//   it('should return 400 when required fields are missing', async () => {
-//     const response = await request(app)
-//       .post('/profiles')
-//       .send({ first_name: 'Joshua' })  // missing fields
+  it('should return 400 when required fields are missing', async () => {
+    const response = await request(app)
+      .post('/profiles')
+      .send({ first_name: 'Joshua' })  // missing fields
 
-//     expect(response.status).toBe(400)
-//     expect(response.body.success).toBe(false)
-//     expect(response.body.error).toBe('All fields are required')
-//   })
+    expect(response.status).toBe(400)
+    expect(response.body.success).toBe(false)
+    expect(response.body.error).toBe('All fields are required')
+  })
 
-//   it('should return 500 on unexpected crash', async () => {
-//     vi.mocked(createProfileDb).mockRejectedValueOnce(new Error('Crash'))
+  it('should return 500 on unexpected crash', async () => {
+    vi.mocked(createProfileDb).mockRejectedValueOnce(new Error('Crash'))
 
-//     const response = await request(app)
-//       .post('/profiles')
-//       .send({
-//         first_name: 'Joshua',
-//         last_name: 'Jacobs',
-//         employee_id: 'S-005',
-//         role: 'staff',
-//         email: 'jodam@gmail.com'
-//       })
+    const response = await request(app)
+      .post('/profiles')
+      .send({
+        first_name: 'Joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005',
+        role: 'staff',
+        email: 'jodam@gmail.com'
+      })
 
-//     expect(response.status).toBe(500)
-//   })
-// })
+    expect(response.status).toBe(500)
+  })
+})
 
 // // ─── LOGIN ───────────────────────────────────────────────────
-// describe('loginProfileCon', () => {
+describe('loginProfileCon', () => {
 
-//   it('should return 200 with token on successful login', async () => {
-//     vi.mocked(loginProfileDb).mockResolvedValueOnce({
-//       success: true,
-//       data: {
-//         id: '1',
-//         first_name: 'Joshua',
-//         last_name: 'Jacobs',
-//         employee_id: 'S-005',
-//         role: 'staff',
-//         is_active: true,
-//         email: 'jodam@gmail.com',
-//         password: '$2b$10$hashedpassword'
-//       }
-//     })
+  it('should return 200 with token on successful login', async () => {
+    vi.mocked(loginProfileDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: '1',
+        first_name: 'Joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005',
+        role: 'staff',
+        is_active: true,
+        email: 'jodam@gmail.com',
+        password: '$2b$10$hashedpassword'
+      }
+    })
 
-//     // bcrypt.compare returns true — password matches
-//     vi.mocked(bcrypt.compare).mockResolvedValueOnce(true as never)
+    // bcrypt.compare returns true — password matches
+    vi.mocked(bcrypt.compare).mockResolvedValueOnce(true as never)
+    vi.mocked(getProfileByIdDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: '1',
+        first_name: 'joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005',
+        role: 'staff',
+        is_active: true,
+        email: 'jodam@gmail.com',
+        password: '$2b$10$hashedpassword'
+      }
+    })
 
-//     const response = await request(app)
-//       .post('/profiles/login')
-//       .send({ email: 'jodam@gmail.com', password: 'Xk9mP2qR' })
+    const response = await request(app)
+      .post('/profiles/login')
+      .send({ email: 'jodam@gmail.com', password: 'Xk9mP2qR' })
 
-//     expect(response.status).toBe(200)
-//     expect(response.body.success).toBe(true)
-//     // Token must be in response
-//     expect(response.body.token).toBeDefined()
-//     // User info returned — no password in response
-//     expect(response.body.user.email).toBe('jodam@gmail.com')
-//     expect(response.body.user.password).toBeUndefined()
-//   })
+    expect(response.status).toBe(200)
+    expect(response.body.success).toBe(true)
+    // Token must be in response
+    expect(response.body.token).toBeDefined()
+    expect(response.body.first_name).toBe('Joshua')
+    // User info returned — no password in response
+    expect(response.body.user.email).toBe('jodam@gmail.com')
+    expect(response.body.user.first_name).toBe('Joshua')
+    expect(response.body.user.password).toBeUndefined()
+  })
 
-//   it('should return 401 when password does not match', async () => {
-//     vi.mocked(loginProfileDb).mockResolvedValueOnce({
-//       success: true,
-//       data: {
-//         id: '1',
-//         email: 'jodam@gmail.com',
-//         password: '$2b$10$hashedpassword',
-//         is_active: true,
-//         role: 'staff',
-//         first_name: 'Joshua',
-//         last_name: 'Jacobs',
-//         employee_id: 'S-005'
-//       }
-//     })
+  it('should return 401 when password does not match', async () => {
+    vi.mocked(loginProfileDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: '1',
+        email: 'jodam@gmail.com',
+        password: '$2b$10$hashedpassword',
+        is_active: true,
+        role: 'staff',
+        first_name: 'Joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005'
+      }
+    })
 
-//     // bcrypt.compare returns false — wrong password
-//     vi.mocked(bcrypt.compare).mockResolvedValueOnce(false as never)
+    // bcrypt.compare returns false — wrong password
+    vi.mocked(bcrypt.compare).mockResolvedValueOnce(false as never)
 
-//     const response = await request(app)
-//       .post('/profiles/login')
-//       .send({ email: 'jodam@gmail.com', password: 'wrongpassword' })
+    const response = await request(app)
+      .post('/profiles/login')
+      .send({ email: 'jodam@gmail.com', password: 'wrongpassword' })
 
-//     expect(response.status).toBe(401)
-//     expect(response.body.error).toBe('Invalid email or password')
-//   })
+    expect(response.status).toBe(401)
+    expect(response.body.error).toBe('Invalid email or password')
+  })
 
-//   it('should return 401 when email not found', async () => {
-//     vi.mocked(loginProfileDb).mockResolvedValueOnce({
-//       success: false,
-//       error: 'User not found'
-//     })
+  it('should return 401 when email not found', async () => {
+    vi.mocked(loginProfileDb).mockResolvedValueOnce({
+      success: false,
+      error: 'User not found'
+    })
 
-//     const response = await request(app)
-//       .post('/profiles/login')
-//       .send({ email: 'ghost@gmail.com', password: 'anything' })
+    const response = await request(app)
+      .post('/profiles/login')
+      .send({ email: 'ghost@gmail.com', password: 'anything' })
 
-//     expect(response.status).toBe(401)
-//     expect(response.body.error).toBe('Invalid email or password')
-//   })
+    expect(response.status).toBe(401)
+    expect(response.body.error).toBe('Invalid email or password')
+  })
 
-//   it('should return 400 when fields are missing', async () => {
-//     const response = await request(app)
-//       .post('/profiles/login')
-//       .send({ email: 'jodam@gmail.com' })  // missing password
+  it('should return 400 when fields are missing', async () => {
+    const response = await request(app)
+      .post('/profiles/login')
+      .send({ email: 'jodam@gmail.com' })  
 
-//     expect(response.status).toBe(400)
-//     expect(response.body.error).toBe('Email and password are required')
-//   })
-// })
+    expect(response.status).toBe(400)
+    expect(response.body.error).toBe('Email and password are required')
+  })
+
+  //ZAHRAA
+  it('should return first_name in login response', async () => {
+    vi.mocked(loginProfileDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: '1',
+        first_name: 'joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005',
+        role: 'staff',
+        is_active: true,
+        email: 'jodam@gmail.com',
+        password: '$2b$10$hashedpassword'
+      }
+    })
+
+    vi.mocked(bcrypt.compare).mockResolvedValueOnce(true as never)
+    vi.mocked(getProfileByIdDb).mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: '1',
+        first_name: 'joshua',
+        last_name: 'Jacobs',
+        employee_id: 'S-005',
+        role: 'staff',
+        is_active: true,
+        email: 'jodam@gmail.com',
+        password: '$2b$10$hashedpassword'
+      }
+    })
+
+    const response = await request(app)
+      .post('/profiles/login')
+      .send({ email: 'jodam@gmail.com', password: 'Xk9mP2qR' })
+
+    expect(response.status).toBe(200)
+    expect(response.body).toHaveProperty('first_name')
+    expect(response.body.first_name).toBe('Joshua')
+  })
+})
 
 // ─── UPDATE ──────────────────────────────────────────────────
 describe('updateProfileCon', () => {
