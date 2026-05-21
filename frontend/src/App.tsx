@@ -8,7 +8,7 @@ import DashboardGrid from "./components/dashboard/DashboardGrid"
 // ============================
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import LoginPage from './components/auth/LoginPage';
-import ScanQRFlow from './components/Features/ScanQRFlow';
+import ScanQRPage from './pages/ScanQRPage';
 import { HistoryPage } from './pages/History-page';
 import { UserProfilePage } from './pages/profile';
 import type { UserProfileData } from './components/profile/UserProfileData';
