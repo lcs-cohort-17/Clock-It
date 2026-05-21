@@ -2,7 +2,7 @@ import ScanQRCard from '../components/ScanQRCard'
 
 const SCAN_PAGE_TEXT = {
   title: 'Scan QR Code',
-  description: 'Point your camera at the workplace QR code to clock in or out.',
+  description: 'Display this workplace QR code so staff can scan it from their phone.',
 }
 
 const SCAN_PAGE_STYLES = {
@@ -13,7 +13,7 @@ function ScanQRPage() {
   return (
     <div className="flex-1 bg-slate-50 p-8 text-slate-900">
       <div className="mx-auto max-w-4xl">
-        {/* This page introduces the scanner before the user opens the camera. */}
+        {/* This page displays the workplace QR layout that staff scan with their phone. */}
         <h1
           className="text-4xl font-bold"
           style={{ color: SCAN_PAGE_STYLES.headingColor }}

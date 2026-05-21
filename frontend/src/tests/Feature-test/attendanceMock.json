@@ -1,0 +1,35 @@
+{
+  "user": {
+    "name": "Shaheed Karlie",
+    "email": "shaheed@clockit.com",
+    "role": "staff",
+    "employeeId": "EMP001"
+  },
+  "scanCodes": {
+    "clockIn": "CLOCK_IN",
+    "clockOut": "CLOCK_OUT",
+    "invalid": "BAD_CODE"
+  },
+  "today": "2026-05-20",
+  "attendanceEvents": [
+    {
+      "date": "2026-05-20",
+      "iso": "2026-05-20T06:00:00.000Z",
+      "time": "08:00",
+      "type": "clock-in",
+      "employeeId": "EMP001"
+    },
+    {
+      "date": "2026-05-20",
+      "iso": "2026-05-20T15:00:00.000Z",
+      "time": "17:00",
+      "type": "clock-out",
+      "employeeId": "EMP001"
+    }
+  ],
+  "todaysActivity": {
+    "firstClockIn": "08:00",
+    "lastClockOut": "17:00",
+    "totalHours": 9
+  }
+}
