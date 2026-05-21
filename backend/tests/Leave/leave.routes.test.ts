@@ -4,14 +4,17 @@ import request from 'supertest'
 
 // mock BEFORE importing routes
 // otherwise Express loads the real controllers
-vi.mock('../../src/controllers/attendanceController.js', () => (
-  {
+vi.mock('../../src/controllers/leaveController.js', () => ({
   submitLeave: vi.fn((req, res) =>
     res.status(201).json({ data: {} })
   ),
 
   getCalendar: vi.fn((req, res) =>
     res.status(200).json({ data: {} })
+  ),
+
+  getLeave: vi.fn((req, res) =>
+    res.status(200).json({ data: [] })
   ),
 
   getAttendance: vi.fn((req, res) =>
@@ -21,10 +24,13 @@ vi.mock('../../src/controllers/attendanceController.js', () => (
   updateLeaveStatus: vi.fn((req, res) =>
     res.status(200).json({ data: {} })
   ),
+
+  updateLeave: vi.fn((req, res) =>
+    res.status(200).json({ data: {} })
+  ),
 }))
 
 import attendanceRoutes from '../../src/routes/leaveRoutes.js'
-
 
 // Mock auth — simulates middleware populating req.auth
 const mockAuth = (
@@ -78,8 +84,8 @@ describe('attendanceRoutes', () => {
         
         request_type: 'leave',
 
-        start_date: '2026-01-01',
-        end_date: '2026-01-05',
+        start_date: '2026-06-01',
+        end_date: '2026-06-05',
 
         reason: 'Family vacation'
       })
@@ -153,14 +159,11 @@ describe('attendanceRoutes', () => {
 
   // no validator on this route
   // simple route/controller test
-  it('GET /api/leaves/getAttendance → calls getAttendance', async () => {
-
-    const res = await request(buildApp())
-
-      .get('/api/leaves/getAttendance')
-
-    expect(res.status).toBe(200)
-  })
+  it('GET /api/leaves/getLeave → calls getLeave', async () => {
+  const res = await request(buildApp())
+    .get('/api/leaves/getLeave')
+  expect(res.status).toBe(200)
+})
 
 
   // router.patch('/:id/status')

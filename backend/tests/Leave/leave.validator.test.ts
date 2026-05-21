@@ -2,6 +2,8 @@
 // LEARNING : Validate central mock data from centralLeaveRequest
 // This test will fail if the central mock data does not meet the schema requirements.
 import { centralLeaveRequest } from '../mockData/centralLeaveRequest.js';
+import { describe, it, expect } from 'vitest'
+import { submitLeaveSchema, calendarQuerySchema, updateLeaveStatusSchema } from '../../src/validators/leaveValidator.js'
 
 describe('submitLeaveSchema with central mock data', () => {
   it('validates the centralLeaveRequest object', () => {
@@ -16,136 +18,117 @@ describe('submitLeaveSchema with central mock data', () => {
     }
   })
 })
-import {describe,it,expect } from 'vitest'
-
-import { submitLeaveSchema,calendarQuerySchema,updateLeaveStatusSchema  } from '../../src/validators/leaveValidator.js'
 
 describe('submitLeaveSchema', () => {
   it('accepts valid leave request data', () => {
-
+    // Get today's date and add 30 days for future dates
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setDate(today.getDate() + 30)
+    const endDate = new Date(today)
+    endDate.setDate(today.getDate() + 35)
+    
     const result = submitLeaveSchema.safeParse({
-
-      // valid enum value
       request_type: 'leave',
-
-      // valid ISO dates
-      start_date: '2026-01-01',
-      end_date: '2026-01-05',
-
-      // valid reason
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
       reason: 'Family vacation'
-
     })
 
-    // We expect validation to pass
     expect(result.success).toBe(true)
-  })})
+  })
 
-   it('rejects invalid request_type values', () => {
-
+  it('rejects invalid request_type values', () => {
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setDate(today.getDate() + 30)
+    const endDate = new Date(today)
+    endDate.setDate(today.getDate() + 35)
+    
     const result = submitLeaveSchema.safeParse({
-
-      // INVALID ENUM VALUE
       request_type: 'holiday',
-
-      start_date: '2026-01-01',
-      end_date: '2026-01-05',
-
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
       reason: 'Vacation'
-
     })
 
-    // Validation should fail
     expect(result.success).toBe(false)
 
-    // If validation failed,
-    // inspect the actual field errors
     if (!result.success) {
-
+      // Updated to match your actual error message: "other" not "personal"
       expect(result.error.flatten().fieldErrors.request_type)
-        .toContain(
-          'request_type must be leave, sick, or personal'
-        )
+        .toContain('request_type must be leave, sick, annual, unpaid or other')
     }
   })
 
-
   it('rejects empty reason', () => {
-
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setDate(today.getDate() + 30)
+    const endDate = new Date(today)
+    endDate.setDate(today.getDate() + 35)
+    
     const result = submitLeaveSchema.safeParse({
-
       request_type: 'leave',
-
-      start_date: '2026-01-01',
-      end_date: '2026-01-05',
-
-      // INVALID EMPTY STRING
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
       reason: ''
-
     })
 
     expect(result.success).toBe(false)
 
     if (!result.success) {
-
       expect(result.error.flatten().fieldErrors.reason)
         .toContain('reason cannot be empty')
     }
   })
 
-
   it('rejects reason longer than 500 characters', () => {
-
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setDate(today.getDate() + 30)
+    const endDate = new Date(today)
+    endDate.setDate(today.getDate() + 35)
+    
     const result = submitLeaveSchema.safeParse({
-
       request_type: 'leave',
-
-      start_date: '2026-01-01',
-      end_date: '2026-01-05',
-
-      // Generates 501 characters
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
       reason: 'a'.repeat(501)
-
     })
 
     expect(result.success).toBe(false)
 
     if (!result.success) {
-
       expect(result.error.flatten().fieldErrors.reason)
-        .toContain(
-          'reason cannot exceed 500 characters'
-        )
+        .toContain('reason cannot exceed 500 characters')
     }
   })
 
   it('rejects end_date before start_date', () => {
-
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setDate(today.getDate() + 35) // Later date
+    const endDate = new Date(today)
+    endDate.setDate(today.getDate() + 30) // Earlier date
+    
     const result = submitLeaveSchema.safeParse({
-
       request_type: 'leave',
-
-      // START AFTER END
-      start_date: '2026-01-10',
-      end_date: '2026-01-05',
-
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
       reason: 'Vacation'
-
     })
 
     expect(result.success).toBe(false)
 
     if (!result.success) {
-
       expect(result.error.flatten().fieldErrors.end_date)
-        .toContain(
-          'end_date must be on or after start_date'
-        )
+        .toContain('end_date must be on or after start_date')
     }
   })
+})
+
 describe('calendarQuerySchema', () => {
-
-
 
   it('converts string query params into numbers', () => {
 
@@ -168,8 +151,6 @@ describe('calendarQuerySchema', () => {
     }
   })
 
-
-
   it('rejects invalid month values', () => {
 
     const result = calendarQuerySchema.safeParse({
@@ -190,9 +171,6 @@ describe('calendarQuerySchema', () => {
   })
 })
 
-
-
-
 describe('updateLeaveStatusSchema', () => {
 
   it('accepts approved status', () => {
@@ -206,9 +184,6 @@ describe('updateLeaveStatusSchema', () => {
     expect(result.success).toBe(true)
   })
 
-
-
- 
   it('rejects invalid status values', () => {
 
     const result = updateLeaveStatusSchema.safeParse({
