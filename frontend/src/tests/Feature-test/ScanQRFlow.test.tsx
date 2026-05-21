@@ -1,54 +1,61 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import ScanQRFlow from '../../components/Features/ScanQRFlow'
+import {
+  getTodaysActivity,
+  recordAttendanceScan,
+  type AttendanceScanType,
+} from '../../components/Features/attendanceEvents'
+import attendanceMock from './attendanceMock.json'
 
-describe('ScanQRFlow', () => {
+const scanCodeToType: Record<string, AttendanceScanType> = {
+  [attendanceMock.scanCodes.clockIn]: 'clock-in',
+  [attendanceMock.scanCodes.clockOut]: 'clock-out',
+}
+
+describe('Scan QR clock-in/out mock data', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-20T06:30:00.000Z'))
   })
 
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  test('stores a clock-in scan with the actual scan time', () => {
-    render(
-      <MemoryRouter>
-        <ScanQRFlow />
-      </MemoryRouter>
+  test('stores a clock-in event from the mock CLOCK_IN code', () => {
+    const event = recordAttendanceScan(
+      scanCodeToType[attendanceMock.scanCodes.clockIn],
+      new Date(attendanceMock.attendanceEvents[0].iso)
     )
 
-    fireEvent.change(screen.getByLabelText(/QR scan code/i), {
-      target: { value: 'CLOCK_IN' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /Submit scan/i }))
-
-    const events = JSON.parse(localStorage.getItem('attendanceEvents') ?? '[]')
-    expect(events).toEqual([
+    expect(event).toEqual(
       expect.objectContaining({
-        date: '2026-05-20',
+        date: attendanceMock.today,
         type: 'clock-in',
-      }),
-    ])
-    expect(screen.getByText(/Clocked in at/i)).toBeInTheDocument()
+      })
+    )
+    expect(JSON.parse(localStorage.getItem('attendanceEvents') ?? '[]')).toHaveLength(1)
   })
 
-  test('rejects invalid QR codes', () => {
-    render(
-      <MemoryRouter>
-        <ScanQRFlow />
-      </MemoryRouter>
+  test('stores a clock-out event from the mock CLOCK_OUT code', () => {
+    const event = recordAttendanceScan(
+      scanCodeToType[attendanceMock.scanCodes.clockOut],
+      new Date(attendanceMock.attendanceEvents[1].iso)
     )
 
-    fireEvent.change(screen.getByLabelText(/QR scan code/i), {
-      target: { value: 'BAD_CODE' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /Submit scan/i }))
+    expect(event).toEqual(
+      expect.objectContaining({
+        date: attendanceMock.today,
+        type: 'clock-out',
+      })
+    )
+    expect(JSON.parse(localStorage.getItem('attendanceEvents') ?? '[]')).toHaveLength(1)
+  })
 
-    expect(screen.getByText(/Invalid QR code/i)).toBeInTheDocument()
-    expect(localStorage.getItem('attendanceEvents')).toBeNull()
+  test('builds today activity from mock clock-in and clock-out events', () => {
+    localStorage.setItem('attendanceEvents', JSON.stringify(attendanceMock.attendanceEvents))
+
+    expect(getTodaysActivity(new Date(`${attendanceMock.today}T12:00:00.000Z`))).toEqual(
+      attendanceMock.todaysActivity
+    )
   })
 })

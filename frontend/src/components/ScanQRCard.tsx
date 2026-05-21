@@ -196,11 +196,9 @@ function ScanQRCard() {
         </div>
       )}
 
-      {scanError && (
-        <div className="mt-6 rounded-xl bg-rose-50 px-4 py-3 text-rose-700">
-          {scanError}
+          <p className="mt-4 text-sm text-slate-500">{SCAN_QR_TEXT.helperText}</p>
         </div>
-      )}
+      </div>
     </div>
   )
 }
