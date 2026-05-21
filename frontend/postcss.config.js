@@ -1,10 +1,7 @@
 /* lutfeeya /adminDashboard */
 
 export default {
-    plugins: {
-        tailwindcss: {},
-        autoprefixer: {},
-    },
+    plugins: {},
 }
 
 /* lutfeeya /adminDashboard */
