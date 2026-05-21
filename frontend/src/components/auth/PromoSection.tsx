@@ -3,7 +3,7 @@ import { Clock, Wifi, Users } from 'lucide-react';
 export default function PromoSection() {
   return (
     // EDIT: Change gradient colors if design differs; currently matches indigo-to-purple from screenshots
-    <div className="flex h-full flex-col justify-center bg-gradient-to-br from-[#4F46E5] to-[#7C3AED] p-8 text-white lg:p-12">
+    <div className="flex h-full flex-col justify-center bg-gradient-to-br from-[#093C5D] via-[#3B7597] to-[#9CB07A] p-8 text-white lg:p-12">
       {/* Logo and App Name – larger spacing, centred */}
       <div className="mb-16 flex items-center gap-4">
         {/* Logo container with rounded-xl and white overlay */}
@@ -12,7 +12,7 @@ export default function PromoSection() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clock It</h1>
-          <p className="text-sm text-white/60">Attendance Tracker</p>
+          <p className="text-sm text-white/75">Attendance Tracker</p>
         </div>
       </div>
 

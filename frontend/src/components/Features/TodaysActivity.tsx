@@ -3,7 +3,7 @@ import React from 'react';
 interface Activity {
   firstClockIn?: string;
   lastClockOut?: string;
-  totalHours?: number;
+  totalHours?: string;
 }
 
 interface TodaysActivityProps {
@@ -30,7 +30,7 @@ const TodaysActivity: React.FC<TodaysActivityProps> = ({ activity }) => {
       </div>
       <div>
         <p className="text-xs font-bold uppercase text-slate-400">Total hours</p>
-        <p className="mt-1 text-xl font-bold text-[#093C5D]">Total hours: {activity.totalHours}</p>
+        <p className="mt-1 text-xl font-bold text-[#093C5D]">{activity.totalHours}</p>
       </div>
     </div>
   );

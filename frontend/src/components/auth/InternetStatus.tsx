@@ -7,9 +7,9 @@ interface Props {
 
 export default function InternetStatus({ status }: Props) {
   const statusConfig = {
-    online: { icon: Wifi, color: 'text-green-500', text: 'Connected' },
-    offline: { icon: WifiOff, color: 'text-red-500', text: 'No Internet' },
-    checking: { icon: Wifi, color: 'text-yellow-500 animate-pulse', text: 'Checking...' },
+    online: { icon: Wifi, color: 'text-[#9CB07A]', text: 'Connected' },
+    offline: { icon: WifiOff, color: 'text-[#093C5D]', text: 'No Internet' },
+    checking: { icon: Wifi, color: 'text-[#3B7597] animate-pulse', text: 'Checking...' },
   };
 
   const { icon: Icon, color, text } = statusConfig[status];
