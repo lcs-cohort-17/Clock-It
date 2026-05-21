@@ -13,6 +13,7 @@ import { HistoryPage } from './pages/History-page';
 import { UserProfilePage } from './pages/profile';
 import type { UserProfileData } from './components/profile/UserProfileData';
 import type { User } from './types/auth';
+import CalendarPage from './pages/CalendarPage';
 
 const fallbackUser: UserProfileData = {
   fullName: 'Siba Mthembu',
@@ -91,8 +92,9 @@ function App() {
   <Route element={<DashboardPage user={user} />}>
     <Route path="/admin-dashboard" element={<DashboardGrid user={user} />} />
     <Route path="/staff-dashboard" element={<DashboardGrid user={user} />} />
-    <Route path="/scan-qr" element={<ScanQRFlow />} />
+    <Route path="/scan-qr" element={<ScanQRPage />} />
     <Route path="/history" element={<HistoryPage />} />
+    <Route path="/calendar" element={<CalendarPage />} />
     <Route path="/profile" element={<UserProfilePage user={user} />} />
   </Route>
 

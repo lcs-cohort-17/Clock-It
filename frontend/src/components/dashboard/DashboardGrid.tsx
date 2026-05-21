@@ -34,7 +34,7 @@ function DashboardGrid({ user = defaultUser }: Props) {
   const [currentTime, setCurrentTime] = useState(() =>
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   )
-  const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0)
+  const [, setAttendanceRefreshKey] = useState(0)
   const latestScan = getLatestScanEvent()
   const isClockedIn = latestScan?.type === 'clock-in'
   const todaysActivity = getTodaysActivity()
