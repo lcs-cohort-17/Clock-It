@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import PasswordSection from './PasswordSection'
+import PasswordSection from '../../components/profile/PasswordCard.tsx'
+import {describe,test,expect} from 'vitest'
 
 describe('PasswordSection', () => {
   /* =========================
