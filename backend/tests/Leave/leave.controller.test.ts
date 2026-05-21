@@ -2,12 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as attendanceDb from '../../src/models/leaveDb.js'
 import { submitLeave, getCalendar, updateLeaveStatus } from '../../src/controllers/leaveController.js'
 
-vi.mock('../../src/models/attendanceDb.js')
+vi.mock('../../src/models/leaveDb.js')
 
 const mockUserId = 'user-123'
 
 const mockReqRes = (overrides = {}) => {
-
   const req = {
     auth: {
       userId: mockUserId,
@@ -37,12 +36,17 @@ describe('attendanceController', () => {
 
     it('returns 201 when request succeeds', async () => {
 
+      // mock findActiveProfile so user passes the active check
+      vi.spyOn(attendanceDb, 'findActiveProfile')
+        .mockResolvedValue({
+          data: { id: mockUserId, is_active: true } as any,
+          error: null
+        })
+
+      // mock insertLeaveRequest so DB is not hit
       vi.spyOn(attendanceDb, 'insertLeaveRequest')
         .mockResolvedValue({
-          data: {
-            id: 'leave-1',
-            status: 'pending'
-          } as any,
+          data: { id: 'leave-1', status: 'pending' } as any,
           error: null
         })
 
@@ -70,7 +74,6 @@ describe('attendanceController', () => {
     })
   })
 
-  //get Calendar
   describe('getCalendar', () => {
 
     it('returns calendar data', async () => {
@@ -89,11 +92,18 @@ describe('attendanceController', () => {
     })
   })
 
-  //Update leave Status
   describe('updateLeaveStatus', () => {
 
     it('allows admin approval', async () => {
 
+      // mock findLeaveById so existence check passes
+      vi.spyOn(attendanceDb, 'findLeaveById')
+        .mockResolvedValue({
+          data: { id: 'leave-1' } as any,
+          error: null
+        })
+
+      // mock updateLeaveRequestStatus so DB is not hit
       vi.spyOn(attendanceDb, 'updateLeaveRequestStatus')
         .mockResolvedValue({
           data: { id: 'leave-1', status: 'approved' } as any,
@@ -111,5 +121,4 @@ describe('attendanceController', () => {
       expect(res.status).toHaveBeenCalledWith(200)
     })
   })
-
 })
