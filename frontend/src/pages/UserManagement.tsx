@@ -29,6 +29,7 @@ type User = {
   employeeId: string;
   role: Role;
   status: Status;
+  password: string;
 };
 
 const INITIAL_USERS: User[] = [
@@ -39,6 +40,7 @@ const INITIAL_USERS: User[] = [
     employeeId: "A-001",
     role: "Admin",
     status: "Active",
+    password: "Temp1234",
   },
   {
     id: "2",
@@ -47,6 +49,7 @@ const INITIAL_USERS: User[] = [
     employeeId: "A-002",
     role: "Admin",
     status: "Active",
+    password: "Temp5678",
   },
   {
     id: "3",
@@ -55,6 +58,7 @@ const INITIAL_USERS: User[] = [
     employeeId: "A-003",
     role: "Admin",
     status: "Active",
+    password: "Temp9012",
   },
   {
     id: "4",
@@ -63,6 +67,7 @@ const INITIAL_USERS: User[] = [
     employeeId: "S-101",
     role: "Staff",
     status: "Active",
+    password: "Temp3456",
   },
   {
     id: "5",
@@ -71,6 +76,7 @@ const INITIAL_USERS: User[] = [
     employeeId: "S-102",
     role: "Staff",
     status: "Active",
+    password: "Temp7890",
   },
   {
     id: "6",
@@ -79,6 +85,7 @@ const INITIAL_USERS: User[] = [
     employeeId: "S-103",
     role: "Staff",
     status: "Active",
+    password: "Temp1122",
   },
 ];
 
@@ -117,6 +124,13 @@ function UserManagementPage() {
     role: "Staff" as Role,
   });
 
+  // Password Modal
+  const [generatedPassword, setGeneratedPassword] =
+    useState("");
+
+  const [showPasswordModal, setShowPasswordModal] =
+    useState(false);
+
   function generateEmployeeId(role: Role) {
     const prefix = role === "Admin" ? "A" : "S";
 
@@ -124,7 +138,26 @@ function UserManagementPage() {
 
     const nextNumber = existing.length + 1;
 
-    return `${prefix}-${String(nextNumber).padStart(3, "0")}`;
+    const baseNumber = role === "Admin" ? 1 : 101;
+
+    return `${prefix}-${String(
+      baseNumber + existing.length
+    ).padStart(3, "0")}`;
+  }
+
+  function generatePassword(length = 10) {
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    let password = "";
+
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(
+        Math.floor(Math.random() * chars.length)
+      );
+    }
+
+    return password;
   }
 
   const filtered = useMemo(() => {
@@ -140,18 +173,22 @@ function UserManagementPage() {
     );
   }, [query, users]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / PAGE_SIZE)
+  );
 
   const currentPage = Math.min(page, totalPages);
 
   const start = (currentPage - 1) * PAGE_SIZE;
 
-  const pageRows = filtered.slice(start, start + PAGE_SIZE);
+  const pageRows = filtered.slice(
+    start,
+    start + PAGE_SIZE
+  );
 
   return (
-    <div
-      className="min-h-screen bg-[#F5F5F5]"
-    >
+    <div className="min-h-screen bg-[#F5F5F5]">
       <main className="w-full px-6 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
@@ -161,7 +198,8 @@ function UserManagementPage() {
             </h1>
 
             <p className="text-lg text-[#3B7597] mt-1">
-              Add, edit, or disable accounts. Self-registration is disabled.
+              Add, edit, or disable accounts.
+              Self-registration is disabled.
             </p>
           </div>
 
@@ -195,143 +233,168 @@ function UserManagementPage() {
         </div>
 
         {/* Table */}
-        <div
-          className="min-h-screen bg-[#F5F5F5]"
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-[#F5F5F5] text-sl uppercase tracking-wider text-[#3B7597]">
-                <tr>
-                  <th className="px-6 py-4 font-semibold">Name</th>
-                  <th className="px-6 py-4 font-semibold">Email</th>
-                  <th className="px-6 py-4 font-semibold">
-                    Employee ID
-                  </th>
-                  <th className="px-6 py-4 font-semibold">Role</th>
-                  <th className="px-6 py-4 font-semibold">Status</th>
-                  <th className="px-6 py-4 font-semibold text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+        <div className="overflow-x-auto bg-white rounded-xl">
+          <table className="w-full text-left">
+            <thead className="bg-[#F5F5F5] uppercase tracking-wider text-[#3B7597]">
+              <tr>
+                <th className="px-6 py-4 font-semibold">
+                  Name
+                </th>
+                <th className="px-6 py-4 font-semibold">
+                  Email
+                </th>
+                <th className="px-6 py-4 font-semibold">
+                  Employee ID
+                </th>
+                <th className="px-6 py-4 font-semibold">
+                  Role
+                </th>
+                <th className="px-6 py-4 font-semibold">
+                  Status
+                </th>
+                <th className="px-6 py-4 font-semibold text-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
 
-              <tbody className="divide-y divide-gray-100">
-                {pageRows.map((u) => (
-                  <tr key={u.id} className="hover:bg-[#F5F5F5]/60">
-                    {/* Name */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-[#093C5D] text-white text-xs font-semibold flex items-center justify-center">
-                          {initials(u.name)}
-                        </div>
-
-                        <span className="text-lg font-medium text-[#093C5D]">
-                          {u.name}
-                        </span>
+            <tbody className="divide-y divide-gray-100">
+              {pageRows.map((u) => (
+                <tr
+                  key={u.id}
+                  className="hover:bg-[#F5F5F5]/60"
+                >
+                  {/* Name */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-[#093C5D] text-white text-xs font-semibold flex items-center justify-center">
+                        {initials(u.name)}
                       </div>
-                    </td>
 
-                    {/* Email */}
-                    <td className="px-6 py-4 text-lg text-[#3B7597]">
-                      {u.email}
-                    </td>
-
-                    {/* Employee ID */}
-                    <td className="px-6 py-4 text-lg text-[#093C5D]">
-                      {u.employeeId}
-                    </td>
-
-                    {/* Role */}
-                    <td className="px-6 py-4">
-                      {u.role === "Admin" ? (
-                        <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-[#093C5D] text-white">
-                          Admin
-                        </span>
-                      ) : (
-                        <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold border border-gray-300 text-[#093C5D]">
-                          Staff
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-4">
-                      <span
-                        className={
-                          "inline-block px-3 py-1 rounded-full text-sm font-semibold border " +
-                          (u.status === "Active"
-                            ? "bg-[#9CB07A]/20 text-[#5e7a3e] border-[#9CB07A]/40"
-                            : "bg-red-100 text-red-600 border-red-200")
-                        }
-                      >
-                        {u.status}
+                      <span className="text-lg font-medium text-[#093C5D]">
+                        {u.name}
                       </span>
-                    </td>
+                    </div>
+                  </td>
 
-                    {/* Actions */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Edit */}
-                        <button
-                          aria-label="Edit"
-                          onClick={() => {
-                            setEditingUserId(u.id);
+                  {/* Email */}
+                  <td className="px-6 py-4 text-lg text-[#3B7597]">
+                    {u.email}
+                  </td>
 
-                            setEditUser({
-                              name: u.name,
-                              email: u.email,
-                              role: u.role,
-                            });
+                  {/* Employee ID */}
+                  <td className="px-6 py-4 text-lg text-[#093C5D]">
+                    {u.employeeId}
+                  </td>
 
-                            setShowEditModal(true);
-                          }}
-                          className="p-2 rounded-md text-[#3B7597] hover:bg-[#3B7597]/10"
-                        >
-                          <Pencil size={16} />
-                        </button>
+                  {/* Role */}
+                  <td className="px-6 py-4">
+                    {u.role === "Admin" ? (
+                      <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-[#093C5D] text-white">
+                        Admin
+                      </span>
+                    ) : (
+                      <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold border border-gray-300 text-[#093C5D]">
+                        Staff
+                      </span>
+                    )}
+                  </td>
 
-                        {/* Reset Password */}
-                        <button
-                          aria-label="Reset password"
-                          onClick={() => {
-                            alert(
-                              `Password reset link sent to ${u.email}`
-                            );
-                          }}
-                          className="p-2 rounded-md text-[#3B7597] hover:bg-[#3B7597]/10"
-                        >
-                          <Key size={16} />
-                        </button>
+                  {/* Status */}
+                  <td className="px-6 py-4">
+                    <span
+                      className={
+                        "inline-block px-3 py-1 rounded-full text-sm font-semibold border " +
+                        (u.status === "Active"
+                          ? "bg-[#9CB07A]/20 text-[#5e7a3e] border-[#9CB07A]/40"
+                          : "bg-red-100 text-red-600 border-red-200")
+                      }
+                    >
+                      {u.status}
+                    </span>
+                  </td>
 
-                        {/* Disable */}
-                        <button
-                          aria-label="Disable user"
-                          onClick={() => {
-                            setUsers((prev) =>
-                              prev.map((user) =>
-                                user.id === u.id
-                                  ? {
-                                      ...user,
-                                      status:
-                                        user.status === "Active"
-                                          ? "Inactive"
-                                          : "Active",
-                                    }
-                                  : user
-                              )
-                            );
-                          }}
-                          className="p-2 rounded-md text-red-500 hover:bg-red-50"
-                        >
-                          <Ban size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  {/* Actions */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      {/* Edit */}
+                      <button
+                        aria-label="Edit"
+                        onClick={() => {
+                          setEditingUserId(u.id);
+
+                          setEditUser({
+                            name: u.name,
+                            email: u.email,
+                            role: u.role,
+                          });
+
+                          setShowEditModal(true);
+                        }}
+                        className="p-2 rounded-md text-[#3B7597] hover:bg-[#3B7597]/10"
+                      >
+                        <Pencil size={16} />
+                      </button>
+
+                      {/* Reset Password */}
+                      <button
+                        aria-label="Reset password"
+                        onClick={() => {
+                          const newPassword =
+                            generatePassword();
+
+                          setUsers((prev) =>
+                            prev.map((user) =>
+                              user.id === u.id
+                                ? {
+                                    ...user,
+                                    password:
+                                      newPassword,
+                                  }
+                                : user
+                            )
+                          );
+
+                          setGeneratedPassword(
+                            newPassword
+                          );
+
+                          setShowPasswordModal(true);
+                        }}
+                        className="p-2 rounded-md text-[#3B7597] hover:bg-[#3B7597]/10"
+                      >
+                        <Key size={16} />
+                      </button>
+
+                      {/* Disable */}
+                      <button
+                        aria-label="Disable user"
+                        onClick={() => {
+                          setUsers((prev) =>
+                            prev.map((user) =>
+                              user.id === u.id
+                                ? {
+                                    ...user,
+                                    status:
+                                      user.status ===
+                                      "Active"
+                                        ? "Inactive"
+                                        : "Active",
+                                  }
+                                : user
+                            )
+                          );
+                        }}
+                        className="p-2 rounded-md text-red-500 hover:bg-red-50"
+                      >
+                        <Ban size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-gray-100 bg-white">
@@ -342,7 +405,10 @@ function UserManagementPage() {
               </span>{" "}
               –{" "}
               <span className="font-semibold text-[#093C5D]">
-                {Math.min(start + PAGE_SIZE, filtered.length)}
+                {Math.min(
+                  start + PAGE_SIZE,
+                  filtered.length
+                )}
               </span>{" "}
               of{" "}
               <span className="font-semibold text-[#093C5D]">
@@ -386,7 +452,9 @@ function UserManagementPage() {
                     Math.min(totalPages, p + 1)
                   )
                 }
-                disabled={currentPage === totalPages}
+                disabled={
+                  currentPage === totalPages
+                }
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-200 text-[#093C5D] disabled:opacity-40 hover:bg-[#F5F5F5]"
               >
                 Next <ChevronRight size={16} />
@@ -416,11 +484,12 @@ function UserManagementPage() {
             <div className="space-y-4">
               {/* Full Name */}
               <div>
-                <label className="block text-sm font-medium text-[#093C5D] mb-1">
+                <label htmlFor="add-full-name" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Full Name
                 </label>
 
                 <input
+                  id="add-full-name"
                   type="text"
                   value={newUser.name}
                   onChange={(e) =>
@@ -435,11 +504,12 @@ function UserManagementPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-[#093C5D] mb-1">
+                <label htmlFor="add-email-address" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Email Address
                 </label>
 
                 <input
+                  id="add-email-address"
                   type="email"
                   value={newUser.email}
                   onChange={(e) =>
@@ -454,11 +524,12 @@ function UserManagementPage() {
 
               {/* Role */}
               <div>
-                <label className="block text-sm font-medium text-[#093C5D] mb-1">
+                <label htmlFor="add-role" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Role
                 </label>
 
                 <select
+                  id="add-role"
                   value={newUser.role}
                   onChange={(e) =>
                     setNewUser({
@@ -468,21 +539,28 @@ function UserManagementPage() {
                   }
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300"
                 >
-                  <option value="Staff">Staff</option>
-                  <option value="Admin">Admin</option>
+                  <option value="Staff">
+                    Staff
+                  </option>
+                  <option value="Admin">
+                    Admin
+                  </option>
                 </select>
               </div>
 
               {/* Employee ID */}
               <div>
-                <label className="block text-sm font-medium text-[#093C5D] mb-1">
+                <label htmlFor="add-employee-id" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Employee ID
                 </label>
 
                 <input
+                  id="add-employee-id"
                   type="text"
                   disabled
-                  value={generateEmployeeId(newUser.role)}
+                  value={generateEmployeeId(
+                    newUser.role
+                  )}
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-500"
                 />
               </div>
@@ -491,7 +569,9 @@ function UserManagementPage() {
             {/* Buttons */}
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() =>
+                  setShowAddModal(false)
+                }
                 className="px-5 py-2.5 rounded-lg border border-gray-300 text-[#093C5D]"
               >
                 Cancel
@@ -499,23 +579,42 @@ function UserManagementPage() {
 
               <button
                 onClick={() => {
-                  if (!newUser.name || !newUser.email) {
-                    alert("Please complete all fields");
+                  if (
+                    !newUser.name ||
+                    !newUser.email
+                  ) {
+                    alert(
+                      "Please complete all fields"
+                    );
                     return;
                   }
+
+                  const randomPassword =
+                    generatePassword();
 
                   const user: User = {
                     id: crypto.randomUUID(),
                     name: newUser.name,
                     email: newUser.email,
                     role: newUser.role,
-                    employeeId: generateEmployeeId(
-                      newUser.role
-                    ),
+                    employeeId:
+                      generateEmployeeId(
+                        newUser.role
+                      ),
                     status: "Active",
+                    password: randomPassword,
                   };
 
-                  setUsers((prev) => [...prev, user]);
+                  setUsers((prev) => [
+                    ...prev,
+                    user,
+                  ]);
+
+                  setGeneratedPassword(
+                    randomPassword
+                  );
+
+                  setShowPasswordModal(true);
 
                   setNewUser({
                     name: "",
@@ -544,7 +643,9 @@ function UserManagementPage() {
               </h2>
 
               <button
-                onClick={() => setShowEditModal(false)}
+                onClick={() =>
+                  setShowEditModal(false)
+                }
                 className="text-gray-400 hover:text-gray-600 text-xl"
               >
                 ✕
@@ -552,13 +653,13 @@ function UserManagementPage() {
             </div>
 
             <div className="space-y-4">
-              {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-[#093C5D] mb-1">
+                <label htmlFor="edit-full-name" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Full Name
                 </label>
 
                 <input
+                  id="edit-full-name"
                   type="text"
                   value={editUser.name}
                   onChange={(e) =>
@@ -571,13 +672,13 @@ function UserManagementPage() {
                 />
               </div>
 
-              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-[#093C5D] mb-1">
+                <label htmlFor="edit-email-address" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Email Address
                 </label>
 
                 <input
+                  id="edit-email-address"
                   type="email"
                   value={editUser.email}
                   onChange={(e) =>
@@ -590,13 +691,13 @@ function UserManagementPage() {
                 />
               </div>
 
-              {/* Role */}
               <div>
-                <label className="block text-sm font-medium text-[#093C5D] mb-1">
+                <label htmlFor="edit-role" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Role
                 </label>
 
                 <select
+                  id="edit-role"
                   value={editUser.role}
                   onChange={(e) =>
                     setEditUser({
@@ -606,8 +707,12 @@ function UserManagementPage() {
                   }
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300"
                 >
-                  <option value="Staff">Staff</option>
-                  <option value="Admin">Admin</option>
+                  <option value="Staff">
+                    Staff
+                  </option>
+                  <option value="Admin">
+                    Admin
+                  </option>
                 </select>
               </div>
             </div>
@@ -615,7 +720,9 @@ function UserManagementPage() {
             {/* Buttons */}
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
-                onClick={() => setShowEditModal(false)}
+                onClick={() =>
+                  setShowEditModal(false)
+                }
                 className="px-5 py-2.5 rounded-lg border border-gray-300 text-[#093C5D]"
               >
                 Cancel
@@ -625,11 +732,13 @@ function UserManagementPage() {
                 onClick={() => {
                   setUsers((prev) =>
                     prev.map((user) =>
-                      user.id === editingUserId
+                      user.id ===
+                      editingUserId
                         ? {
                             ...user,
                             name: editUser.name,
-                            email: editUser.email,
+                            email:
+                              editUser.email,
                             role: editUser.role,
                           }
                         : user
@@ -641,6 +750,52 @@ function UserManagementPage() {
                 className="px-5 py-2.5 rounded-lg bg-[#093C5D] text-white hover:bg-[#072d47]"
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PASSWORD MODAL */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+            <h2 className="text-2xl font-bold text-[#093C5D] mb-4">
+              Temporary Password
+            </h2>
+
+            <p className="text-[#3B7597] mb-4">
+              Copy and share this password
+              securely with the user.
+            </p>
+
+            <div className="flex items-center justify-between bg-[#F5F5F5] border border-gray-200 rounded-lg px-4 py-3">
+              <span className="font-mono text-lg text-[#093C5D]">
+                {generatedPassword}
+              </span>
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    generatedPassword
+                  );
+
+                  alert("Password copied!");
+                }}
+                className="px-3 py-1.5 rounded-md bg-[#093C5D] text-white text-sm hover:bg-[#072d47]"
+              >
+                Copy
+              </button>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() =>
+                  setShowPasswordModal(false)
+                }
+                className="px-5 py-2.5 rounded-lg bg-[#093C5D] text-white hover:bg-[#072d47]"
+              >
+                Close
               </button>
             </div>
           </div>
