@@ -1,10 +1,12 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import AttendanceLogPage from '../AttendanceLogPage';
-import AttendanceLog from '../AttendanceLog';
+import AttendanceLogPage from '../pages/AttendanceLogPage';
+import AttendanceLog from '../components/AttendanceLog';
 
 function advance() {
-  vi.advanceTimersByTime(400);
+  act(() => {
+    vi.advanceTimersByTime(400);
+  });
 }
 
 describe('AttendanceLog (Page + Component Integration)', () => {
@@ -57,9 +59,7 @@ describe('AttendanceLog (Page + Component Integration)', () => {
 
       advance();
 
-      await waitFor(() => {
-        expect(screen.getByText('No records.')).toBeInTheDocument();
-      });
+      expect(screen.getByText('No records.')).toBeInTheDocument();
     });
   });
 

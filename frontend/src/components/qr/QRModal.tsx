@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import { generateQRToken } from "./qrService";
 
@@ -18,7 +18,7 @@ export default function QRModal({ open, onClose, type }: Props) {
   const [timeLeft, setTimeLeft] = useState(60);
   const [error, setError] = useState("");
 
-  const fetchQRCode = async () => {
+  const fetchQRCode = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -31,12 +31,21 @@ export default function QRModal({ open, onClose, type }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [type]);
 
   useEffect(() => {
-    if (open) fetchQRCode();
-    else { setToken(""); setExpired(false); setError(""); }
-  }, [open, type]);
+    const timer = window.setTimeout(() => {
+      if (open) {
+        void fetchQRCode();
+      } else {
+        setToken("");
+        setExpired(false);
+        setError("");
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchQRCode, open]);
 
   useEffect(() => {
     if (!token || expired) return;

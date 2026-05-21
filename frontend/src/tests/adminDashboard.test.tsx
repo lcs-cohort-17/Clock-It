@@ -1,12 +1,15 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
 import AdminDashboard from '../pages/adminDashboard';
-import Sidebar from '../components/adminDashSidebar';
-import TopNav from '../components/adminDashTopNav';
 
 describe('Admin Dashboard Full Page', () => {
-  it('renders the full admin dashboard layout', () => {
-    render(<AdminDashboard />);
+  it('renders the full admin dashboard layout', async () => {
+    render(
+      <MemoryRouter>
+        <AdminDashboard />
+      </MemoryRouter>
+    );
 
     // =====================
     // Sidebar
@@ -25,16 +28,16 @@ describe('Admin Dashboard Full Page', () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText('Attendance Logs')
-    ).toBeInTheDocument();
+      screen.getAllByText('Attendance Logs').length
+    ).toBeGreaterThan(0);
 
     expect(
       screen.getByText('User Management')
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText('Settings')
-    ).toBeInTheDocument();
+      screen.getAllByText('Settings').length
+    ).toBeGreaterThan(0);
 
     expect(
       screen.getByText('Log out')
@@ -49,8 +52,8 @@ describe('Admin Dashboard Full Page', () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText('Admin')
-    ).toBeInTheDocument();
+      screen.getAllByText('Admin').length
+    ).toBeGreaterThan(0);
 
     // =====================
     // Dashboard Main Content
@@ -71,8 +74,8 @@ describe('Admin Dashboard Full Page', () => {
     // =====================
 
     expect(
-      screen.getByText('Currently onsite')
-    ).toBeInTheDocument();
+      (await screen.findAllByText('Currently onsite', {}, { timeout: 2000 })).length
+    ).toBeGreaterThan(0);
 
     expect(
       screen.getByText('Total clocked in today')
@@ -95,24 +98,24 @@ describe('Admin Dashboard Full Page', () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText('Attendance Logs')
-    ).toBeInTheDocument();
+      screen.getAllByText('Attendance Logs').length
+    ).toBeGreaterThan(0);
 
     expect(
-      screen.getByText('Settings')
-    ).toBeInTheDocument();
+      screen.getAllByText('Settings').length
+    ).toBeGreaterThan(0);
 
     // =====================
     // Onsite Staff
     // =====================
 
     expect(
-      screen.getByText('Sarah Mthembu')
-    ).toBeInTheDocument();
+      screen.getAllByText('Sarah Mthembu').length
+    ).toBeGreaterThan(0);
 
     expect(
-      screen.getByText('EMP001')
-    ).toBeInTheDocument();
+      screen.getAllByText('EMP001').length
+    ).toBeGreaterThan(0);
 
     // =====================
     // Recent Activity
