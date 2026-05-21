@@ -63,6 +63,7 @@ function ScanQRCard() {
     recordAttendanceScan(scanType)
     setScanError('')
     setScanResult(decodedText.trim().toUpperCase())
+
     await stopScanner()
   }
 
@@ -154,8 +155,11 @@ function ScanQRCard() {
           {/* Divider */}
           <div className="mt-10 w-full border-t border-slate-200" />
 
+          {/* Demo Buttons */}
           <div className="mt-6 text-center">
-            <p className="text-lg text-slate-600">No camera? Try demo scan:</p>
+            <p className="text-lg text-slate-600">
+              No camera? Try demo scan:
+            </p>
 
             <div className="mt-4 flex flex-wrap justify-center gap-3">
               <button
@@ -190,15 +194,17 @@ function ScanQRCard() {
         </div>
       )}
 
+      {scanError && (
+        <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-red-700">
+          {scanError}
+        </div>
+      )}
+
       {scanResult && (
         <div className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-700">
           Scanned result: {scanResult}
         </div>
       )}
-
-          <p className="mt-4 text-sm text-slate-500">{SCAN_QR_TEXT.helperText}</p>
-        </div>
-      </div>
     </div>
   )
 }
