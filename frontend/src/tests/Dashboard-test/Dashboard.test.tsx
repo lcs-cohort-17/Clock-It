@@ -1,94 +1,149 @@
-// import '@testing-library/jest-dom/vitest'
-// import { render, screen } from '@testing-library/react'
-// import userEvent from '@testing-library/user-event'
-// import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
-// import { describe, expect, test, vi } from 'vitest'
+import '@testing-library/jest-dom/vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { BrowserRouter } from 'react-router-dom'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
-// import Header from '../tests/Dashboard-test/Header'
-// import Sidebar from './components/dashboard/Sidebar'
-// import DashboardGrid from './components/dashboard/DashboardGrid'
-// import DashboardPage from './DashboardPage'
+import App from '../../App'
+import Header from '../../components/dashboard/Header'
+import Sidebar from '../../components/dashboard/Sidebar'
+import DashboardGrid from '../../components/dashboard/DashboardGrid'
 
-// describe('Dashboard frontend tests', () => {
-//   test('renders sidebar navigation items', () => {
-//     render(
-//       <BrowserRouter>
-//         <Sidebar isOpen={true} />
-//       </BrowserRouter>,
-//     )
 
-//     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-//     expect(screen.getByText('Scan QR')).toBeInTheDocument()
-//     expect(screen.getByText('History')).toBeInTheDocument()
-//     expect(screen.getByText('Profile')).toBeInTheDocument()
-//     expect(screen.getByText('Log out')).toBeInTheDocument()
-//   })
 
-//   test('renders dashboard grid content', () => {
-//     render(<DashboardGrid />)
+const mockUser = {
+  fullName: 'Shaheed Karlie',
+  email: 'shaheed@clockit.com',
+  employeeId: 'EMP001',
+  role: 'staff',
+}
 
-//     expect(screen.getByText(/current status/i)).toBeInTheDocument()
-//     expect(screen.getByText(/clocked out/i)).toBeInTheDocument()
-//     expect(screen.getByText(/scan qr code to clock in/i)).toBeInTheDocument()
-//     expect(screen.getByText(/calendar/i)).toBeInTheDocument()
-//     expect(screen.getByText(/leave requests/i)).toBeInTheDocument()
-//     expect(screen.getByText(/profile/i)).toBeInTheDocument()
-//   })
+function renderAppAt(path: string) {
+  window.history.pushState({}, '', path)
+  return render(<App />)
+}
 
-//   test('mobile menu button calls onMenuClick', async () => {
-//     const user = userEvent.setup()
-//     const onMenuClick = vi.fn()
+beforeEach(() => {
+  localStorage.clear()
 
-//     render(<Header onMenuClick={onMenuClick} />)
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+})
 
-//     const menuButton = screen.getByRole('button')
-//     await user.click(menuButton)
+describe('Dashboard frontend tests', () => {
+  test('renders sidebar navigation items', () => {
+    render(
+      <BrowserRouter>
+        <Sidebar isOpen={true} user={mockUser} />
+      </BrowserRouter>,
+    )
 
-//     expect(onMenuClick).toHaveBeenCalledTimes(1)
-//   })
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Scan QR')).toBeInTheDocument()
+    expect(screen.getByText('History')).toBeInTheDocument()
+    expect(screen.getByText('Profile')).toBeInTheDocument()
+    expect(screen.getByText('Log out')).toBeInTheDocument()
+  })
 
-//   test('sidebar close button calls onClose', async () => {
-//     const user = userEvent.setup()
-//     const onClose = vi.fn()
+  test('renders dashboard grid content with logged-in user name', () => {
+    render(
+      <BrowserRouter>
+        <DashboardGrid user={mockUser} />
+      </BrowserRouter>,
+    )
 
-//     render(
-//       <BrowserRouter>
-//         <Sidebar isOpen={true} onClose={onClose} />
-//       </BrowserRouter>,
-//     )
+    expect(screen.getByText(/good morning,\s*shaheed/i)).toBeInTheDocument()
+    //expect(screen.getByText(/good morning, shaheed/i)).toBeInTheDocument()
+    expect(screen.getByText(/scan qr/i)).toBeInTheDocument()
+  })
 
-//     const closeButton = screen.getByRole('button', { name: '×' })
-//     await user.click(closeButton)
+ test('mobile menu button calls onMenuClick', async () => {
+  const user = userEvent.setup()
+  const onMenuClick = vi.fn()
 
-//     expect(onClose).toHaveBeenCalledTimes(1)
-//   })
+  render(<Header onMenuClick={onMenuClick} />)
 
-//   test('logout interaction navigates to login page', async () => {
-//     const user = userEvent.setup()
+  const buttons = screen.getAllByRole('button')
 
-//     render(
-//       <MemoryRouter initialEntries={['/staff-dashboard']}>
-//         <Routes>
-//           <Route path="/" element={<h1>Login Page</h1>} />
-//           <Route path="/staff-dashboard" element={<Sidebar isOpen={true} />} />
-//         </Routes>
-//       </MemoryRouter>,
-//     )
+  await user.click(buttons[0])
 
-//     await user.click(screen.getByText(/log out/i))
+  expect(onMenuClick).toHaveBeenCalledTimes(1)
+})
 
-//     expect(screen.getByText(/login page/i)).toBeInTheDocument()
-//   })
+  test('sidebar close button calls onClose', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
 
-//   test('dashboard page renders protected dashboard content', () => {
-//     render(
-//       <BrowserRouter>
-//         <DashboardPage />
-//       </BrowserRouter>,
-//     )
+    render(
+      <BrowserRouter>
+        <Sidebar isOpen={true} onClose={onClose} user={mockUser} />
+      </BrowserRouter>,
+    )
 
-//     expect(screen.getByText(/staff/i)).toBeInTheDocument()
-//     expect(screen.getByText(/clocked out/i)).toBeInTheDocument()
-//     expect(screen.getByText(/sarah mthembu/i)).toBeInTheDocument()
-//   })
-// })
+    await user.click(screen.getByRole('button', { name: '×' }))
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  test('logout interaction navigates to login page', async () => {
+    const user = userEvent.setup()
+
+    localStorage.setItem('loggedInUser', JSON.stringify(mockUser))
+    renderAppAt('/staff-dashboard')
+
+    await user.click(screen.getByText(/log out/i))
+
+    expect(window.location.pathname).toBe('/')
+  })
+
+  test('sidebar and header show on dashboard page', () => {
+    localStorage.setItem('loggedInUser', JSON.stringify(mockUser))
+
+    renderAppAt('/staff-dashboard')
+
+    expect(screen.getByText(/clock it/i)).toBeInTheDocument()
+    expect(screen.getByText(/staff/i)).toBeInTheDocument()
+    expect(screen.getByText(/shaheed karlie/i)).toBeInTheDocument()
+    expect(screen.getByText(/shaheed@clockit.com/i)).toBeInTheDocument()
+  })
+
+  test('sidebar and header show on history page', () => {
+    localStorage.setItem('loggedInUser', JSON.stringify(mockUser))
+
+    renderAppAt('/history')
+
+    expect(screen.getByText(/dashboard/i)).toBeInTheDocument()
+    expect(screen.getByText(/scan qr/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/history/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/log out/i)).toBeInTheDocument()
+  })
+
+  test('sidebar and header show on profile page', () => {
+    localStorage.setItem('loggedInUser', JSON.stringify(mockUser))
+
+    renderAppAt('/profile')
+
+    expect(screen.getByText(/dashboard/i)).toBeInTheDocument()
+    expect(screen.getByText(/scan qr/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/profile/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/log out/i)).toBeInTheDocument()
+  })
+
+//   test('unauthorized user does not see protected dashboard content', () => {
+//     renderAppAt('/staff-dashboard')
+
+//     expect(screen.queryByText(/shaheed karlie/i)).not.toBeInTheDocument()
+//     expect(screen.queryByText(/log out/i)).not.toBeInTheDocument(){{}}__
+//   })/
+})
