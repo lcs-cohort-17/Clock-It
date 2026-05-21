@@ -1,9 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { createClient } from '@supabase/supabase-js'
-import { buildAdminDashboardRouter } from './adminDashboard.js'
-
+import profileRoutes from './src/routes/profileRoutes.js'
 dotenv.config()
 const app = express()
 app.use(cors())
@@ -21,6 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 app.use('/api/admin/dashboard', buildAdminDashboardRouter(supabase))
 
+app.use('/profiles', profileRoutes)
 app.listen(port, () => {
   console.log(`http://localhost:${port}`)
 })

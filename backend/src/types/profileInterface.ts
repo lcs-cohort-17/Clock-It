@@ -6,5 +6,5 @@ export interface Profile {
   role: "admin" | "staff"
   is_active: boolean
   email: string
-  pasword: string
+  password: string
 }
