@@ -8,12 +8,41 @@ vi.mock('../../src/controllers/profileController.js', () => ({
     res.status(200).json({ success: true, message: 'getProfilesCon hit' })
   }),
 
+  createProfileCon: vi.fn((req, res) => {
+    res.status(201).json({ success: true, message: 'createProfileCon hit' })
+  }),
+
   updateProfileCon: vi.fn((req, res) => {
     res.status(200).json({ success: true, message: 'updateProfileCon hit' })
   }),
 
   deleteProfileCon: vi.fn((req, res) => {
     res.status(200).json({ success: true, message: 'deleteProfileCon hit' })
+  }),
+
+  loginProfileCon: vi.fn((req, res) => {
+    res.status(200).json({ 
+      success: true, 
+      token: 'mock-token',
+      user: { id: 'user-123', email: 'test@test.com' }
+    })
+  }),
+
+  // ZAHRAA'S MOCK
+  getProfileByIdCon: vi.fn((req, res) => {
+    const { employee_id } = req.params  
+    res.status(200).json({
+      success: true,
+      data: {
+        id: 'user-123',
+        first_name: 'Sarah',
+        last_name: 'Johnson',
+        employee_id: employee_id,
+        email: 'sarah@company.com',
+        role: 'staff',
+        is_active: true
+      }
+    })
   })
 }))
 
@@ -39,7 +68,8 @@ import profileRoutes from '../../src/routes/profileRoutes.js'
 import {
   getProfilesCon,
   updateProfileCon,
-  deleteProfileCon
+  deleteProfileCon,
+  getProfileByIdCon
 } from '../../src/controllers/profileController.js'
 
 // ─── MINI APP ───────────────────────────────────────────────
@@ -77,6 +107,54 @@ describe('GET /profiles', () => {
     expect(response.body.error).toBe('Access denied')
   })
 })
+
+//ZAHRAA'S TESTS 
+describe('GET /profiles/:employee_id', () => {
+
+  it('should call getProfileByIdCon when authenticated', async () => {
+    const response = await request(app)
+      .get('/profiles/S-006')
+      .set('Authorization', 'Bearer faketoken')
+
+    expect(response.status).toBe(200)
+    expect(response.body.success).toBe(true)
+    expect(response.body.data).toHaveProperty('first_name')
+    expect(response.body.data.employee_id).toBe('S-006')
+    expect(getProfileByIdCon).toHaveBeenCalledTimes(1)
+  })
+
+  it('should return 401 when no token is provided', async () => {
+    const response = await request(app)
+      .get('/profiles/S-006')
+
+    expect(response.status).toBe(401)
+    expect(response.body.success).toBe(false)
+    expect(response.body.error).toBe('Access denied')
+  })
+
+  it('should work with different employee_id values', async () => {
+    const testIds = ['A-001', 'S-999', 'EMP-123']
+    
+    for (const id of testIds) {
+      const response = await request(app)
+        .get(`/profiles/${id}`)
+        .set('Authorization', 'Bearer faketoken')
+      
+      expect(response.status).toBe(200)
+      expect(response.body.data.employee_id).toBe(id)
+    }
+    expect(getProfileByIdCon).toHaveBeenCalledTimes(3)
+  })
+
+  it('should return 404 for non-existent route', async () => {
+    const response = await request(app)
+      .get('/api/non-existent')
+      .set('Authorization', 'Bearer faketoken')
+
+    expect(response.status).toBe(404)
+  })
+})
+
 
 // ─── PATCH ROUTE ────────────────────────────────────────────
 describe('PATCH /profiles/:employee_id', () => {

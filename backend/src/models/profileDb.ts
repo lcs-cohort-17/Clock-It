@@ -14,6 +14,38 @@ export const getProfilesDb = async (): Promise<ApiResponse<Profile[]>> => {
   return { success: true, data }
 }
 
+//ZAHRAA'S CODE
+function capitalizeFirstName(name: string | null): string | null {
+  if (!name) return name
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()
+}
+
+export async function getProfileByIdDb(employeeId: string): Promise<ApiResponse<Profile>> {
+    try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('employee_id', employeeId)  
+      .single()
+    
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    
+    if (data && data.first_name) {
+      data.first_name = capitalizeFirstName(data.first_name)
+    }
+    
+    return { success: true, data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
+}
+//END OF ZAHRAA'S CODE
+
 // ─── CREATE ──────────────────────────────────────────────────
 export const createProfileDb = async ( 
         first_name: string, 

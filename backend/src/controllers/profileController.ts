@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import {
   getProfilesDb,
+  getProfileByIdDb,
   updateProfileDb,
   deleteProfileDb,
   loginProfileDb,
@@ -23,6 +24,37 @@ export const getProfilesCon = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message })
   }
+}
+
+export const getProfileByIdCon = async (req: Request, res: Response) => {
+  try {
+    const employee_id = req.params.employee_id as string
+
+    const result = await getProfileByIdDb(employee_id)
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      })
+    }
+
+    // SO THAT SENSITIVE FIELDS ARE NOT SENT
+    const safeData = { ...result.data }
+    delete (safeData as any).password
+    delete (safeData as any).password_hash
+    delete (safeData as any).reset_token
+
+    return res.status(200).json({
+      success: true,
+      data: safeData
+    })
+  } catch (error: any) {
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    })
+  }
 }
 
 // ─── CREATE ──────────────────────────────────────────────────
@@ -61,6 +93,12 @@ export const createProfileCon = async (req: Request, res: Response) => {
 // ─── LOGIN ───────────────────────────────────────────────────
 // bcrypt.compare lives here — controller handles auth logic
 // Model just fetches the user from DB
+
+function capitalizeFirstName(name: string | null): string | null {
+  if (!name) return name
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()
+}
+
 export const loginProfileCon = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body
@@ -105,13 +143,20 @@ export const loginProfileCon = async (req: Request, res: Response) => {
       { expiresIn: '2h' }
     )
 
+    const profileResult = await getProfileByIdDb(result.data!.employee_id)
+
+    const first_name = profileResult.success && profileResult.data?.first_name
+      ? capitalizeFirstName(profileResult.data.first_name)
+      : null
+
     // Return token and user info — never return password
     return res.status(200).json({
       success: true,
       token,
+      first_name,
       user: {
         id: result.data!.id,
-        first_name: result.data!.first_name,
+        first_name,
         last_name: result.data!.last_name,
         email: result.data!.email,
         employee_id: result.data!.employee_id,

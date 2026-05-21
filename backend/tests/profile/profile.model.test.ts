@@ -25,6 +25,7 @@ vi.mock('../../src/config/supabase.js', () => ({
 }))
 
 import {getProfilesDb, 
+    getProfileByIdDb,
     // createProfileDb, 
     deleteProfileDb, 
     updateProfileDb,
@@ -498,3 +499,128 @@ describe('deleteProfileDb', () => {
 //     expect(result.error).toBe('Reset failed')  // lowercase 'f' — consistent casing
 //   })
 // })
+
+//ZAHRAA TESTS
+
+
+//TEST 1: PROFILE WITH FISRT NAME
+//CREATES A GROUP CALLED "GetProfileByIdDb" - ALL RELATED TESTS GO INSIDE
+describe('getProfileByIdDb', () => {
+//IT = ONE TEST. 
+  it('should return profile with capitalized first_name', async () => {
+    const mockData = {
+      id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
+      first_name: 'sarah',
+      last_name: 'johnson',
+      email: 'sarah@company.com',
+      employee_id: 'S-006',
+      role: 'staff',
+      is_active: true
+    }
+// TELLS THE FAKE DATABASE TO RETURN THE ABOVE FAKE DATA WHEN .SINGLE() IS CALLED 
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+// CALLS FUNCTION THAT MUST STILL BE WRITTEN 
+    const result = await getProfileByIdDb('S-006')
+// WHAT THE FUNCTION SHOULD RETURN 
+    expect(result.success).toBe(true)
+    expect(result.data?.first_name).toBe('Sarah')
+  })
+
+  // TEST 2: WHEN A USER DOESN'T EXIST 
+  it('should return error if profile not found', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Profile not found' }
+    })
+
+    const result = await getProfileByIdDb('99')
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Profile not found')
+  })
+
+})
+
+//TEST 3: CAPITALISATION FORMAT 
+// DESCRIBE = GROUPS ALL CAPITALISATION TESTS TOGETHER 
+describe('first_name capitalization formats', () => {
+// testCases = TEST DATA TABLE: EACH ROW HAS AN INPUT(WHAT DATABASE STORES) 
+// AND EXPECTED OUTPUT (WHAT FUNCTION SHOULD RETURN )
+  const testCases = [
+    { input: 'sarah', expected: 'Sarah' },
+    { input: 'SARAH', expected: 'Sarah' },
+    { input: 'sArAh', expected: 'Sarah' },
+    { input: 'john', expected: 'John' },
+    { input: 'JOHN', expected: 'John' },
+    { input: 'mary-jane', expected: 'Mary-jane' },
+    { input: '', expected: '' },
+    { input: 'a', expected: 'A' }
+  ]
+  
+//LOOPS THROUGH EACH TEST CASE AND CREATE A TEST FOR EACH CASE.
+  testCases.forEach(({ input, expected }) => {
+    it(`should capitalize "${input}" to "${expected}"`, async () => {
+      const mockData = {
+        id: 'test-id',
+        employee_id: 'test-emp-id',
+        first_name: input,
+        email: 'test@company.com'
+      }
+
+      mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+      
+      const result = await getProfileByIdDb('test-emp-id');
+      
+// CALLS  REAL FUNCTION.
+      if (expected === '') {
+        expect(result.data?.first_name === '' || result.data?.first_name === null).toBe(true)
+      } else {
+        expect(result.data?.first_name).toBe(expected)
+      }
+    })
+  })
+})
+
+//TEST 3: NULL FIRST NAME 
+describe('getProfileByIdDb - edge cases', () => {
+  it('should handle null first_name from database', async () => {
+    const mockData = {
+      id: 'test-id',                    
+      employee_id: 'test-emp-id',
+      first_name: null,
+      email: 'test@company.com',
+      last_name: 'Test',
+      role: 'staff',
+      is_active: true
+    }
+
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+
+    const result = await getProfileByIdDb('test-emp-id');
+    
+    expect(result.success).toBe(true)
+    // Should handle null gracefully (return null or empty string)
+    expect(result.data?.first_name === null || result.data?.first_name === '').toBe(true)
+  })
+
+// MISSING FIRST NAME FIELD 
+  it('should handle missing first_name field', async () => {
+    const mockData = {
+      id: 'test-id',                    
+      employee_id: 'test-emp-id',
+      email: 'test@company.com',
+      last_name: 'Test',                
+      role: 'staff',                    
+      is_active: true                   
+    }
+
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+
+    const result = await getProfileByIdDb('test-emp-id');
+    
+    expect(result.success).toBe(true)
+    expect(result.data?.first_name === undefined || result.data?.first_name === null).toBe(true)
+  })
+}) 
+
+//END OF ZAHRAA'S TESTS
