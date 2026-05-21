@@ -11,7 +11,7 @@ const SCAN_PAGE_STYLES = {
 
 function ScanQRPage() {
   return (
-    <div className="flex-1 bg-slate-50 p-8 text-slate-900">
+    <div className="flex-1 bg-[#EEF3F8] dark:bg-[#081a2f] p-8 text-slate-900 dark:text-[#eff6ff]">
       <div className="mx-auto max-w-4xl">
         {/* This page introduces the scanner before the user opens the camera. */}
         <h1
@@ -20,7 +20,7 @@ function ScanQRPage() {
         >
           {SCAN_PAGE_TEXT.title}
         </h1>
-        <p className="mt-3 text-lg text-slate-600">{SCAN_PAGE_TEXT.description}</p>
+        <p className="mt-3 text-lg text-slate-600 dark:text-[#9bb3d1]">{SCAN_PAGE_TEXT.description}</p>
 
         <div className="mt-8">
           <ScanQRCard />

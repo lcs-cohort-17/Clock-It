@@ -75,19 +75,19 @@ export const HistoryPage: React.FC = () => {
   }, [processedData]);
 
   return (
-    <div className="font-['Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif] bg-gray-50 min-h-screen p-4 md:p-8">
+    <div className="font-['Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif] bg-[#EEF3F8] dark:bg-[#081a2f] min-h-screen p-4 md:p-8">
       {/* Header */}
-      <div className="bg-white rounded-2xl p-6 mb-8 shadow-sm">
+      <div className="bg-white dark:bg-[#0b2142] rounded-2xl p-6 mb-8 shadow-sm dark:border dark:border-[#163856]">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">📋 Attendance History</h1>
-          <p className="text-sm text-gray-500">View and manage employee attendance records</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-[#eff6ff] mb-1">📋 Attendance History</h1>
+          <p className="text-sm text-gray-500 dark:text-[#9bb3d1]">View and manage employee attendance records</p>
         </div>
         
         {/* Stats Cards */}
         <div className="flex gap-2 md:gap-4 flex-wrap">
-          <div className="bg-gray-50 rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100">
-            <span className="block text-xs text-gray-500 mb-1">Total Records</span>
-            <span className="block text-xl md:text-2xl font-bold text-gray-900">{summary.total}</span>
+          <div className="bg-gray-50 dark:bg-[#0b2142] rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100 dark:border-[#163856]">
+            <span className="block text-xs text-gray-500 dark:text-[#9bb3d1] mb-1">Total Records</span>
+            <span className="block text-xl md:text-2xl font-bold text-gray-900 dark:text-[#eff6ff]">{summary.total}</span>
           </div>
           <div className="bg-gray-50 rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100">
             <span className="block text-xs text-gray-500 mb-1">Present</span>

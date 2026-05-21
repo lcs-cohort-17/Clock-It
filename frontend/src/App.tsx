@@ -42,11 +42,11 @@ function DashboardPage({ user }: { user: UserProfileData }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5] md:flex">
+    <main className="min-h-screen bg-[#F5F5F5] dark:bg-[#081a2f] md:flex">
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/30 md:hidden"
         />
       )}
 
