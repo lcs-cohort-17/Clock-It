@@ -4,6 +4,7 @@ import UserProfilePage from "../../pages/profile";
 
 import type { UserProfileData }
 from "../../components/profile/UserProfileData";
+import Profile_Workspace from '../../components/profile/Profile_Workspace';
 
 // Mock child components
 vi.mock('../../components/profile/Profile_Workspace', () => ({
@@ -15,8 +16,14 @@ vi.mock('../../components/profile/Profile_Workspace', () => ({
 }))
 
 vi.mock('../../components/profile/Support_Workspace', () => ({
-  Support_Workspace: () => (
+  default: () => (
     <div data-testid="support-workspace">Mock Support</div>
+  ),
+}))
+
+vi.mock('../../components/profile/PasswordCard', () => ({
+  default: () => (
+    <div data-testid="password-card">Mock Password Card</div>
   ),
 }))
 
@@ -47,8 +54,8 @@ describe('UserProfilePage', () => {
     expect(screen.getByTestId('support-workspace')).toBeInTheDocument()
   })
 
-  it('should render password section placeholder', () => {
+  it('should render password card', () => {
     render(<UserProfilePage user={mockUser} />)
-    expect(screen.getByText('Password')).toBeInTheDocument()
+    expect(screen.getByTestId('password-card')).toBeInTheDocument()
   })
 })
