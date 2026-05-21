@@ -8,6 +8,7 @@ export interface AttendanceScanEvent {
 }
 
 const STORAGE_KEY = 'attendanceEvents'
+export const ATTENDANCE_EVENTS_UPDATED = 'attendance-events-updated'
 
 export function formatDateKey(date: Date) {
   const year = date.getFullYear()
@@ -23,6 +24,11 @@ export function formatScanTime(date: Date) {
   })
 }
 
+function formatTimeDifference(totalMinutes: number) {
+  const safeMinutes = Math.max(0, Math.floor(totalMinutes))
+  return `${safeMinutes} ${safeMinutes === 1 ? 'minute' : 'minutes'}`
+}
+
 export function getAttendanceScanEvents(): AttendanceScanEvent[] {
   return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')
 }
@@ -36,6 +42,7 @@ export function recordAttendanceScan(type: AttendanceScanType, scannedAt = new D
   }
   const events = [...getAttendanceScanEvents(), event]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(events))
+  window.dispatchEvent(new CustomEvent(ATTENDANCE_EVENTS_UPDATED, { detail: event }))
   return event
 }
 
@@ -59,18 +66,18 @@ export function getTodaysActivity(date = new Date()) {
     return null
   }
 
-  const totalHours =
+  const totalMinutes =
     lastClockOut
       ? Math.max(
           0,
           (new Date(lastClockOut.iso).getTime() - new Date(firstClockIn.iso).getTime()) /
-            (1000 * 60 * 60)
+            (1000 * 60)
         )
       : 0
 
   return {
     firstClockIn: firstClockIn.time,
     lastClockOut: lastClockOut?.time ?? 'Not clocked out yet',
-    totalHours: Number(totalHours.toFixed(1)),
+    totalHours: formatTimeDifference(totalMinutes),
   }
 }

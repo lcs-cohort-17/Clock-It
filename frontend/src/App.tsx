@@ -8,7 +8,7 @@ import DashboardGrid from "./components/dashboard/DashboardGrid"
 // ============================
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/auth/LoginPage';
-import ScanQRFlow from './components/Features/ScanQRFlow';
+import ScanQRPage from './pages/ScanQRPage';
 import { HistoryPage } from './pages/History-page';
 import { UserProfilePage } from './pages/profile';
 import type { UserProfileData } from './components/profile/UserProfileData';
@@ -95,7 +95,7 @@ function App() {
         */}
         <Route path="/admin-dashboard" element={<DashboardPage user={user} />} />
         <Route path="/staff-dashboard" element={<DashboardPage user={user} />} />
-        <Route path="/scan-qr" element={<ScanQRFlow />} />
+        <Route path="/scan-qr" element={<ScanQRPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/profile" element={<UserProfilePage user={user} />} />
 
