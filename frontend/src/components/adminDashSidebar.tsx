@@ -12,7 +12,7 @@ interface SidebarProps {
 const Sidebar: FC<SidebarProps> = ({ isOpen, onClose }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
-    { id: 'qrcodes', label: 'QR Codes', icon: QrCode, path: '/qr-codes' },
+    { id: 'qrcodes', label: 'QR Codes', icon: QrCode, path: '/qr-generator' },
     { id: 'logs', label: 'Attendance Logs', icon: FileText, path: '/attendance' },
     { id: 'users', label: 'User Management', icon: Users, path: '/users' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
