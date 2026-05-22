@@ -6,17 +6,19 @@ import {
   updateProfileCon,
   deleteProfileCon,
   updatePasswordCon,
-  resetPasswordCon
+  resetPasswordCon,
+  getProfileByIdCon
 } from '../controllers/profileController.js'
 import { authenticateToken } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
-// Public — no auth needed
+// Public - no auth needed
 router.post('/login', loginProfileCon)
 
-// Protected — must be logged in
+// Protected - must be logged in
 router.get('/', authenticateToken, getProfilesCon)
+router.get('/:employee_id', authenticateToken, getProfileByIdCon)
 router.post('/', authenticateToken, createProfileCon)
 router.patch('/:employee_id', authenticateToken, updateProfileCon)
 router.delete('/:employee_id', authenticateToken, deleteProfileCon)
