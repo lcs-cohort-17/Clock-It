@@ -59,14 +59,16 @@ const Calendar: React.FC<CalendarProps> = ({ events = [] }) => {
         key={date}
         type="button"
         onClick={() => setSelectedDate(date)}
-        className={`relative flex h-11 w-11 items-center justify-center rounded-xl text-lg font-medium transition ${
+        className={`relative flex h-11 w-11 items-center justify-center rounded-xl text-lg font-semibold transition ${
           isSelected
-            ? 'bg-[#093C5D] text-white shadow-sm'
+            ? 'bg-[#093C5D] text-white shadow-lg shadow-[#093C5D]/20'
             : hasEvents
-              ? 'bg-[#9CBF52] text-white'
-              : isCurrentMonth
-                ? 'text-[#093C5D] hover:bg-slate-100'
-                : 'text-slate-400'
+              ? 'bg-[#2563eb] text-white shadow-sm shadow-blue-500/20 hover:bg-[#1d4ed8]'
+              : isToday
+                ? 'border border-[#2563eb] bg-[#DBEAFE] text-[#0f172a] shadow-sm dark:border-[#3b82f6] dark:bg-[#1e3a8a] dark:text-[#eff6ff]'
+                : isCurrentMonth
+                  ? 'text-[#164068] hover:bg-slate-100 dark:text-[#eff6ff] dark:hover:bg-[#164068]'
+                  : 'text-slate-400'
         }`}
         aria-label={`${date}${hasEvents ? ' has attendance events' : ''}`}
       >
@@ -80,41 +82,41 @@ const Calendar: React.FC<CalendarProps> = ({ events = [] }) => {
         {hasEvents && isSelected && (
           <span
             aria-label="attendance event"
-            className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#9CBF52]"
+            className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#f8fafc]"
           />
         )}
         {isToday && !hasEvents && !isSelected && (
-          <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#9CBF52]" />
+          <span className="absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#2563eb]" />
         )}
       </button>
     );
   };
 
   return (
-    <div className="calendar-component mx-auto max-w-sm bg-white">
+    <div className="calendar-component mx-auto max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition dark:border-[#163856] dark:bg-[#0b2142]">
       <div className="mb-4 grid grid-cols-[44px_1fr_44px] items-center gap-4">
         <button
           type="button"
           onClick={goToPreviousMonth}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-[#3B5C74] transition hover:bg-slate-50"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-[#164068] transition hover:bg-slate-100 dark:border-[#23456f] dark:text-[#eff6ff] dark:hover:bg-[#164068]"
           aria-label="Previous month"
         >
           <MdChevronLeft size={22} />
         </button>
 
-        <h2 className="text-center text-lg font-bold text-[#093C5D]">{monthName}</h2>
+        <h2 className="text-center text-lg font-bold text-[#093C5D] dark:text-[#eff6ff]">{monthName}</h2>
 
         <button
           type="button"
           onClick={goToNextMonth}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-[#3B5C74] transition hover:bg-slate-50"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-[#164068] transition hover:bg-slate-100 dark:border-[#23456f] dark:text-[#eff6ff] dark:hover:bg-[#164068]"
           aria-label="Next month"
         >
           <MdChevronRight size={22} />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 text-center text-base font-medium text-[#3B5C74]">
+      <div className="grid grid-cols-7 gap-2 text-center text-base font-semibold text-[#164068] dark:text-[#c7d89a]">
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
           <div key={day}>{day}</div>
         ))}

@@ -77,23 +77,23 @@ function DashboardGrid({ user = defaultUser }: Props) {
   }, [])
 
   return (
-    <section className="flex-1 bg-[#F5F5F5] p-4 md:p-8">
-      <div className="rounded-2xl bg-white p-5 shadow-sm md:p-8">
+    <section className="flex-1 bg-[#F5F5F5] dark:bg-[#081a2f] p-4 md:p-8">
+      <div className="rounded-2xl bg-white dark:bg-[#0b2142] p-5 shadow-sm md:p-8 dark:border dark:border-[#163856]">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
             Good morning, {user.fullName.split(' ')[0]}
             </p>
 
-            <h1 className="mt-2 text-3xl font-bold text-[#093C5D] md:text-5xl">
+            <h1 className="mt-2 text-3xl font-bold text-[#093C5D] dark:text-[#f8fafc] md:text-5xl">
               {isClockedIn ? 'Clocked In' : 'Clocked Out'}
             </h1>
 
-            <p className="mt-3 inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+            <p className="mt-3 inline-block rounded-full bg-slate-100 dark:bg-[#164068] px-3 py-1 text-xs font-medium text-slate-500 dark:text-[#eff6ff]">
               You are currently {isClockedIn ? 'ONSITE' : 'OFFSITE'}
             </p>
 
-            <p className="mt-4 text-sm text-slate-500">
+            <p className="mt-4 text-sm text-slate-500 dark:text-[#9bb3d1]">
               {latestScan
                 ? `Last scan: ${latestScan.time}`
                 : 'No QR scan recorded yet.'}
@@ -101,7 +101,7 @@ function DashboardGrid({ user = defaultUser }: Props) {
           </div>
 
           <div className="text-left md:text-right">
-            <h2 className="text-4xl font-bold text-[#093C5D] md:text-6xl">
+            <h2 className="text-4xl font-bold text-[#093C5D] dark:text-[#f8fafc] md:text-6xl">
               {currentTime}
             </h2>
           </div>
@@ -111,7 +111,7 @@ function DashboardGrid({ user = defaultUser }: Props) {
           <button
             type="button"
             onClick={() => navigate('/scan-qr')}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#093C5D] py-4 text-sm font-bold text-white shadow-sm transition hover:opacity-90 md:text-base"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#3B7597] dark:bg-[#1a5374] py-4 text-sm font-bold text-white shadow-sm transition hover:opacity-90 md:text-base"
           >
             <MdQrCodeScanner size={22} />
             Scan QR
@@ -123,8 +123,8 @@ function DashboardGrid({ user = defaultUser }: Props) {
         </p>
       </div>
 
-      <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
-        <div className="mb-6 flex items-center gap-2 text-[#093C5D]">
+      <div className="mt-8 rounded-2xl bg-white dark:bg-[#0b2142] p-6 shadow-sm dark:border dark:border-[#163856]">
+        <div className="mb-6 flex items-center gap-2 text-[#093C5D] dark:text-[#eff6ff]">
           <MdLocationOn size={22} />
           <h2 className="text-xl font-bold">Today's activity</h2>
         </div>
@@ -155,7 +155,7 @@ function DashboardGrid({ user = defaultUser }: Props) {
 
       {isCalendarModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-[640px] rounded-2xl bg-white p-8 shadow-2xl">
+          <div className="w-full max-w-[640px] rounded-2xl bg-white dark:bg-[#0b2142] dark:border dark:border-[#163856] p-8 shadow-2xl">
             <div className="mb-8 flex items-start justify-between gap-6">
               <div>
                 <h2 className="text-2xl font-bold text-[#093C5D]">Calendar</h2>
@@ -198,11 +198,11 @@ function DashboardActionCard({ icon, title, description, ariaLabel, onClick }: D
       type="button"
       aria-label={ariaLabel}
       onClick={onClick}
-      className="min-h-36 rounded-2xl border border-slate-200 bg-white p-6 text-left text-[#093C5D] shadow-sm transition hover:-translate-y-0.5 hover:border-[#9CB07A] hover:shadow-md"
+      className="min-h-36 rounded-2xl border border-slate-200 bg-white dark:bg-[#164068] dark:border-[#1b3f6d] p-6 text-left text-[#093C5D] dark:text-white shadow-sm transition hover:-translate-y-0.5 hover:border-[#9CB07A] hover:shadow-md dark:hover:bg-[#1b4f75]"
     >
-      <div className="mb-5 text-[#093C5D]">{icon}</div>
-      <h3 className="text-xl font-bold">{title}</h3>
-      <p className="mt-2 text-base text-[#16425F]">{description}</p>
+      <div className="mb-5 text-[#093C5D] dark:text-white">{icon}</div>
+      <h3 className="text-xl font-bold text-[#093C5D] dark:text-white">{title}</h3>
+      <p className="mt-2 text-base text-[#16425F] dark:text-slate-100">{description}</p>
     </button>
   )
 }

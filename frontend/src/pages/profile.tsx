@@ -9,17 +9,17 @@ export function UserProfilePage({
   user: UserProfileData;
 }) {
   return (
-    <section className="min-h-screen w-full bg-[#EEF3F8] p-4 md:p-6 xl:p-8">
+    <section className="min-h-screen w-full bg-[#EEF3F8] dark:bg-[#081a2f] p-4 md:p-6 xl:p-8">
       <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-[#9bb3d1]">
           Profile
         </p>
 
-        <h1 className="mt-2 text-3xl font-bold text-slate-800 md:text-4xl">
+        <h1 className="mt-2 text-3xl font-bold text-slate-800 dark:text-[#eff6ff] md:text-4xl">
           User Profile
         </h1>
 
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-slate-500 dark:text-[#9bb3d1]">
           Your account information
         </p>
       </div>
