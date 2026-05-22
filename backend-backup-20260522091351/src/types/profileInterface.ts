@@ -3,8 +3,8 @@ export interface Profile {
   first_name: string
   last_name: string
   employee_id: string
-  role: "admin" | "staff"
+  role: 'admin' | 'staff'
   is_active: boolean
   email: string
-  pasword: string
+  password: string
 }
