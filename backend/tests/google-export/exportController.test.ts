@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 vi.mock('../../src/models/googleDb.ts', () => ({
   getDecryptedTokens: vi.fn(),
@@ -48,6 +49,8 @@ const SAMPLE_ROW = {
   total_hours: '8h 0m',
 };
 
+const mockSupabase = {} as SupabaseClient;
+
 function makeRows(count: number) {
   return Array.from({ length: count }, (_, i) => ({ ...SAMPLE_ROW, staff_name: `Staff ${i}` }));
 }
@@ -80,7 +83,7 @@ describe('exportToSheets', () => {
     const req = mockReq();
     const res = mockRes();
 
-    await exportToSheets(req as Request, res as Response);
+    await exportToSheets(mockSupabase)(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(
@@ -96,7 +99,7 @@ describe('exportToSheets', () => {
     const req = mockReq();
     const res = mockRes();
 
-    await exportToSheets(req as Request, res as Response);
+    await exportToSheets(mockSupabase)(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
@@ -112,7 +115,7 @@ describe('exportToSheets', () => {
     const req = mockReq();
     const res = mockRes();
 
-    await exportToSheets(req as Request, res as Response);
+    await exportToSheets(mockSupabase)(req as Request, res as Response);
 
     expect(mockCreate).toHaveBeenCalledOnce();
     expect(mockAppend).toHaveBeenCalled();
@@ -130,7 +133,7 @@ describe('exportToSheets', () => {
     (getDecryptedTokens as any).mockResolvedValue(SAMPLE_TOKENS);
     (getExportData as any).mockResolvedValue([SAMPLE_ROW]);
 
-    await exportToSheets(mockReq() as Request, mockRes() as Response);
+    await exportToSheets(mockSupabase)(mockReq() as Request, mockRes() as Response);
 
     const firstAppendCall = mockAppend.mock.calls[0][0];
     const firstRow = firstAppendCall.requestBody.values[0];
@@ -141,7 +144,7 @@ describe('exportToSheets', () => {
     (getDecryptedTokens as any).mockResolvedValue(SAMPLE_TOKENS);
     (getExportData as any).mockResolvedValue([{ ...SAMPLE_ROW, clock_out: null }]);
 
-    await exportToSheets(mockReq() as Request, mockRes() as Response);
+    await exportToSheets(mockSupabase)(mockReq() as Request, mockRes() as Response);
 
     const appendCall = mockAppend.mock.calls[0][0];
     const dataRow = appendCall.requestBody.values[1]; // row after header
@@ -153,7 +156,7 @@ describe('exportToSheets', () => {
     (getExportData as any).mockResolvedValue(makeRows(1050));
 
     const res = mockRes();
-    await exportToSheets(mockReq() as Request, res as Response);
+    await exportToSheets(mockSupabase)(mockReq() as Request, res as Response);
 
     // 1050 data rows + 1 header = 1051 total rows
     // Batch 1: rows 0–499 (500), Batch 2: rows 500–999 (500), Batch 3: rows 1000–1050 (51)
@@ -169,7 +172,7 @@ describe('exportToSheets', () => {
     mockCreate.mockRejectedValue(new Error('invalid_grant'));
 
     const res = mockRes();
-    await exportToSheets(mockReq() as Request, res as Response);
+    await exportToSheets(mockSupabase)(mockReq() as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(
@@ -182,7 +185,7 @@ describe('exportToSheets', () => {
     (getExportData as any).mockRejectedValue(new Error('Unexpected DB crash'));
 
     const res = mockRes();
-    await exportToSheets(mockReq() as Request, res as Response);
+    await exportToSheets(mockSupabase)(mockReq() as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith(
@@ -194,11 +197,11 @@ describe('exportToSheets', () => {
     (getDecryptedTokens as any).mockResolvedValue(SAMPLE_TOKENS);
     (getExportData as any).mockResolvedValue([]);
 
-    await exportToSheets(
+    await exportToSheets(mockSupabase)(
       mockReq({ from: '2024-03-01', to: '2024-03-31' }) as Request,
       mockRes() as Response
     );
 
-    expect(getExportData).toHaveBeenCalledWith({ from: '2024-03-01', to: '2024-03-31' });
+    expect(getExportData).toHaveBeenCalledWith(mockSupabase, { from: '2024-03-01', to: '2024-03-31' });
   });
 });

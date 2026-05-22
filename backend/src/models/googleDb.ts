@@ -18,7 +18,7 @@ function getSupabase(): SupabaseClient {
 export interface StoredTokens {
   access_token: string;
   refresh_token?: string | null;
-  expiry_date?: number | null; // Google returns ms timestamp; we convert before storing
+  expiry_date?: number | null;
 }
 
 export interface ConnectionStatus {
@@ -37,11 +37,7 @@ export const saveCredentials = async (
       profile_id: profileId,
       access_token: encrypt(tokens.access_token),
       refresh_token: tokens.refresh_token ? encrypt(tokens.refresh_token) : null,
-      // FIX: convert ms timestamp → ISO string to match timestamptz column
-      token_expiry: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
-      // FIX: mark as connected on every save/refresh
-      is_connected: true,
-      connected_at: new Date().toISOString(),
+      expiry_date: tokens.expiry_date ?? null,
     },
     { onConflict: 'profile_id' }
   );
@@ -55,8 +51,7 @@ export const getDecryptedTokens = async (
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('google_credentials')
-    // FIX: select token_expiry (actual column name), not expiry_date
-    .select('access_token, refresh_token, token_expiry')
+    .select('access_token, refresh_token, expiry_date')
     .eq('profile_id', profileId)
     .single();
 
@@ -65,8 +60,7 @@ export const getDecryptedTokens = async (
   return {
     access_token: decrypt(data.access_token),
     refresh_token: data.refresh_token ? decrypt(data.refresh_token) : null,
-    // FIX: convert ISO string back to ms number so Google OAuth client is happy
-    expiry_date: data.token_expiry ? new Date(data.token_expiry).getTime() : null,
+    expiry_date: data.expiry_date ?? null,
   };
 };
 
@@ -77,26 +71,20 @@ export const getConnectionStatus = async (
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('google_credentials')
-    .select('connected_at, is_connected')
+    .select('connected_at')
     .eq('profile_id', profileId)
     .single();
 
-  if (error || !data || !data.is_connected) return { connected: false };
+  if (error || !data) return { connected: false };
   return { connected: true, connectedAt: data.connected_at };
 };
 
 // ── Delete stored credentials ─────────────────────────────────
 export const clearCredentials = async (profileId: string): Promise<void> => {
   const supabase = getSupabase();
-  // FIX: set is_connected = false instead of hard delete so the row (and audit trail) is preserved
   const { error } = await supabase
     .from('google_credentials')
-    .update({
-      is_connected: false,
-      access_token: '',
-      refresh_token: null,
-      token_expiry: null,
-    })
+    .delete()
     .eq('profile_id', profileId);
 
   if (error) throw new Error(`clearCredentials failed: ${error.message}`);
