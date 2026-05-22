@@ -29,13 +29,13 @@ function Sidebar({
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-4 rounded-2xl px-4 py-4 text-base font-semibold no-underline transition ${
       isActive
-        ? 'bg-[#3B7597] text-white'
-        : 'text-white hover:bg-[#3B7597]'
+        ? 'bg-[#3B7597] dark:bg-[#1a5374] text-white'
+        : 'text-white hover:bg-[#3B7597] dark:hover:bg-[#13436b]'
     }`
 
   return (
     <aside
-      className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-[#093C5D] text-white transition-transform duration-300 md:static md:translate-x-0 ${
+      className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-[#093C5D] dark:bg-[#081a2f] text-white transition-transform duration-300 md:static md:translate-x-0 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
@@ -56,7 +56,7 @@ function Sidebar({
         {/* LOGO */}
         <div className="flex items-center gap-2">
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#3B7597]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#3B7597] dark:bg-[#1b5578]">
             <MdAccessTime
               size={24}
               className="text-white"

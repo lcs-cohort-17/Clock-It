@@ -40,32 +40,33 @@ function getStoredUser() {
 // EXISTING DASHBOARD COMPONENT (completely unchanged)
 // =================================================
 function DashboardPage({ user }: { user: UserProfileData }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-  return (
-    <main className="h-screen overflow-hidden bg-[#F5F5F5] md:flex">
-      {isSidebarOpen && (
-        <div
-          onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
-        />
-      )}
+  return (
+    <main className="min-h-screen bg-[#F5F5F5] dark:bg-[#081a2f] md:flex">
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/30 md:hidden"
+        />
+      )}
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        user={user}
-      />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        user={user}
+      />
 
-      <div className="flex h-screen flex-1 flex-col overflow-hidden">
-        <Header onMenuClick={() => setIsSidebarOpen(true)} />
+      <div className="flex flex-1 flex-col">
+        <Header
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
 
-        <div className="flex-1 overflow-y-auto">
-          <Outlet />
-        </div>
-      </div>
-    </main>
-  )
+        <DashboardGrid user={user} />
+      </div>
+    </main>
+  )
+
 }
 
 
