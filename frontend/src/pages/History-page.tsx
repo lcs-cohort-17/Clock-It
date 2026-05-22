@@ -75,50 +75,66 @@ export const HistoryPage: React.FC = () => {
   }, [processedData]);
 
   return (
-    <div className="font-['Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif] bg-gray-50 min-h-screen p-4 md:p-8">
-      {/* Header */}
-      <div className="bg-white rounded-2xl p-6 mb-8 shadow-sm">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">📋 Attendance History</h1>
-          <p className="text-sm text-gray-500">View and manage employee attendance records</p>
-        </div>
+    <section className="min-h-screen w-full bg-[#EEF3F8] p-4 md:p-6 xl:p-8">
+      {/* Header Container aligned with profile header spacing */}
+      <div className="mb-8">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+          Attendance
+        </p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-800 md:text-4xl">
+          Attendance History
+        </h1>
+        <p className="mt-2 text-sm text-slate-500">
+          View and manage employee attendance records
+        </p>
+      </div>
+      
+      {/* Main content wrapper constrained to match profile spacing layout */}
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
         
-        {/* Stats Cards */}
-        <div className="flex gap-2 md:gap-4 flex-wrap">
-          <div className="bg-gray-50 rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100">
-            <span className="block text-xs text-gray-500 mb-1">Total Records</span>
-            <span className="block text-xl md:text-2xl font-bold text-gray-900">{summary.total}</span>
+        {/* Stats Cards Dashboard Pane */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-[#093C5D] mb-4">
+            Metrics Overview
+          </h2>
+          <div className="flex gap-2 md:gap-4 flex-wrap">
+            <div className="bg-slate-50 rounded-2xl px-4 py-3 min-w-[70px] md:min-w-[100px] flex-1 text-center border border-slate-100">
+              <span className="block text-xs font-medium text-slate-500 mb-1">Total Records</span>
+              <span className="block text-xl md:text-2xl font-bold text-slate-800">{summary.total}</span>
+            </div>
+            <div className="bg-slate-50 rounded-2xl px-4 py-3 min-w-[70px] md:min-w-[100px] flex-1 text-center border border-slate-100">
+              <span className="block text-xs font-medium text-slate-500 mb-1">Present</span>
+              <span className="block text-xl md:text-2xl font-bold text-emerald-600">{summary.present}</span>
+            </div>
+            <div className="bg-slate-50 rounded-2xl px-4 py-3 min-w-[70px] md:min-w-[100px] flex-1 text-center border border-slate-100">
+              <span className="block text-xs font-medium text-slate-500 mb-1">Late</span>
+              <span className="block text-xl md:text-2xl font-bold text-amber-600">{summary.late}</span>
+            </div>
+            <div className="bg-slate-50 rounded-2xl px-4 py-3 min-w-[70px] md:min-w-[100px] flex-1 text-center border border-slate-100">
+              <span className="block text-xs font-medium text-slate-500 mb-1">Absent</span>
+              <span className="block text-xl md:text-2xl font-bold text-red-500">{summary.absent}</span>
+            </div>
+            <div className="bg-slate-50 rounded-2xl px-4 py-3 min-w-[70px] md:min-w-[100px] flex-1 text-center border border-slate-100">
+              <span className="block text-xs font-medium text-slate-500 mb-1">Avg Hours</span>
+              <span className="block text-xl md:text-2xl font-bold text-blue-500">{summary.avgHours}h</span>
+            </div>
           </div>
-          <div className="bg-gray-50 rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100">
-            <span className="block text-xs text-gray-500 mb-1">Present</span>
-            <span className="block text-xl md:text-2xl font-bold text-emerald-600">{summary.present}</span>
-          </div>
-          <div className="bg-gray-50 rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100">
-            <span className="block text-xs text-gray-500 mb-1">Late</span>
-            <span className="block text-xl md:text-2xl font-bold text-amber-600">{summary.late}</span>
-          </div>
-          <div className="bg-gray-50 rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100">
-            <span className="block text-xs text-gray-500 mb-1">Absent</span>
-            <span className="block text-xl md:text-2xl font-bold text-red-500">{summary.absent}</span>
-          </div>
-          <div className="bg-gray-50 rounded-xl px-4 py-3 min-w-[70px] md:min-w-[100px] text-center border border-gray-100">
-            <span className="block text-xs text-gray-500 mb-1">Avg Hours</span>
-            <span className="block text-xl md:text-2xl font-bold text-blue-500">{summary.avgHours}h</span>
-          </div>
+        </div>
+
+        {/* History Table Container */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-4 md:p-6 shadow-sm">
+          <HistoryTable
+            data={processedData}
+            onSort={handleSort}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            filterStatus={filterStatus}
+            onFilterChange={setFilterStatus}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
         </div>
       </div>
-
-      {/* History Table */}
-      <HistoryTable
-        data={processedData}
-        onSort={handleSort}
-        sortField={sortField}
-        sortOrder={sortOrder}
-        filterStatus={filterStatus}
-        onFilterChange={setFilterStatus}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
-    </div>
+    </section>
   );
 };
