@@ -71,7 +71,7 @@ type HeaderProps = {
 
 function Header({ onMenuClick }: HeaderProps) {
   return (
-    /* We safely added dark:bg-[#081a2f] and dark:border-[#1b3f6d] so the header bar turns dark smoothly! */
+    /* We safely added dark:bg-[#081a2f] and dark:border-[#1b3f6d] so the header bar turns dark smoothly!!! */
     <header className="border-b border-slate-200 bg-white px-4 py-4 md:px-8 transition-colors duration-300 dark:bg-[#081a2f] dark:border-[#1b3f6d]">
       <div className="flex items-center justify-between">
 
