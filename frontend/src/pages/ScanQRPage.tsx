@@ -1,5 +1,5 @@
 import ScanQRCard from '../components/ScanQRCard'
-
+//fix
 const SCAN_PAGE_TEXT = {
   title: 'Scan QR Code',
   description:
