@@ -1,11 +1,3 @@
 {
-<<<<<<< HEAD
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" }
-  ]
-}
-=======
   "extends": "./tsconfig.app.json"
 }
->>>>>>> fce12ba4e1b5c5f935464309b32a5d9d75d6c432
