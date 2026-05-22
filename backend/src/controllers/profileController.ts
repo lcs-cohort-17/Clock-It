@@ -8,7 +8,8 @@ import {
   deleteProfileDb,
   loginProfileDb,
   createProfileDb,
-//   resetPasswordDb
+  updatePasswordDb,
+  resetPasswordDb,
 } from '../models/profileDb.js'
 
 // ─── GET ALL ─────────────────────────────────────────────────
@@ -204,24 +205,66 @@ export const deleteProfileCon = async (req: Request, res: Response) => {
   }
 }
 
-// ─── RESET PASSWORD ──────────────────────────────────────────
-// Admin resets — generates new 8 char plain text, returns it
-// This is PATCH not POST — updating existing password
-// export const resetPasswordCon = async (req: Request, res: Response) => {
-//   try {
-//     const { employee_id } = req.params
+// // ─── RESET PASSWORD ──────────────────────────────────────────
+// // Admin resets — generates new 8 char plain text, returns it
+// // This is PATCH not POST — updating existing password
+export const resetPasswordCon = async (req: Request, res: Response) => {
+  try {
+    const employee_id = req.params.employee_id as string
 
-//     const result = await resetPasswordDb(employee_id)
+    const result = await resetPasswordDb(employee_id)
 
-//     if (!result.success) {
-//       return res.status(400).json(result)
-//     }
+    if (!result.success) {
+      return res.status(400).json(result)
+    }
 
-//     return res.status(200).json(result)
-//   } catch (error: any) {
-//     return res.status(500).json({ success: false, error: error.message })
-//   }
-// }
+    return res.status(200).json(result)
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message })
+  }
+}
+
+export const updatePasswordCon = async (req: Request, res: Response) => {
+  try {
+    const employee_id = req.params.employee_id as string
+    const { oldPassword, newPassword } = req.body
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Old password and new password are required'
+      })
+    }
+
+    // Get user first to verify old password
+    const userResult = await loginProfileDb(req.user!.email)
+    if (!userResult.success) {
+      return res.status(404).json({ success: false, error: 'User not found' })
+    }
+
+    // Verify old password — bcrypt.compare in controller
+    const passwordMatch = await bcrypt.compare(oldPassword, userResult.data!.password)
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Old password is incorrect'
+      })
+    }
+
+    // Hash new password — controller hashes, model just stores
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+    const result = await updatePasswordDb(employee_id, hashedPassword)
+
+    if (!result.success) {
+      return res.status(400).json(result)
+    }
+
+    return res.status(200).json({ success: true, message: 'Password updated successfully' })
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message })
+  }
+}
 
 
 
