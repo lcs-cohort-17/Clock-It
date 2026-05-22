@@ -1,5 +1,6 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/adminDashboard';
 import AttendanceLogPage from './pages/AttendanceLogPage';
 import QRCodeGeneratorPage from './pages/QRCodeGeneratorPage';
@@ -11,11 +12,13 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/attendance" element={<AttendanceLogPage />} />
-        <Route path="/qr-generator" element={<QRCodeGeneratorPage />} />
-        <Route path="/users" element={<UserManagement />} />
-        <Route path="/settings" element={<AdminSettingsPage />} />
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/attendance" element={<AttendanceLogPage />} />
+          <Route path="/qr-generator" element={<QRCodeGeneratorPage />} />
+          <Route path="/users" element={<UserManagement />} />
+          <Route path="/settings" element={<AdminSettingsPage />} />
+        </Route>
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </BrowserRouter>

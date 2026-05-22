@@ -1,13 +1,18 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
+import AdminLayout from '../components/AdminLayout';
 import AdminDashboard from '../pages/adminDashboard';
 
 describe('Admin Dashboard Full Page', () => {
   it('renders the full admin dashboard layout', async () => {
     render(
-      <MemoryRouter>
-        <AdminDashboard />
+      <MemoryRouter initialEntries={['/admin']}>
+        <Routes>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+        </Routes>
       </MemoryRouter>
     );
 

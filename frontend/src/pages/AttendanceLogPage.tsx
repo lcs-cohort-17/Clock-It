@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import AttendanceLog, { ClockEvent, AuditEvent } from '../components/AttendanceLog';
+import AttendanceLog from '../components/AttendanceLog';
+import type { ClockEvent, AuditEvent } from '../components/AttendanceLog';
 
 interface FetchState<T> {
   data: T[];
