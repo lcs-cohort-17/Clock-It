@@ -52,7 +52,7 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
         </div>
 
         {/* Login Form Card – no extra card border, just the form */}
-        <div className="mx-auto w-full max-w-md lg:mx-0">
+        <div className="mx-auto w-full max-w-md">
           <LoginForm onLogin={handleLogin} loading={loading} error={error} />
         </div>
       </div>
