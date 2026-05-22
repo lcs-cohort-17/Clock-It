@@ -3,7 +3,7 @@ import React from 'react';
 interface Activity {
   firstClockIn?: string;
   lastClockOut?: string;
-  totalHours?: number;
+  totalHours?: string;
 }
 
 interface TodaysActivityProps {

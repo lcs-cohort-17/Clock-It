@@ -106,19 +106,21 @@ export const HistoryPage: React.FC = () => {
             <span className="block text-xl md:text-2xl font-bold text-blue-500">{summary.avgHours}h</span>
           </div>
         </div>
-      </div>
 
-      {/* History Table */}
-      <HistoryTable
-        data={processedData}
-        onSort={handleSort}
-        sortField={sortField}
-        sortOrder={sortOrder}
-        filterStatus={filterStatus}
-        onFilterChange={setFilterStatus}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
-    </div>
+        {/* History Table Container */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-4 md:p-6 shadow-sm">
+          <HistoryTable
+            data={processedData}
+            onSort={handleSort}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            filterStatus={filterStatus}
+            onFilterChange={setFilterStatus}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
+        </div>
+      </div>
+    </section>
   );
 };

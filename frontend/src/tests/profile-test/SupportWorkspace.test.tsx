@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { Support_Workspace } from '../../components/profile/Support_Workspace'
 
 describe('Support_Workspace', () => {
+  const openSpy = vi
+    .spyOn(window, 'open')
+    .mockImplementation(() => null)
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -37,17 +41,23 @@ describe('Support_Workspace', () => {
       const user = userEvent.setup()
       render(<Support_Workspace />)
 
-      const contactButton = screen.getByText('Contact admin')
+      const contactButton = screen.getByRole('button', {
+        name: 'Contact admin',
+      })
       await user.click(contactButton)
 
-      expect(window.location.href).toContain('mailto:admin@clock-it.com')
+      expect(openSpy).toHaveBeenCalledWith(
+        'mailto:admin@clock-it.com?subject=Clock-It Support Request'
+      )
     })
 
     it('should show loading state when clicking contact admin', async () => {
       const user = userEvent.setup()
       render(<Support_Workspace />)
 
-      const contactButton = screen.getByText('Contact admin')
+      const contactButton = screen.getByRole('button', {
+        name: 'Contact admin',
+      })
       await user.click(contactButton)
 
       expect(screen.getByText('Opening support...')).toBeInTheDocument()

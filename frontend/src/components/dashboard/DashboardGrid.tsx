@@ -10,6 +10,7 @@ import {
 } from 'react-icons/md'
 import Calendar, { type AttendanceEvent } from '../Features/Calendar'
 import {
+  ATTENDANCE_EVENTS_UPDATED,
   getAttendanceScanEvents,
   getLatestScanEvent,
   getTodaysActivity,
@@ -33,6 +34,7 @@ function DashboardGrid({ user = defaultUser }: Props) {
   const [currentTime, setCurrentTime] = useState(() =>
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   )
+  const [, setAttendanceRefreshKey] = useState(0)
   const latestScan = getLatestScanEvent()
   const isClockedIn = latestScan?.type === 'clock-in'
   const todaysActivity = getTodaysActivity()
@@ -52,6 +54,26 @@ function DashboardGrid({ user = defaultUser }: Props) {
     }, 30000)
 
     return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    const handleAttendanceUpdated = () => {
+      setAttendanceRefreshKey(current => current + 1)
+    }
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'attendanceEvents') {
+        setAttendanceRefreshKey(current => current + 1)
+      }
+    }
+
+    window.addEventListener(ATTENDANCE_EVENTS_UPDATED, handleAttendanceUpdated)
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      window.removeEventListener(ATTENDANCE_EVENTS_UPDATED, handleAttendanceUpdated)
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   return (

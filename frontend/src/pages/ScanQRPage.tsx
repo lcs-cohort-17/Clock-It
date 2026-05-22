@@ -2,11 +2,8 @@ import ScanQRCard from '../components/ScanQRCard'
 
 const SCAN_PAGE_TEXT = {
   title: 'Scan QR Code',
-  description: 'Point your camera at the workplace QR code to clock in or out.',
-}
-
-const SCAN_PAGE_STYLES = {
-  headingColor: '#093C5D',
+  description:
+    'Point your camera at the workplace QR code to clock in or out.',
 }
 
 function ScanQRPage() {
@@ -22,7 +19,13 @@ function ScanQRPage() {
         </h1>
         <p className="mt-3 text-lg text-slate-600 dark:text-[#9bb3d1]">{SCAN_PAGE_TEXT.description}</p>
 
-        <div className="mt-8">
+        {/* Description */}
+        <p className="mt-3 text-xl text-slate-600">
+          {SCAN_PAGE_TEXT.description}
+        </p>
+
+        {/* QR Card */}
+        <div className="mt-10">
           <ScanQRCard />
         </div>
       </div>

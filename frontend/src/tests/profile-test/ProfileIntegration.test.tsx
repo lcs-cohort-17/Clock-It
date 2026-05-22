@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitForElementToBeRemoved } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import UserProfilePage from "../../pages/profile";
 
@@ -7,6 +7,10 @@ import type { UserProfileData }
 from "../../components/profile/UserProfileData";
 
 describe('Profile Page Integration', () => {
+  const openSpy = vi
+    .spyOn(window, 'open')
+    .mockImplementation(() => null)
+
   const mockUser: UserProfileData = {
     fullName: 'Sarah Mthembu',
     email: 'sarah@clockit.app',
@@ -31,7 +35,9 @@ describe('Profile Page Integration', () => {
 
     await user.click(screen.getByText('Save'))
 
-    expect(screen.getByText('Sarah Nkosi')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Sarah Nkosi' })
+    ).toBeInTheDocument()
   })
 
   it('should complete clear cache flow', async () => {
@@ -43,7 +49,9 @@ describe('Profile Page Integration', () => {
     expect(screen.getByText('Clear local cache?')).toBeInTheDocument()
 
     await user.click(screen.getByText('Yes, clear cache'))
-    expect(screen.queryByText('Clear local cache?')).not.toBeInTheDocument()
+    await waitForElementToBeRemoved(() =>
+      screen.queryByText('Clear local cache?')
+    )
   })
 
   it('should complete contact admin flow', async () => {
@@ -51,6 +59,8 @@ describe('Profile Page Integration', () => {
     render(<UserProfilePage user={mockUser} />)
 
     await user.click(screen.getByText('Contact admin'))
-    expect(window.location.href).toContain('mailto:admin@clock-it.com')
+    expect(openSpy).toHaveBeenCalledWith(
+      'mailto:admin@clock-it.com?subject=Clock-It Support Request'
+    )
   })
 })
