@@ -27,7 +27,9 @@ export function ConnectionStatus() {
     <div className="flex items-center gap-3">
       <span
         className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${
-          isOnline ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+          isOnline
+            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-100"
+            : "bg-red-100 text-red-700 dark:bg-red-400/15 dark:text-red-100"
         }`}
       >
         <span className="relative flex h-2 w-2">
@@ -44,17 +46,17 @@ export function ConnectionStatus() {
       </span>
 
       {sync === "syncing" && (
-        <span className="inline-flex items-center gap-1 text-sm text-gray-600">
+        <span className="inline-flex items-center gap-1 text-sm text-gray-600 dark:text-[#cbd5ff]">
           <Loader2 className="h-4 w-4 animate-spin" /> Syncing…
         </span>
       )}
       {sync === "synced" && (
-        <span className="inline-flex items-center gap-1 text-sm text-emerald-600">
+        <span className="inline-flex items-center gap-1 text-sm text-emerald-600 dark:text-emerald-100">
           <Check className="h-4 w-4" /> Synced
         </span>
       )}
       {sync === "failed" && (
-        <span className="inline-flex items-center gap-1 text-sm text-red-600">
+        <span className="inline-flex items-center gap-1 text-sm text-red-600 dark:text-red-100">
           <AlertCircle className="h-4 w-4" /> Sync failed
         </span>
       )}

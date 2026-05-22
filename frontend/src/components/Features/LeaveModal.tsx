@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 export interface LeaveRequest {
-  type: 'Leave' | 'Sick';
+  type: 'leave' | 'Sick';
   start_date: string;
   end_date: string;
   reason: string;
@@ -14,70 +14,128 @@ interface LeaveModalProps {
 }
 
 const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [type, setType] = useState<'Leave' | 'Sick'>('Leave');
+  const [type, setType] = useState<'leave' | 'Sick'>('leave');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
 
+  if (!isOpen) return null;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const today = new Date().toISOString().split('T')[0];
+    
     if (!startDate || !endDate) {
       setError('Start and end date are required.');
       return;
     }
-    if (endDate < startDate) {
-      setError('End date must be after or equal to start date.');
-      return;
-    }
-    if (startDate < today) {
-      setError('Start date must be today or in the future.');
-      return;
-    }
-    if (endDate < today) {
-      setError('End date must be today or in the future.');
-      return;
-    }
+    
     setError('');
-    const request: LeaveRequest = { type, start_date: startDate, end_date: endDate, reason };
-    const savedRequests = JSON.parse(localStorage.getItem('leaveRequests') ?? '[]');
-    localStorage.setItem('leaveRequests', JSON.stringify([...savedRequests, request]));
-    onSubmit(request);
+    onSubmit({
+      type,
+      start_date: startDate,
+      end_date: endDate,
+      reason
+    });
+    
+    // Clear fields on successful submit
+    setStartDate('');
+    setEndDate('');
+    setReason('');
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="modal-content w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-        <h2 className="text-xl font-bold text-[#093C5D]">Request Leave / Sick</h2>
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          <label className="block text-sm font-semibold text-slate-600">
-            Type
-            <select className="mt-1 w-full rounded-lg border border-slate-200 p-3" value={type} onChange={e => setType(e.target.value as 'Leave' | 'Sick')}>
-              <option value="Leave">Leave</option>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      {/* Modal Container */}
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xl transition-all duration-300 dark:border-zinc-800 dark:bg-[#0f172a]">
+        
+        {/* Modal Header */}
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900 transition-colors duration-300 dark:text-white mb-6">
+          Request Leave / Sick
+        </h2>
+
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/50 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        {/* Form Content */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          
+          {/* Type Selection */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 transition-colors duration-300 dark:text-slate-200">
+              Type
+            </label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as 'leave' | 'Sick')}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm transition-all duration-300 focus:border-[#093C5D] focus:outline-none focus:ring-2 focus:ring-[#093C5D]/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-700"
+            >
+              <option value="leave">Leave</option>
               <option value="Sick">Sick</option>
             </select>
-          </label>
-          <label className="block text-sm font-semibold text-slate-600">
-            Start Date
-            <input className="mt-1 w-full rounded-lg border border-slate-200 p-3" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          </label>
-          <label className="block text-sm font-semibold text-slate-600">
-            End Date
-            <input className="mt-1 w-full rounded-lg border border-slate-200 p-3" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-          </label>
-          <label className="block text-sm font-semibold text-slate-600">
-            Reason
-            <textarea className="mt-1 min-h-24 w-full rounded-lg border border-slate-200 p-3" value={reason} onChange={e => setReason(e.target.value)} />
-          </label>
-          {error && <p className="error text-sm font-semibold text-red-600">{error}</p>}
-          <div className="flex justify-end gap-3">
-            <button className="rounded-lg px-4 py-2 text-sm font-bold text-slate-500" type="button" onClick={onClose}>Cancel</button>
-            <button className="rounded-lg bg-[#9CB07A] px-4 py-2 text-sm font-bold text-[#093C5D]" type="submit">Submit</button>
           </div>
+
+          {/* Start Date */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 transition-colors duration-300 dark:text-slate-200">
+              Start Date (YYYY/MM/DD)
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm transition-all duration-300 focus:border-[#093C5D] focus:outline-none focus:ring-2 focus:ring-[#093C5D]/20 scheme-light dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:scheme-dark dark:focus:border-zinc-700"
+            />
+          </div>
+
+          {/* End Date */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 transition-colors duration-300 dark:text-slate-200">
+              End Date (YYYY/MM/DD)
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm transition-all duration-300 focus:border-[#093C5D] focus:outline-none focus:ring-2 focus:ring-[#093C5D]/20 scheme-light dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:scheme-dark dark:focus:border-zinc-700"
+            />
+          </div>
+
+          {/* Reason Description */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 transition-colors duration-300 dark:text-slate-200">
+              Reason
+            </label>
+            <textarea
+              rows={4}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Provide context or a brief note..."
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm transition-all duration-300 placeholder:text-slate-400 focus:border-[#093C5D] focus:outline-none focus:ring-2 focus:ring-[#093C5D]/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500 dark:focus:border-zinc-700 resize-none"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800/60">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#093C5D] transition-all duration-200 hover:bg-[#072f49] shadow-sm shadow-[#093C5D]/10 dark:bg-[#b8d684] dark:text-[#0f172a] dark:hover:bg-[#a6c76f]"
+            >
+              Submit
+            </button>
+          </div>
+
         </form>
       </div>
     </div>

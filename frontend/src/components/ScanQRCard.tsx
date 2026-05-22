@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
+import { Camera, QrCode } from 'lucide-react'
+import {
+  recordAttendanceScan,
+  type AttendanceScanType,
+} from './Features/attendanceEvents'
 
 const SCANNER_ELEMENT_ID = 'reader'
 
@@ -10,40 +15,35 @@ const SCANNER_CONFIG = {
   qrbox: { width: 220, height: 220 },
 }
 
-const SCAN_QR_TEXT = {
-  badge: 'QR',
-  title: 'Ready to scan',
-  description: 'Use a device camera to scan the workplace QR code.',
-  openButton: 'Open camera',
-  stopButton: 'Stop camera',
-  resultLabel: 'Scanned result:',
-  cameraError: 'Could not open camera. Please allow camera access and try again.',
-}
+function getScanTypeFromCode(code: string): AttendanceScanType | null {
+  const normalizedCode = code.trim().toUpperCase()
 
-const SCAN_QR_STYLES = {
-  badgeBackground: '#1D547A',
-  headingColor: '#093C5D',
-  buttonBackground: '#093C5D',
-  buttonHoverBackground: '#0b4b73',
+  if (normalizedCode === 'CLOCK_IN') {
+    return 'clock-in'
+  }
+
+  if (normalizedCode === 'CLOCK_OUT') {
+    return 'clock-out'
+  }
+
+  return null
 }
 
 function ScanQRCard() {
   const [scannerOpen, setScannerOpen] = useState(false)
   const [scanResult, setScanResult] = useState('')
   const [scanError, setScanError] = useState('')
-  const [openButtonHovered, setOpenButtonHovered] = useState(false)
+
   const scannerRef = useRef<Html5Qrcode | null>(null)
 
   const stopScanner = async () => {
-    if (!scannerRef.current) {
-      return
-    }
+    if (!scannerRef.current) return
 
     try {
       await scannerRef.current.stop()
       scannerRef.current.clear()
     } catch {
-      // Ignore stop errors if the scanner is already closed.
+      //
     } finally {
       scannerRef.current = null
       setScannerOpen(false)
@@ -51,22 +51,46 @@ function ScanQRCard() {
   }
 
   const handleScanSuccess = async (decodedText: string) => {
-    // Save the scanned QR value, then close the camera.
-    setScanResult(decodedText)
+    const scanType = getScanTypeFromCode(decodedText)
+
+    if (!scanType) {
+      setScanError('Invalid QR code. Use CLOCK_IN or CLOCK_OUT.')
+      setScanResult('')
+      await stopScanner()
+      return
+    }
+
+    recordAttendanceScan(scanType)
+    setScanError('')
+    setScanResult(decodedText.trim().toUpperCase())
+
     await stopScanner()
+  }
+
+  const handleDemoScan = (code: 'CLOCK_IN' | 'CLOCK_OUT') => {
+    const scanType = getScanTypeFromCode(code)
+
+    if (!scanType) return
+
+    recordAttendanceScan(scanType)
+    setScanError('')
+    setScanResult(code)
   }
 
   const startScanner = async () => {
     try {
-      // Clear old messages before opening the camera again.
       setScanError('')
       setScanResult('')
+      setScannerOpen(true)
+
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve())
+      })
 
       const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID)
       scannerRef.current = scanner
 
       try {
-        // Try the back camera first because it is usually best for scanning QR codes.
         await scanner.start(
           SCANNER_CONFIG.primaryCamera,
           {
@@ -74,9 +98,7 @@ function ScanQRCard() {
             qrbox: SCANNER_CONFIG.qrbox,
           },
           handleScanSuccess,
-          () => {
-            // Ignore scan noise while the camera searches.
-          },
+          () => {},
         )
       } catch {
         await scanner.start(
@@ -86,21 +108,20 @@ function ScanQRCard() {
             qrbox: SCANNER_CONFIG.qrbox,
           },
           handleScanSuccess,
-          () => {
-            // Ignore scan noise while the camera searches.
-          },
+          () => {},
         )
       }
 
-      setScannerOpen(true)
     } catch {
-      setScanError(SCAN_QR_TEXT.cameraError)
       scannerRef.current = null
+      setScannerOpen(false)
+      setScanError(
+        'Could not open camera. Please allow camera access and try again.',
+      )
     }
   }
 
   useEffect(() => {
-    // Stop the scanner if the user leaves the page while the camera is still active.
     return () => {
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => undefined)
@@ -109,61 +130,85 @@ function ScanQRCard() {
   }, [])
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+    <div className="rounded-3xl border border-slate-300 bg-white px-6 py-10 shadow-sm transition-colors duration-300 dark:border-[#163856] dark:bg-[#0b2142]">
       {!scannerOpen ? (
-        <div className="text-center">
-          {/* This is the idle view shown before the camera starts. */}
-          <div
-            className="mx-auto flex h-28 w-28 items-center justify-center rounded-3xl text-4xl text-white"
-            style={{ backgroundColor: SCAN_QR_STYLES.badgeBackground }}
-          >
-            {SCAN_QR_TEXT.badge}
+        <div className="flex flex-col items-center justify-center text-center">
+          {/* QR Icon Box */}
+          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#1E567D]">
+            <QrCode size={37} className="text-white" strokeWidth={2.25} />
           </div>
-          <h2
-            className="mt-8 text-3xl font-semibold"
-            style={{ color: SCAN_QR_STYLES.headingColor }}
-          >
-            {SCAN_QR_TEXT.title}
+
+          {/* Heading */}
+          <h2 className="mt-8 text-4xl font-bold text-[#093C5D] dark:text-[#eff6ff]">
+            Ready to scan
           </h2>
-          <p className="mt-3 text-lg text-slate-600">{SCAN_QR_TEXT.description}</p>
+
+          {/* Description */}
+          <p className="mt-3 text-xl text-slate-600 dark:text-[#cbd5ff]">
+            Camera works offline. Events will sync automatically.
+          </p>
+
+          {/* Button */}
           <button
             type="button"
             onClick={startScanner}
-            onMouseEnter={() => setOpenButtonHovered(true)}
-            onMouseLeave={() => setOpenButtonHovered(false)}
-            className="mt-6 rounded-xl px-6 py-3 text-white transition"
-            style={{
-              backgroundColor: openButtonHovered
-                ? SCAN_QR_STYLES.buttonHoverBackground
-                : SCAN_QR_STYLES.buttonBackground,
-            }}
+            className="mt-8 flex items-center gap-3 rounded-2xl bg-[#093C5D] px-6 py-3 text-lg font-semibold text-white transition hover:bg-[#0B4B73]"
           >
-            {SCAN_QR_TEXT.openButton}
+            <Camera size={22} />
+            Open camera
           </button>
+
+          {/* Divider */}
+          <div className="mt-10 w-full border-t border-slate-200" />
+
+          {/* Demo Buttons */}
+          <div className="mt-6 text-center">
+            <p className="text-lg text-slate-600 dark:text-[#cbd5ff]">
+              No camera? Try demo scan:
+            </p>
+
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleDemoScan('CLOCK_IN')}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-lg font-medium text-[#093C5D] transition-colors hover:bg-slate-50 dark:border-[#23456f] dark:bg-[#081a2f] dark:text-[#eff6ff] dark:hover:bg-[#103553]"
+              >
+                Demo: Clock In
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoScan('CLOCK_OUT')}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-lg font-medium text-[#093C5D] transition-colors hover:bg-slate-50 dark:border-[#23456f] dark:bg-[#081a2f] dark:text-[#eff6ff] dark:hover:bg-[#103553]"
+              >
+                Demo: Clock Out
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="text-center">
-          {/* The QR library will place the live camera view inside this box. */}
           <div id={SCANNER_ELEMENT_ID} className="mx-auto max-w-xl" />
+
           <button
             type="button"
             onClick={stopScanner}
-            className="mt-6 rounded-xl border border-slate-300 px-6 py-3 text-slate-700 transition hover:bg-slate-50"
+            className="mt-6 rounded-xl border border-slate-300 px-6 py-3 text-slate-700 transition-colors hover:bg-slate-50 dark:border-[#23456f] dark:text-[#eff6ff] dark:hover:bg-[#103553]"
           >
-            {SCAN_QR_TEXT.stopButton}
+            Stop camera
           </button>
-        </div>
-      )}
-
-      {scanResult && (
-        <div className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-700">
-          {SCAN_QR_TEXT.resultLabel} {scanResult}
         </div>
       )}
 
       {scanError && (
-        <div className="mt-6 rounded-xl bg-rose-50 px-4 py-3 text-rose-700">
+        <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-red-700 dark:bg-red-950/50 dark:text-red-200">
           {scanError}
+        </div>
+      )}
+
+      {scanResult && (
+        <div className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+          Scanned result: {scanResult}
         </div>
       )}
     </div>
