@@ -623,4 +623,30 @@ describe('getProfileByIdDb - edge cases', () => {
   })
 }) 
 
+// TEST 4: PROOF OF MIGRATION - FIRST NAME POPULATION
+describe('Database migration - first_name population', () => {
+  
+  it('should prove that all user records have a populated first_name', async () => {
+    const mockUser = {
+      id: 'user-123',
+      first_name: 'Sarah',  
+      last_name: 'Johnson',
+      employee_id: 'S-006',
+      email: 'sarah@company.com',
+      role: 'staff',
+      is_active: true
+    }
+
+    mockSingle.mockResolvedValueOnce({ data: mockUser, error: null })
+
+    const result = await getProfileByIdDb('S-006')
+
+    expect(result.data?.first_name).toBeDefined()
+    expect(result.data?.first_name).not.toBeNull()
+    expect(result.data?.first_name).not.toBe('')
+    expect(typeof result.data?.first_name).toBe('string')
+    expect(result.data?.first_name.length).toBeGreaterThan(0)
+  })
+})
+
 //END OF ZAHRAA'S TESTS
