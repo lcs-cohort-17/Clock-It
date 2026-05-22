@@ -8,6 +8,7 @@ import {
 //   resetPasswordCon
 } from '../controllers/profileController.js'
 import { authenticateToken } from '../middleware/authMiddleware.js'
+import { clearCacheController} from '../../src/controllers/cacheController.js'
 
 const router = express.Router()
 
@@ -15,10 +16,11 @@ const router = express.Router()
 router.post('/login', loginProfileCon)
 
 // Protected — must be logged in
-router.get('/', authenticateToken, getProfilesCon)
-router.post('/', authenticateToken, createProfileCon)
-router.patch('/:employee_id', authenticateToken, updateProfileCon)
-router.delete('/:employee_id', authenticateToken, deleteProfileCon)
-// router.patch('/:employee_id/reset-password', authenticateToken, resetPasswordCon)
+router.get('/', getProfilesCon)
+router.post('/', createProfileCon)
+router.patch('/:employee_id', updateProfileCon)
+router.delete('/:employee_id', deleteProfileCon)
+router.post('/clear-cache', clearCacheController)
+// router.patch('/:employee_id/reset-password', resetPasswordCon)
 
 export default router
