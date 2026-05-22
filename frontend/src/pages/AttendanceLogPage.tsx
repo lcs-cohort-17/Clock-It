@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import AttendanceLog from '../components/AttendanceLog';
-import type { ClockEvent, AuditEvent } from '../components/AttendanceLog';
+import AttendanceLog, { ClockEvent, AuditEvent } from '../components/AttendanceLog';
 
 interface FetchState<T> {
   data: T[];
@@ -28,7 +27,7 @@ export default function AttendanceLogPage() {
       // const data: ClockEvent[] = await res.json();
       const data: ClockEvent[] = [];
       setClockState({ data, loading: false, error: null });
-    } catch {
+    } catch (_err) {
       setClockState({ data: [], loading: false, error: 'Failed to load clock events. Please try again.' });
     }
   }, []);
@@ -42,7 +41,7 @@ export default function AttendanceLogPage() {
       // const data: AuditEvent[] = await res.json();
       const data: AuditEvent[] = [];
       setAuditState({ data, loading: false, error: null });
-    } catch {
+    } catch (_err) {
       setAuditState({ data: [], loading: false, error: 'Failed to load audit trail. Please try again.' });
     }
   }, []);
@@ -55,19 +54,15 @@ export default function AttendanceLogPage() {
       // const data: { name: string }[] = await res.json();
       // setStaffOptions(data.map(s => s.name));
       setStaffOptions([]);
-    } catch {
+    } catch (_err) {
       setStaffOptions([]);
     }
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchClockEvents();
-      void fetchAuditEvents();
-      void fetchStaffOptions();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+    fetchClockEvents();
+    fetchAuditEvents();
+    fetchStaffOptions();
   }, [fetchClockEvents, fetchAuditEvents, fetchStaffOptions]);
 
   return (

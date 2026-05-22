@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Download, Search, ChevronDown, Pencil, ArrowUpDown, AlertCircle, RefreshCw, Check } from 'lucide-react';
+import ExportCSVButton from './ExportCSVButton';
 
 export type Tab         = 'clock' | 'audit';
 export type ClockType   = 'CLOCK_IN' | 'CLOCK_OUT' | 'BREAK_START' | 'BREAK_END';
@@ -354,13 +355,16 @@ export default function AttendanceLog({
     >
       <div style={{ padding: '28px 32px' }}>
 
-        <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 700, margin: 0, color: C.textPrimary, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-            Attendance Logs
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '14px', color: C.textMuted }}>
-            Full clock-event history with override and audit trail.
-          </p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ fontSize: '26px', fontWeight: 700, margin: 0, color: C.textPrimary, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+              Attendance Logs
+            </h1>
+            <p style={{ margin: '4px 0 0', fontSize: '14px', color: C.textMuted }}>
+              Full clock-event history with override and audit trail.
+            </p>
+          </div>
+          <ExportCSVButton rows={filteredClockEvents} />
         </div>
 
         <div style={{ display: 'flex', gap: '4px', marginBottom: '20px' }}>
