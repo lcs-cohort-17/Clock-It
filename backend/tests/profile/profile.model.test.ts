@@ -29,7 +29,9 @@ import {getProfilesDb,
     // createProfileDb, 
     deleteProfileDb, 
     updateProfileDb,
-    createProfileDb, 
+    createProfileDb,
+    updatePasswordDb,
+    resetPasswordDb, 
     // resetPasswordDb
 } from '../../src/models/profileDb.js'
 
@@ -106,7 +108,7 @@ describe('getProfilesDb', () => {
 
 describe('createProfileDb', () => {
 
-  it('should create a staff profile successfully with auto-generated 8 char password', async () => {
+  it('should create a staff profile, store hashed password, return plain text to admin', async () => {
     const mockData = {
       id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
       first_name: 'Joshua',
@@ -115,7 +117,7 @@ describe('createProfileDb', () => {
       role: 'staff',
       is_active: true,
       email: 'jodam@gmail.com',
-      password: 'Xk9mP2qR'  // auto-generated 8 char plain text
+      password: '$2b$10$hashedpasswordhere'  // DB stores hash
     }
 
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
@@ -130,23 +132,23 @@ describe('createProfileDb', () => {
     expect(result.data?.is_active).toBe(true)
     expect(result.data?.email).toBe('jodam@gmail.com')
 
-    // Password must be auto-generated, 8 chars, plain text — returned to admin
+    // Response must have plain text — not the hash
     expect(result.data?.password).toBeDefined()
     expect(result.data?.password).toHaveLength(8)
+    expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
     expect(typeof result.data?.password).toBe('string')
   })
 
-  it('should create an admin profile successfully with auto-generated 8 char password', async () => {
-    // Admin can create OTHER admins too
+  it('should create an admin profile successfully', async () => {
     const mockData = {
       id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
       first_name: 'Sarah',
       last_name: 'Johnson',
       employee_id: 'A-010',
-      role: 'admin',           // role is admin this time
+      role: 'admin',
       is_active: true,
       email: 'sarah@company.com',
-      password: 'Nq7rT2mX'   // auto-generated 8 char plain text
+      password: '$2b$10$hashedpasswordhere'
     }
 
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
@@ -154,14 +156,12 @@ describe('createProfileDb', () => {
     const result = await createProfileDb('Sarah', 'Johnson', 'A-010', 'admin', 'sarah@company.com')
 
     expect(result.success).toBe(true)
-    expect(result.data?.role).toBe('admin')          // confirms admin can create admins
-    expect(result.data?.password).toBeDefined()
+    expect(result.data?.role).toBe('admin')
     expect(result.data?.password).toHaveLength(8)
-    expect(typeof result.data?.password).toBe('string')
+    expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
   })
 
   it('should auto-generate a different password each time', async () => {
-    // Two creates should not return the same password
     const mockData1 = {
       id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
       first_name: 'Joshua',
@@ -170,7 +170,7 @@ describe('createProfileDb', () => {
       role: 'staff',
       is_active: true,
       email: 'jodam@gmail.com',
-      password: 'Xk9mP2qR'
+      password: '$2b$10$firsthash'
     }
 
     const mockData2 = {
@@ -181,7 +181,7 @@ describe('createProfileDb', () => {
       role: 'staff',
       is_active: true,
       email: 'sarah@company.com',
-      password: 'Nq7rT2mX'   // different password
+      password: '$2b$10$secondhash'
     }
 
     mockSingle.mockResolvedValueOnce({ data: mockData1, error: null })
@@ -190,40 +190,28 @@ describe('createProfileDb', () => {
     const result1 = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
     const result2 = await createProfileDb('Sarah', 'Johnson', 'S-006', 'staff', 'sarah@company.com')
 
-    // Passwords must be different — not the same every time
     expect(result1.data?.password).not.toBe(result2.data?.password)
   })
 
-  it('should return the password in plain text so admin can share it with staff', async () => {
-    const mockData = {
-      id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
-      first_name: 'Joshua',
-      last_name: 'Jacobs',
-      employee_id: 'S-005',
-      role: 'staff',
-      is_active: true,
-      email: 'jodam@gmail.com',
-      password: 'Xk9mP2qR'
-    }
+  it('should only accept role of staff or admin', async () => {
+    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'invalid' as any, 'jodam@gmail.com')
 
-    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
-
-    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
-
-    // Password must be in the response — admin needs to see it and share with staff
-    expect(result.data?.password).toBeDefined()
-
-    // Must not be hashed — hashed passwords look like '$2b$10$...' (bcrypt format)
-    expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
-
-    // Must be exactly 8 characters — not a hash which is 60 chars
-    expect(result.data?.password).toHaveLength(8)
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Role must be either staff or admin')
   })
 
-  it('should only accept role of staff or admin', async () => {
-    // Invalid role should fail validation before hitting Supabase
-    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'invalid' as any, 'jodam@gmail.com')
-    expect(result.error).toBe('Role must be either staff or admin')
+  it('should reject staff employee_id that does not start with S-', async () => {
+    const result = await createProfileDb('Joshua', 'Jacobs', 'A-005', 'staff', 'jodam@gmail.com')
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Staff employee_id must start with S-')
+  })
+
+  it('should reject admin employee_id that does not start with A-', async () => {
+    const result = await createProfileDb('Sarah', 'Johnson', 'S-010', 'admin', 'sarah@company.com')
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Admin employee_id must start with A-')
   })
 
   it('should return error if creation fails', async () => {
@@ -238,7 +226,6 @@ describe('createProfileDb', () => {
     expect(result.error).toBe('Creation failed')
   })
 })
-
 //UPDATE
 describe('updateProfileDb', () => {
 
@@ -435,71 +422,138 @@ describe('deleteProfileDb', () => {
   })
 })
 
+describe('updatePasswordDb', () => {
+
+  it('should update password successfully by employee_id', async () => {
+    const mockData = {
+      id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
+      employee_id: 'S-300',
+      password: '$2b$10$newhashhere',
+      first_name: 'Official',
+      last_name: 'Staff',
+      role: 'staff',
+      is_active: true,
+      email: 'officialstaff@clockit.com'
+    }
+
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+
+    const result = await updatePasswordDb('S-300', '$2b$10$newhashhere')
+
+    expect(result.success).toBe(true)
+    // DB stores hash — not plain text
+    expect(result.data?.password).toMatch(/^\$2[ab]\$/)
+  })
+
+  it('should work for admin employee_id too', async () => {
+    const mockData = {
+      id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
+      employee_id: 'A-010',
+      password: '$2b$10$adminhashhere',
+      first_name: 'Sarah',
+      last_name: 'Johnson',
+      role: 'admin',
+      is_active: true,
+      email: 'sarah@company.com'
+    }
+
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+
+    const result = await updatePasswordDb('A-010', '$2b$10$adminhashhere')
+
+    expect(result.success).toBe(true)
+    expect(result.data?.employee_id).toBe('A-010')
+  })
+
+  it('should return error if employee_id does not exist', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Profile not found' }
+    })
+
+    const result = await updatePasswordDb('X-999', '$2b$10$somehash')
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Profile not found')
+  })
+
+  it('should return error if update fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Update failed' }
+    })
+
+    const result = await updatePasswordDb('S-300', '$2b$10$somehash')
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Update failed')
+  })
+})
+
 //RESET PASSWORD
-// describe('resetPasswordDb', () => {
+describe('resetPasswordDb', () => {
 
-//   it('should generate a new 8 char password by employee_id and return it to admin', async () => {
-//     const mockData = {
-//       id: '18741667-48ea-48c8-9890-6cb196adc0Gc',
-//       employee_id: 'S-007',
-//       password: 'Nq7rT2mX'  // new auto-generated 8 char password
-//     }
+  it('should generate a new 8 char password by employee_id and return it to admin', async () => {
+    const mockData = {
+      id: '18741667-48ea-48c8-9890-6cb196adc0Gc',
+      employee_id: 'S-007',
+      password: 'Nq7rT2mX'  // new auto-generated 8 char password
+    }
 
-//     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-//     // Target by employee_id not uuid
-//     const result = await resetPasswordDb('S-007')
+    // Target by employee_id not uuid
+    const result = await resetPasswordDb('S-007')
 
-//     expect(result.success).toBe(true)
-//     // Must return new password so admin can share it with staff
-//     expect(result.data?.password).toBeDefined()
-//     expect(result.data?.password).toHaveLength(8)
-//     // Must be plain text — not hashed
-//     expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
-//     expect(typeof result.data?.password).toBe('string')
-//   })
+    expect(result.success).toBe(true)
+    // Must return new password so admin can share it with staff
+    expect(result.data?.password).toBeDefined()
+    expect(result.data?.password).toHaveLength(8)
+    // Must be plain text — not hashed
+    expect(result.data?.password).not.toMatch(/^\$2[ab]\$/)
+    expect(typeof result.data?.password).toBe('string')
+  })
 
-//   it('should generate a new password for admin by employee_id', async () => {
-//     const mockData = {
-//       id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
-//       employee_id: 'A-010',
-//       password: 'Xk9mP2qR'
-//     }
+  it('should generate a new password for admin by employee_id', async () => {
+    const mockData = {
+      id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
+      employee_id: 'A-010',
+      password: 'Xk9mP2qR'
+    }
 
-//     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
+    mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-//     const result = await resetPasswordDb('A-010')
+    const result = await resetPasswordDb('A-010')
 
-//     expect(result.success).toBe(true)
-//     expect(result.data?.password).toHaveLength(8)
-//     expect(typeof result.data?.password).toBe('string')
-//   })
+    expect(result.success).toBe(true)
+    expect(result.data?.password).toHaveLength(8)
+    expect(typeof result.data?.password).toBe('string')
+  })
 
-//   it('should return error if employee_id does not exist', async () => {
-//     mockSingle.mockResolvedValueOnce({
-//       data: null,
-//       error: { message: 'Profile not found' }
-//     })
+  it('should return error if employee_id does not exist', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Profile not found' }
+    })
 
-//     const result = await resetPasswordDb('X-999')
+    const result = await resetPasswordDb('X-999')
 
-//     expect(result.success).toBe(false)
-//     expect(result.error).toBe('Profile not found')
-//   })
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Profile not found')
+  })
 
-//   it('should return error if reset fails', async () => {
-//     mockSingle.mockResolvedValueOnce({
-//       data: null,
-//       error: { message: 'Reset failed' }
-//     })
+  it('should return error if reset fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Reset failed' }
+    })
 
-//     const result = await resetPasswordDb('S-007')
+    const result = await resetPasswordDb('S-007')
 
-//     expect(result.success).toBe(false)
-//     expect(result.error).toBe('Reset failed')  // lowercase 'f' — consistent casing
-//   })
-// })
-
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Reset failed')  // lowercase 'f' — consistent casing
+  })
+})
 //ZAHRAA TESTS
 
 
