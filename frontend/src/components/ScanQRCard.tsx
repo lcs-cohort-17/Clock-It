@@ -81,6 +81,11 @@ function ScanQRCard() {
     try {
       setScanError('')
       setScanResult('')
+      setScannerOpen(true)
+
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve())
+      })
 
       const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID)
       scannerRef.current = scanner
@@ -107,8 +112,9 @@ function ScanQRCard() {
         )
       }
 
-      setScannerOpen(true)
     } catch {
+      scannerRef.current = null
+      setScannerOpen(false)
       setScanError(
         'Could not open camera. Please allow camera access and try again.',
       )
@@ -124,7 +130,7 @@ function ScanQRCard() {
   }, [])
 
   return (
-    <div className="rounded-3xl border border-slate-300 bg-white px-6 py-10 shadow-sm">
+    <div className="rounded-3xl border border-slate-300 bg-white px-6 py-10 shadow-sm transition-colors duration-300 dark:border-[#163856] dark:bg-[#0b2142]">
       {!scannerOpen ? (
         <div className="flex flex-col items-center justify-center text-center">
           {/* QR Icon Box */}
@@ -133,12 +139,12 @@ function ScanQRCard() {
           </div>
 
           {/* Heading */}
-          <h2 className="mt-8 text-4xl font-bold text-[#093C5D]">
+          <h2 className="mt-8 text-4xl font-bold text-[#093C5D] dark:text-[#eff6ff]">
             Ready to scan
           </h2>
 
           {/* Description */}
-          <p className="mt-3 text-xl text-slate-600">
+          <p className="mt-3 text-xl text-slate-600 dark:text-[#cbd5ff]">
             Camera works offline. Events will sync automatically.
           </p>
 
@@ -157,7 +163,7 @@ function ScanQRCard() {
 
           {/* Demo Buttons */}
           <div className="mt-6 text-center">
-            <p className="text-lg text-slate-600">
+            <p className="text-lg text-slate-600 dark:text-[#cbd5ff]">
               No camera? Try demo scan:
             </p>
 
@@ -165,7 +171,7 @@ function ScanQRCard() {
               <button
                 type="button"
                 onClick={() => handleDemoScan('CLOCK_IN')}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-lg font-medium text-[#093C5D] hover:bg-slate-50"
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-lg font-medium text-[#093C5D] transition-colors hover:bg-slate-50 dark:border-[#23456f] dark:bg-[#081a2f] dark:text-[#eff6ff] dark:hover:bg-[#103553]"
               >
                 Demo: Clock In
               </button>
@@ -173,7 +179,7 @@ function ScanQRCard() {
               <button
                 type="button"
                 onClick={() => handleDemoScan('CLOCK_OUT')}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-lg font-medium text-[#093C5D] hover:bg-slate-50"
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-lg font-medium text-[#093C5D] transition-colors hover:bg-slate-50 dark:border-[#23456f] dark:bg-[#081a2f] dark:text-[#eff6ff] dark:hover:bg-[#103553]"
               >
                 Demo: Clock Out
               </button>
@@ -187,7 +193,7 @@ function ScanQRCard() {
           <button
             type="button"
             onClick={stopScanner}
-            className="mt-6 rounded-xl border border-slate-300 px-6 py-3 text-slate-700 hover:bg-slate-50"
+            className="mt-6 rounded-xl border border-slate-300 px-6 py-3 text-slate-700 transition-colors hover:bg-slate-50 dark:border-[#23456f] dark:text-[#eff6ff] dark:hover:bg-[#103553]"
           >
             Stop camera
           </button>
@@ -195,13 +201,13 @@ function ScanQRCard() {
       )}
 
       {scanError && (
-        <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-red-700">
+        <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-red-700 dark:bg-red-950/50 dark:text-red-200">
           {scanError}
         </div>
       )}
 
       {scanResult && (
-        <div className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-700">
+        <div className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
           Scanned result: {scanResult}
         </div>
       )}

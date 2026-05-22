@@ -2,8 +2,7 @@ import { useState } from "react"
 import Header from "./components/dashboard/Header"
 import Sidebar from "./components/dashboard/Sidebar"
 import DashboardGrid from "./components/dashboard/DashboardGrid"
-
-<<<<<<< HEAD
+// fix
 // ============================
 // NEW IMPORTS FOR ROUTING ----
 // ============================
