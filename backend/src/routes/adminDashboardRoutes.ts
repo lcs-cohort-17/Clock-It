@@ -16,11 +16,8 @@ export function buildAdminDashboardRouter(supabase: SupabaseClient) {
 
   router.get("/stats", statsRateLimiter, handleGetStats(supabase));
 
-  router.post("/export", exportToSheets);
-  
-  // Add this new route below your existing routes, before the 404 handler
-  // authMiddleware is commented out until the other dev is done
-  router.post('/export/sheets', /* authMiddleware, */ exportToSheets);
+  // FIX: exportToSheets is now a factory — pass supabase so it uses the shared client
+  router.post('/export/sheets', /* authMiddleware, */ exportToSheets(supabase));
 
   router.use((req, res) => {
     res.status(404).json({ error: "Not found" });
