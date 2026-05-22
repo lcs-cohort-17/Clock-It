@@ -1,11 +1,10 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 import { buildAdminDashboardRouter } from './src/routes/adminDashboardRoutes.ts'
 import googleRoutes from './src/routes/googleRoutes.ts';
 
-dotenv.config()
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -20,7 +19,7 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-app.use('/api/admin/dashboard', buildAdminDashboardRouter(supabase))
+app.use('/api/admin', buildAdminDashboardRouter(supabase))
 app.use('/api/google', googleRoutes)
 
 app.listen(port, () => {

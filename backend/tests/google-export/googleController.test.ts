@@ -9,9 +9,13 @@ vi.mock('../../src/models/googleDb.ts', () => ({
   clearCredentials: vi.fn(),
 }));
 
-const mockGenerateAuthUrl = vi.fn();
-const mockGetToken = vi.fn();
-const mockRevokeToken = vi.fn();
+// vi.mock factories are hoisted to the top of the file by Vitest, so any
+// variables they reference must also be hoisted via vi.hoisted().
+const { mockGenerateAuthUrl, mockGetToken, mockRevokeToken } = vi.hoisted(() => ({
+  mockGenerateAuthUrl: vi.fn(),
+  mockGetToken: vi.fn(),
+  mockRevokeToken: vi.fn(),
+}));
 
 vi.mock('../../src/config/google.ts', () => ({
   oauth2Client: {
@@ -215,7 +219,6 @@ describe('disconnect', () => {
 
     await disconnect(req as Request, res as Response);
 
-    // Revoke warning is logged but disconnect still succeeds
     expect(clearCredentials).toHaveBeenCalledWith('profile-1');
     expect(res.status).toHaveBeenCalledWith(200);
   });

@@ -7,10 +7,17 @@ import {
   clearCredentials,
 } from '../models/googleDb.ts';
 
+function getProfileId(req: Request): string | undefined {
+  return (req as any).profile?.employee_id
+    ?? (req as any).profile?.id
+    ?? req.query.employee_id as string | undefined
+    ?? req.query.profile_id as string | undefined;
+}
+
 // ── GET /api/google/status ────────────────────────────────────
 export const checkStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    const profileId = (req as any).profile?.id;
+    const profileId = getProfileId(req);
     const status = await getConnectionStatus(profileId);
     res.status(200).json(status);
   } catch (err) {
@@ -22,7 +29,11 @@ export const checkStatus = async (req: Request, res: Response): Promise<void> =>
 // ── GET /api/google/auth ──────────────────────────────────────
 export const initiateAuth = (req: Request, res: Response): void => {
   try {
-    const profileId = (req as any).profile?.id;
+    const profileId = getProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Missing employee_id' });
+      return;
+    }
 
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -71,7 +82,7 @@ export const handleCallback = async (req: Request, res: Response): Promise<void>
 // ── DELETE /api/google/disconnect ─────────────────────────────
 export const disconnect = async (req: Request, res: Response): Promise<void> => {
   try {
-    const profileId = (req as any).profile?.id;
+    const profileId = getProfileId(req);
     const tokens = await getDecryptedTokens(profileId);
 
     if (!tokens) {
