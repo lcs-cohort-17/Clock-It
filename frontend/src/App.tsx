@@ -3,6 +3,7 @@ import Header from "./components/dashboard/Header"
 import Sidebar from "./components/dashboard/Sidebar"
 import DashboardGrid from "./components/dashboard/DashboardGrid"
 
+<<<<<<< HEAD
 // ============================
 // NEW IMPORTS FOR ROUTING ----
 // ============================
@@ -108,3 +109,30 @@ function App() {
 // DEFAULT EXPORT (now the App router)
 // ============================
 export default App;
+=======
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AdminDashboard from './pages/adminDashboard';
+import AttendanceLogPage from './pages/AttendanceLogPage';
+import QRCodesPage from './pages/QRCodesPage';
+import UserManagement from './pages/UserManagement';
+import AdminSettingsPage from './pages/AdminSettingsPage';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/attendance" element={<AttendanceLogPage />} />
+        <Route path="/qr-codes" element={<QRCodesPage />} />
+        <Route path="/users" element={<UserManagement />} />
+        <Route path="/settings" element={<AdminSettingsPage />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+// END
+>>>>>>> fce12ba4e1b5c5f935464309b32a5d9d75d6c432
