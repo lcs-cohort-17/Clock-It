@@ -3,7 +3,7 @@ import { MdCalendarMonth, MdRequestQuote } from 'react-icons/md'
 import Calendar, { type AttendanceEvent } from '../components/Features/Calendar'
 import LeaveModal, { type LeaveRequest } from '../components/Features/LeaveModal'
 import { getAttendanceScanEvents } from '../components/Features/attendanceEvents'
-
+//fix
 function CalendarPage() {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false)
 
