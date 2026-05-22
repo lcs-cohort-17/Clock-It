@@ -26,13 +26,11 @@ vi.mock('../../src/config/supabase.js', () => ({
 
 import {getProfilesDb, 
     getProfileByIdDb,
-    // createProfileDb, 
     deleteProfileDb, 
     updateProfileDb,
     createProfileDb,
     updatePasswordDb,
-    resetPasswordDb, 
-    // resetPasswordDb
+    resetPasswordDb
 } from '../../src/models/profileDb.js'
 
 // reset mocks before each test
