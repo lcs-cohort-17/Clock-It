@@ -2,7 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminDashboard from './pages/adminDashboard';
 import AttendanceLogPage from './pages/AttendanceLogPage';
-import QRCodesPage from './pages/QRCodesPage';
+import QRCodeGeneratorPage from './pages/QRCodeGeneratorPage';
 import UserManagement from './pages/UserManagement';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 
@@ -13,7 +13,7 @@ function App() {
         <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/attendance" element={<AttendanceLogPage />} />
-        <Route path="/qr-codes" element={<QRCodesPage />} />
+        <Route path="/qr-generator" element={<QRCodeGeneratorPage />} />
         <Route path="/users" element={<UserManagement />} />
         <Route path="/settings" element={<AdminSettingsPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
