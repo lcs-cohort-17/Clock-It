@@ -1,7 +1,13 @@
+# Ignore root level npm files
 node_modules/
 dist/
 dist-ssr/
-.DS_Store
 .env
 .env.local
 
+# Ignore frontend subfolder npm files (just in case)
+frontend/node_modules/
+frontend/dist/
+
+# System files
+.DS_Store
