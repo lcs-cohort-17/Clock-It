@@ -1,9 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
+// FIX: accept the shared supabase client instead of creating a second singleton.
+// Previously this file created its own client, which was inconsistent with the
+// rest of the admin router and would break if credentials ever rotated.
 
 export interface ExportRow {
   staff_name: string;
@@ -14,11 +13,14 @@ export interface ExportRow {
 }
 
 export interface DateRange {
-  from?: string;   // ISO string e.g. "2025-01-01"
-  to?: string;     // ISO string e.g. "2025-12-31"
+  from?: string;
+  to?: string;
 }
 
-export const getExportData = async (range?: DateRange): Promise<ExportRow[]> => {
+export const getExportData = async (
+  supabase: SupabaseClient,
+  range?: DateRange
+): Promise<ExportRow[]> => {
   let query = supabase
     .from('sessions')
     .select(`
@@ -34,7 +36,7 @@ export const getExportData = async (range?: DateRange): Promise<ExportRow[]> => 
     .order('clock_in_time', { ascending: false });
 
   if (range?.from) query = query.gte('clock_in_time', range.from);
-  if (range?.to)   query = query.lte('clock_in_time', range.to);
+  if (range?.to) query = query.lte('clock_in_time', range.to);
 
   const { data, error } = await query;
   if (error) throw new Error(`Export query failed: ${error.message}`);
