@@ -57,7 +57,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return '↕️';
+    if (sortField !== field) return '';
     return sortOrder === 'asc' ? '↑' : '↓';
   };
 

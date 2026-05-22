@@ -46,20 +46,20 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
       <div className="w-full max-w-md mx-auto">
         {/* Heading – matching the larger font and spacing */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Sign in to Clock It</h2>
-          <p className="mt-2 text-base text-gray-500">Welcome back! Please enter your details.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-[#093C5D]">Sign in to Clock It</h2>
+          <p className="mt-2 text-base text-[#3B7597]">Welcome back! Please enter your details.</p>
         </div>
 
         {/* Login Method Tabs – pill style as seen in the design */}
-        <div className="flex rounded-lg bg-gray-100 p-1 mb-8">
+        <div className="flex rounded-lg bg-[#F5F5F5] p-1 mb-8">
           {(['email', 'employeeId'] as LoginMethod[]).map((method) => (
             <button
               key={method}
               onClick={() => setLoginMethod(method)}
               className={`flex-1 rounded-md py-2.5 text-sm font-medium transition ${
                 loginMethod === method
-                  ? 'bg-white shadow text-indigo-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white shadow text-[#093C5D]'
+                  : 'text-[#3B7597] hover:text-[#093C5D]'
               }`}
             >
               {method === 'email' ? 'Email' : 'Employee ID'}
@@ -71,11 +71,11 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
           {loginMethod === 'email' && (
             <>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#3B7597]" />
                   <input
                     id="email"
                     type="email"
@@ -83,17 +83,17 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="block w-full rounded-lg border border-[#3B7597]/30 py-3 pl-11 pr-4 text-sm text-[#093C5D] outline-none placeholder:text-slate-400 focus:border-[#3B7597] focus:ring-2 focus:ring-[#3B7597]/20"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-[#093C5D] mb-1">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#3B7597]" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -101,7 +101,7 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-11 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="block w-full rounded-lg border border-[#3B7597]/30 py-3 pl-11 pr-11 text-sm text-[#093C5D] outline-none placeholder:text-slate-400 focus:border-[#3B7597] focus:ring-2 focus:ring-[#3B7597]/20"
                   />
                   <button
                     type="button"
@@ -109,28 +109,28 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
                     className="absolute right-3 top-1/2 -translate-y-1/2"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" />
+                      <EyeOff className="h-5 w-5 text-[#3B7597]" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400" />
+                      <Eye className="h-5 w-5 text-[#3B7597]" />
                     )}
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-gray-600">
+                <label className="flex items-center gap-2 text-sm text-[#3B7597]">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="h-4 w-4 rounded border-[#3B7597]/30 text-[#9CB07A] focus:ring-[#9CB07A]"
                   />
                   Remember me
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(true)}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                  className="text-sm font-medium text-[#093C5D] hover:text-[#3B7597]"
                 >
                   Forgot password?
                 </button>
@@ -140,11 +140,11 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
 
           {loginMethod === 'employeeId' && (
             <div>
-              <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="employeeId" className="block text-sm font-medium text-[#093C5D] mb-1">
                 Employee ID
               </label>
               <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#3B7597]" />
                 <input
                   id="employeeId"
                   type="text"
@@ -152,7 +152,7 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
                   placeholder="e.g. EMP001"
-                  className="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  className="block w-full rounded-lg border border-[#3B7597]/30 py-3 pl-11 pr-4 text-sm text-[#093C5D] outline-none placeholder:text-slate-400 focus:border-[#3B7597] focus:ring-2 focus:ring-[#3B7597]/20"
                 />
               </div>
             </div>
@@ -165,7 +165,7 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition"
+            className="w-full rounded-lg bg-[#093C5D] py-3 text-sm font-semibold text-white shadow hover:bg-[#3B7597] focus:outline-none focus:ring-2 focus:ring-[#3B7597] focus:ring-offset-2 disabled:opacity-50 transition"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -182,16 +182,16 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
         <div className="mt-8">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t border-[#3B7597]/20" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-3 text-gray-500">Or continue with</span>
+              <span className="bg-white px-3 text-[#3B7597]">Or continue with</span>
             </div>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-4">
             <button
               onClick={handleMicrosoftLogin}
-              className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+              className="flex items-center justify-center gap-2 rounded-lg border border-[#3B7597]/30 bg-white py-3 text-sm font-medium text-[#093C5D] hover:bg-[#F5F5F5] transition"
             >
               {/* Microsoft icon */}
               <svg className="h-5 w-5" viewBox="0 0 21 21" fill="none">
@@ -204,9 +204,9 @@ export default function LoginForm({ onLogin, loading, error }: Props) {
             </button>
             <button
               onClick={handleGoogleLogin}
-              className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+              className="flex items-center justify-center gap-2 rounded-lg border border-[#3B7597]/30 bg-white py-3 text-sm font-medium text-[#093C5D] hover:bg-[#F5F5F5] transition"
             >
-              <CircleUserRound className="h-5 w-5 text-blue-500" />
+              <CircleUserRound className="h-5 w-5 text-[#3B7597]" />
               Google
             </button>
           </div>

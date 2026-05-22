@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   MdChatBubbleOutline,
@@ -13,6 +13,17 @@ export function Support_Workspace() {
   const [isContactingAdmin, setIsContactingAdmin] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const contactResetTimeoutRef = useRef<number | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    return () => {
+      if (contactResetTimeoutRef.current) {
+        window.clearTimeout(contactResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // =========================
   // CONTACT ADMIN
@@ -27,7 +38,8 @@ export function Support_Workspace() {
       console.error("Failed to open mail client:", error);
     } finally {
       // Small delay to ensure loading state is visible
-      setTimeout(() => {
+      contactResetTimeoutRef.current =
+        window.setTimeout(() => {
         setIsContactingAdmin(false);
       }, 300);
     }
@@ -124,7 +136,7 @@ export function Support_Workspace() {
             aria-live="polite"
             className="
               flex
-              w-full
+              w-fit
               items-center
               gap-3
               rounded-2xl
@@ -207,7 +219,7 @@ export function Support_Workspace() {
               disabled={isClearingCache}
               className="
                 flex
-                w-full
+                w-fit
                 items-center
                 gap-3
                 rounded-2xl

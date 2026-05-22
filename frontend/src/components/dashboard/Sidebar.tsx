@@ -5,7 +5,6 @@ import {
   MdHistory,
   MdLogout,
   MdAccessTime,
-  MdCalendarMonth,
 } from 'react-icons/md'
 
 import { NavLink } from 'react-router-dom'
@@ -117,19 +116,6 @@ function Sidebar({
           />
 
           <span>History</span>
-        </NavLink>
-
-        <NavLink
-          to="/calendar"
-          className={navLinkClasses}
-          onClick={onClose}
-        >
-          <MdCalendarMonth
-            size={22}
-            className="text-white"
-          />
-
-          <span>Calendar</span>
         </NavLink>
 
         <NavLink
