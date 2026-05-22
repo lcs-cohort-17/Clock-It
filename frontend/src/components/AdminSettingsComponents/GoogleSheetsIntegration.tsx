@@ -67,18 +67,18 @@ const GoogleSheetsIntegration = () => {
 
   return (
     <>
-      <Card className="w-full rounded-xl border border-[#cbd7df] bg-white px-7 py-7 text-[#002f4f] shadow-sm">
+      <Card className="w-full rounded-xl border border-[#cbd7df] bg-white px-[30px] py-[30px] text-[#002f4f] shadow-sm">
         <CardHeader className="p-0">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-5">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#eef6df] p-3">
-                <GoogleSheetsIcon className="h-6 w-6" />
+            <div className="flex items-start gap-[21px]">
+              <div className="flex h-[50px] w-[50px] flex-shrink-0 items-center justify-center rounded-xl bg-[#eef6df] p-3">
+                <GoogleSheetsIcon className="h-[22px] w-[22px]" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold text-[#002f4f]">
+                <CardTitle className="text-[22px] font-bold leading-tight text-[#002f4f]">
                   Google Sheets Integration
                 </CardTitle>
-                <CardDescription className="mt-2 text-base text-[#245575]">
+                <CardDescription className="mt-[7px] text-base leading-normal text-[#245575]">
                   Two-way sync of attendance data with auto field mapping.
                 </CardDescription>
               </div>
