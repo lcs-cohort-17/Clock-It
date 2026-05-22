@@ -11,7 +11,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-* gfygy{
+* {
   box-sizing: border-box;
 }
 
@@ -56,6 +56,7 @@ html.dark .bg-gray-50\/50,
 html.dark .bg-slate-100,
 html.dark .bg-gray-100,
 html.dark .bg-\[\#F5F5F5\],
+html.dark .bg-\[\#F5F7FA\],
 html.dark .bg-\[\#EEF3F8\],
 html.dark .bg-\[\#F7F7F7\] {
   background-color: #0b2142 !important;
@@ -77,7 +78,9 @@ html.dark .border-white\/10 {
 
 html.dark .text-slate-500,
 html.dark .text-gray-500,
+html.dark .text-gray-400,
 html.dark .text-slate-400,
+html.dark .text-slate-300,
 html.dark .text-\[\#3B5C74\],
 html.dark .text-\[\#093C5D\],
 html.dark .text-\[\#164068\],
@@ -106,14 +109,18 @@ html.dark .text-slate-900,
 html.dark .text-slate-800,
 html.dark .text-slate-700,
 html.dark .text-slate-600,
-html.dark .text-[#093C5D],
-html.dark .text-[#3B5C74],
-html.dark .text-[#164068],
-html.dark .text-[#0f172a],
-html.dark .text-[#050505],
-html.dark .text-[#9bb3d1],
-html.dark .text-[#b1bf86],
-html.dark .text-[#c7d89a],
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-\[\#093C5D\],
+html.dark .text-\[\#3B5C74\],
+html.dark .text-\[\#164068\],
+html.dark .text-\[\#0A3A5A\],
+html.dark .text-\[\#0f172a\],
+html.dark .text-\[\#050505\],
+html.dark .text-\[\#9bb3d1\],
+html.dark .text-\[\#b1bf86\],
+html.dark .text-\[\#c7d89a\],
 html.dark svg,
 html.dark .icon,
 html.dark .react-icons {
@@ -125,7 +132,7 @@ html.dark .react-icons {
 html.dark .text-gray-500,
 html.dark .text-slate-500,
 html.dark .text-slate-400,
-html.dark .text-[#d9f0b1] {
+html.dark .text-\[\#d9f0b1\] {
   color: #cbd5ff !important;
 }
 

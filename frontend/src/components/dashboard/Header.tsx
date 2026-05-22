@@ -1,4 +1,3 @@
-import React from 'react';
 import { MdMenu } from 'react-icons/md';
 import { ConnectionStatus } from './ConnectionStatus';
 import { useTheme } from '../../context/ThemeContext.tsx';
