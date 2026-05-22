@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import AdminLayout from "./components/qr/AdminLayout.tsx";
-import QRCodeCard from "./components/qr/QRCodeCard.tsx";
-import QRModal from "..QRModal.tsx";
+import AdminLayout from "../components/qr/AdminLayout";
+import QRCodeCard from "../components/qr/QRCodeCard";
+import QRModal from "../components/qr/QRModal";
 
 export default function QRCodesPage() {
   const [open, setOpen] = useState(false);
