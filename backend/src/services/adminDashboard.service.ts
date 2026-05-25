@@ -1,4 +1,5 @@
 //adminDashboard.service.ts
+//adminDashboard.service.ts
 import type { CurrentlyOnsiteRecord, RecentActivityRecord } from '../types/dashboardInterface.types.js';
 export function formatRecentActivity(records: RecentActivityRecord[]) {
     return records.map((r) => ({

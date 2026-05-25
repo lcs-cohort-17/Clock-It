@@ -1,4 +1,5 @@
 // This file defines TypeScript interfaces for the dashboard data structures used in the backend of the Clock-It application.
+// This file defines TypeScript interfaces for the dashboard data structures used in the backend of the Clock-It application.
 export type AttendanceType = "clock-in" | "clock-out";
 
 export interface Profile {

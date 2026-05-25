@@ -10,6 +10,7 @@ app.use(express.json())
 const port = process.env.PORT || 4321
 
 app.use('/api/admin/dashboard', adminDashboardRoutes)
+app.use('/api/admin/dashboard', adminDashboardRoutes)
 
 app.listen(port, () => {
   console.log(`http://localhost:${port}`)
