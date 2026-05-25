@@ -1,6 +1,7 @@
 /* lutfeeya / adminDashboard */
 
 import { useEffect, useState, type FC } from 'react';
+import { Link } from 'react-router-dom';
 import { Users, MapPin, AlertCircle, Calendar, QrCode, FileText, Settings, FileSpreadsheet, RefreshCw, ChevronRight } from 'lucide-react';
 import {
   dashboardStats,
@@ -131,7 +132,10 @@ const AdminDashboard: FC = () => {
             {/* Bottom Section - 3 cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* QR Generator Card */}
-              <div className="card card-hover cursor-pointer">
+              <Link
+                to="/admin-dashboard/qr-generator"
+                className="card card-hover cursor-pointer"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center">
                     <QrCode className="w-5 h-5 text-blue" />
@@ -140,10 +144,13 @@ const AdminDashboard: FC = () => {
                 </div>
                 <h3 className="font-semibold text-navy mb-1">QR Generator</h3>
                 <p className="text-gray-500 text-sm">Create and manage clock-in QR codes</p>
-              </div>
+              </Link>
 
               {/* Attendance Logs Card */}
-              <div className="card card-hover cursor-pointer">
+              <Link
+                to="/admin-dashboard/attendance"
+                className="card card-hover cursor-pointer"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 bg-olive/10 rounded-xl flex items-center justify-center">
                     <FileText className="w-5 h-5 text-olive" />
@@ -152,10 +159,13 @@ const AdminDashboard: FC = () => {
                 </div>
                 <h3 className="font-semibold text-navy mb-1">Attendance Logs</h3>
                 <p className="text-gray-500 text-sm">All clock events with full audit trail</p>
-              </div>
+              </Link>
 
               {/* Settings Card */}
-              <div className="card card-hover cursor-pointer">
+              <Link
+                to="/admin-dashboard/settings"
+                className="card card-hover cursor-pointer"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
                     <Settings className="w-5 h-5 text-navy" />
@@ -164,7 +174,7 @@ const AdminDashboard: FC = () => {
                 </div>
                 <h3 className="font-semibold text-navy mb-1">Settings</h3>
                 <p className="text-gray-500 text-sm">Manage users and integration</p>
-              </div>
+              </Link>
             </div>
 
             {/* Currently Onsite Staff List */}

@@ -96,12 +96,12 @@ function App() {
           <Route path="/profile" element={<UserProfilePage user={profileUser!} />} />
         </Route>
 
-        <Route element={requireRole('admin', <AdminLayout />)}>
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/admin-dashboard/attendance" element={<AttendanceLogPage />} />
-          <Route path="/admin-dashboard/qr-generator" element={<QRCodeGeneratorPage />} />
-          <Route path="/admin-dashboard/users" element={<UserManagement />} />
-          <Route path="/admin-dashboard/settings" element={<AdminSettingsPage />} />
+        <Route path="/admin-dashboard" element={requireRole('admin', <AdminLayout />)}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="attendance" element={<AttendanceLogPage />} />
+          <Route path="qr-generator" element={<QRCodeGeneratorPage />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
 
         <Route path="/admin" element={<Navigate to="/admin-dashboard" replace />} />
