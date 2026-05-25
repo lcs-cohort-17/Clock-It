@@ -1,3 +1,5 @@
+//tests for adminDashboardDb.ts
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../src/config/supabase.ts', () => ({

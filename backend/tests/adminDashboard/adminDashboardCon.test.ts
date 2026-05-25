@@ -1,3 +1,5 @@
+//tests for adminDashboard.controller.ts
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Supabase before importing anything that uses it

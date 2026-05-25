@@ -1,4 +1,5 @@
 //routes/adminDashboard.routes.ts
+//routes/adminDashboard.routes.ts
 
 import express from 'express';
 import { getRecentActivityController, getCurrentlyOnsiteController } from '../controllers/adminDashboardCon.js';
