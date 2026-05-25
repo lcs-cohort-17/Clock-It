@@ -11,8 +11,49 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  color: #093c5d;
+  background: #f5f5f5;
+  --admin-page-bg: #eef0f4;
+  --admin-card-bg: #ffffff;
+  --admin-border: #d0dae4;
+  --admin-border-input: #c8d3de;
+  --admin-focus-ring: #1a3a5c;
+  --admin-text-primary: #0d1f35;
+  --admin-text-secondary: #2a4860;
+  --admin-text-muted: #637e96;
+  --admin-link: #2563eb;
+  --admin-row-hover: #f5f8fc;
+  --admin-skeleton: #dce6f0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 * {
   box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: #f5f5f5;
+  color: #0f172a;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 body {
@@ -140,6 +181,223 @@ html.dark .border-slate-200,
 html.dark .border-slate-100,
 html.dark .border-white\/10 {
   border-color: #163856 !important;
+}
+
+html.dark .shadow-sm,
+html.dark .shadow-xl,
+html.dark .shadow-2xl {
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.65) !important;
+}
+
+html.dark .card {
+  background-color: #0b2142 !important;
+  border-color: #163856 !important;
+  color: #eff6ff !important;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.65) !important;
+}
+
+html.dark .card-hover:hover {
+  background-color: #103553 !important;
+}
+
+html.dark .btn-outline {
+  background-color: #0b2142 !important;
+  border-color: #163856 !important;
+  color: #eff6ff !important;
+}
+
+html.dark .btn-outline:hover {
+  background-color: #103553 !important;
+}
+
+html.dark {
+  color-scheme: dark;
+  --admin-page-bg: #081a2f;
+  --admin-card-bg: #0b2142;
+  --admin-border: #163856;
+  --admin-border-input: #1b456a;
+  --admin-focus-ring: #3b7597;
+  --admin-text-primary: #eff6ff;
+  --admin-text-secondary: #dbeafe;
+  --admin-text-muted: #9bb3d1;
+  --admin-link: #93c5fd;
+  --admin-row-hover: #103553;
+  --admin-skeleton: #163856;
+}
+
+html.dark body {
+  background-color: #081a2f !important;
+  color: #eff6ff;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/20,
+html.dark .bg-white\/50,
+html.dark .bg-background,
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/50,
+html.dark .bg-slate-100,
+html.dark .bg-gray-100,
+html.dark .bg-\[\#f4f4f4\],
+html.dark .bg-\[\#F4F4F4\],
+html.dark .bg-\[\#F5F5F5\],
+html.dark .bg-\[\#F5F7FA\],
+html.dark .bg-\[\#EEF3F8\],
+html.dark .bg-\[\#F7F7F7\],
+html.dark .bg-\[\#f8fafb\],
+html.dark .bg-\[\#fdfdfd\],
+html.dark .bg-\[\#fff8e8\],
+html.dark .bg-\[\#fff4df\],
+html.dark .bg-\[\#f1f8e8\],
+html.dark .bg-green-50,
+html.dark .bg-amber-50,
+html.dark .bg-red-50,
+html.dark .bg-red-100 {
+  background-color: #0b2142 !important;
+}
+
+html.dark .bg-\[\#050505\],
+html.dark .bg-\[\#0f120a\],
+html.dark .bg-\[\#081a2f\] {
+  background-color: #081a2f !important;
+}
+
+html.dark .border-slate-200,
+html.dark .border-gray-200,
+html.dark .border-slate-100,
+html.dark .border-gray-100,
+html.dark .border-gray-300,
+html.dark .border-slate-300,
+html.dark .border-\[\#cbd7df\],
+html.dark .border-\[\#dce5eb\],
+html.dark .border-\[\#f1d28b\],
+html.dark .border-red-200,
+html.dark .border-white\/10 {
+  border-color: #163856 !important;
+}
+
+html.dark .text-gray-900,
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-slate-500,
+html.dark .text-gray-500,
+html.dark .text-gray-400,
+html.dark .text-slate-400,
+html.dark .text-slate-300,
+html.dark .text-\[\#093C5D\],
+html.dark .text-navy,
+html.dark .text-blue,
+html.dark .text-\[\#3B5C74\],
+html.dark .text-\[\#164068\],
+html.dark .text-\[\#0A3A5A\],
+html.dark .text-\[\#002f4f\],
+html.dark .text-\[\#003957\],
+html.dark .text-\[\#06466b\],
+html.dark .text-\[\#245575\],
+html.dark .text-\[\#5b7890\],
+html.dark .text-\[\#5d9a1b\],
+html.dark .text-\[\#5e7a3e\],
+html.dark .text-\[\#6f4b08\],
+html.dark .text-\[\#8a5a00\],
+html.dark .text-\[\#0f172a\],
+html.dark .text-\[\#050505\],
+html.dark .text-\[\#9bb3d1\],
+html.dark .text-\[\#b1bf86\],
+html.dark .text-\[\#c7d89a\],
+html.dark .text-\[\#d9f0b1\],
+html.dark .icon,
+html.dark .react-icons {
+  color: #eff6ff !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+html.dark .text-olive,
+html.dark .text-olive-green {
+  color: #c7d89a !important;
+}
+
+html.dark .text-green-500,
+html.dark .text-green-600,
+html.dark .text-green-700 {
+  color: #8bd18b !important;
+}
+
+html.dark .text-amber-500,
+html.dark .text-amber-600,
+html.dark .text-amber-700 {
+  color: #f7c46c !important;
+}
+
+html.dark .text-red-400,
+html.dark .text-red-500,
+html.dark .text-red-600,
+html.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+html.dark .bg-blue\/10,
+html.dark .bg-navy\/10,
+html.dark .bg-olive\/10,
+html.dark .bg-\[\#3B7597\]\/10,
+html.dark .bg-\[\#9CB07A\]\/20 {
+  background-color: #103553 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #0b2142 !important;
+  border-color: #163856 !important;
+  color: #eff6ff !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #9bb3d1 !important;
+}
+
+html.dark option {
+  background-color: #0b2142;
+  color: #eff6ff;
+}
+
+html.dark table,
+html.dark thead,
+html.dark tbody,
+html.dark tr {
+  background-color: transparent !important;
+}
+
+html.dark tbody tr:hover,
+html.dark .hover\:bg-\[\#F5F5F5\]\/60:hover,
+html.dark .hover\:bg-\[\#F5F5F5\]:hover,
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-gray-200:hover {
+  background-color: #103553 !important;
+}
+
+html.dark .bg-\[\#093C5D\] {
+  background-color: #205979 !important;
+}
+
+html.dark .bg-\[\#3B7597\] {
+  background-color: #1f4f72 !important;
+}
+
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-white:hover,
+html.dark .hover\:bg-white\/20:hover,
+html.dark .hover\:bg-\[\#3B7597\]:hover {
+  background-color: #103553 !important;
 }
 
 html.dark .shadow-sm,
