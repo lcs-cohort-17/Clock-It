@@ -89,19 +89,22 @@ export const updateLeaveBodySchema = z.object({
   request_type: z.enum(['leave', 'sick', 'annual', 'unpaid', 'other'], {
     message: 'request_type must be leave, sick, annual, unpaid or other'
   }).optional(),
-  start_date: z.iso.date('start_date must be a valid date eg 2024-01-01')
-    .refine(date => date >= new Date().toISOString().split('T')[0], {
-      message: 'start_date must be today or in the future'
-    }).optional(),
-  end_date: z.iso.date('end_date must be a valid date eg 2024-01-01')
-    .refine(date => date >= new Date().toISOString().split('T')[0], {
-      message: 'end_date must be today or in the future'
-    }).optional(),
+  start_date: z.iso.date('start_date must be a valid date eg 2024-01-01').optional(),
+  end_date: z.iso.date('end_date must be a valid date eg 2024-01-01').optional(),     
   reason: z
     .string()
     .min(1, 'reason cannot be empty')
     .max(500, 'reason cannot exceed 500 characters')
     .optional(),
+})
+.refine(data => {
+  if (data.start_date && data.end_date) {
+    return data.end_date >= data.start_date
+  }
+  return true
+}, {
+  message: 'end_date must be on or after start_date',
+  path: ['end_date']
 })
 // only check end vs start if both are provided
 .refine(data => {
