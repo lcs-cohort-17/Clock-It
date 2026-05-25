@@ -2,8 +2,6 @@
 
 import { useEffect, useState, type FC } from 'react';
 import { Users, MapPin, AlertCircle, Calendar, QrCode, FileText, Settings, FileSpreadsheet, RefreshCw, ChevronRight } from 'lucide-react';
-import Sidebar from '../components/adminDashSidebar';
-import TopNav from '../components/adminDashTopNav';
 import {
   dashboardStats,
   recentEvents,
@@ -28,7 +26,6 @@ const formatDayMonth = (date: Date) =>
   }).format(date);
 
 const AdminDashboard: FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const stats: DashboardStats = dashboardStats;
@@ -49,13 +46,6 @@ const AdminDashboard: FC = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
-        <TopNav onMenuClick={() => setSidebarOpen(true)} />
-        
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header with Actions */}
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -268,9 +258,6 @@ const AdminDashboard: FC = () => {
               </>
             )}
           </div>
-        </main>
-      </div>
-    </div>
   );
 };
 

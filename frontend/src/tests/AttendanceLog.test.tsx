@@ -1,11 +1,11 @@
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import AttendanceLogPage from '../pages/AttendanceLogPage';
-import AttendanceLog from '../components/AttendanceLog';
+import AttendanceLog, { type ClockEvent } from '../components/AttendanceLog';
 
-function advance() {
-  act(() => {
-    vi.advanceTimersByTime(400);
+function flushDebounce() {
+  return act(async () => {
+    vi.runAllTimers();
   });
 }
 
@@ -57,7 +57,7 @@ describe('AttendanceLog (Page + Component Integration)', () => {
       const input = screen.getByTestId('search-input');
       fireEvent.change(input, { target: { value: 'zzzz-invalid' } });
 
-      advance();
+      await flushDebounce();
 
       expect(screen.getByText('No records.')).toBeInTheDocument();
     });
@@ -97,7 +97,7 @@ describe('AttendanceLog (Page + Component Integration)', () => {
 
   describe('Manual edit indicator', () => {
     it('renders without crashing for edited rows', () => {
-      const mock = [
+      const mock: ClockEvent[] = [
         {
           id: '1',
           staff: 'John',
