@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import attendanceRoutes from './src/routes/leaveRoutes.js'
 import profileRoutes from './src/routes/profileRoutes.js'
 import attendanceRoutes from './src/routes/leaveRoutes.js'
 import adminDashboardRoutes from './src/routes/adminDashboardRoutes.js'
