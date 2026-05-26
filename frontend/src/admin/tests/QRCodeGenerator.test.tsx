@@ -47,6 +47,7 @@ const advancePastGeneration = async () => {
 describe('QR code generator requirements', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 4, 26, 8, 4));
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
   });
 
@@ -77,14 +78,14 @@ describe('QR code generator requirements', () => {
   it('opens the same modal with the correct QR type from the generator page', async () => {
     const { unmount } = render(<QRCodeGeneratorPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: /^generate qr code$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /clock in qr/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open qr code options/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /clock in qr/i }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Clock In QR Code');
 
     await advancePastGeneration();
     expect(screen.getByTestId('qr-code')).toHaveAttribute(
       'data-value',
-      expect.stringMatching(/^Clocked in\nToken: clock-in-/),
+      'Clocked in at 2026/05/26 08:04',
     );
     expect(screen.getByTestId('qr-code')).toHaveAttribute('data-fg-color', '#002f4f');
     expect(within(screen.getByRole('dialog')).queryByText(/^Active$/)).not.toBeInTheDocument();
@@ -95,14 +96,14 @@ describe('QR code generator requirements', () => {
     unmount();
     render(<QRCodeGeneratorPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: /^generate qr code$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /clock out qr/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open qr code options/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /clock out qr/i }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Clock Out QR Code');
 
     await advancePastGeneration();
     expect(screen.getByTestId('qr-code')).toHaveAttribute(
       'data-value',
-      expect.stringMatching(/^Clocked out\nToken: clock-out-/),
+      'Clocked out at 2026/05/26 08:04',
     );
   });
 
@@ -132,7 +133,7 @@ describe('QR code generator requirements', () => {
     await advancePastGeneration();
     expect(screen.getByTestId('qr-code')).toHaveAttribute(
       'data-value',
-      expect.stringMatching(/^Clocked in\nToken: clock-in-/),
+      'Clocked in at 2026/05/26 08:04',
     );
 
     fireEvent.click(screen.getByRole('button', { name: /close modal/i }));
@@ -147,7 +148,7 @@ describe('QR code generator requirements', () => {
     await advancePastGeneration();
     expect(screen.getByTestId('qr-code')).toHaveAttribute(
       'data-value',
-      expect.stringMatching(/^Clocked out\nToken: clock-out-/),
+      'Clocked out at 2026/05/26 08:04',
     );
   });
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { Camera, QrCode } from 'lucide-react'
 import {
+  formatScanDateTime,
   recordAttendanceScan,
   type AttendanceScanType,
 } from './Features/attendanceEvents'
@@ -31,7 +32,13 @@ function getScanTypeFromCode(code: string): AttendanceScanType | null {
 }
 
 function getScanTokenFromCode(code: string) {
-  return code.match(/token:\s*([^\s]+)/i)?.[1] ?? null
+  const explicitToken = code.match(/token:\s*([^\s]+)/i)?.[1]
+
+  if (explicitToken) {
+    return explicitToken
+  }
+
+  return getScanTypeFromCode(code) ? code.trim() : null
 }
 
 function getUsedQrTokens() {
@@ -86,12 +93,12 @@ function ScanQRCard() {
       return
     }
 
-    recordAttendanceScan(scanType)
+    const event = recordAttendanceScan(scanType)
     if (scanToken) {
       markQrTokenAsUsed(scanToken)
     }
     setScanError('')
-    setScanResult(scanType === 'clock-in' ? 'Clocked in' : 'Clocked out')
+    setScanResult(`${scanType === 'clock-in' ? 'Clocked in' : 'Clocked out'} at ${formatScanDateTime(new Date(event.iso))}`)
 
     await stopScanner()
   }
@@ -101,9 +108,9 @@ function ScanQRCard() {
 
     if (!scanType) return
 
-    recordAttendanceScan(scanType)
+    const event = recordAttendanceScan(scanType)
     setScanError('')
-    setScanResult(code)
+    setScanResult(`${scanType === 'clock-in' ? 'Clocked in' : 'Clocked out'} at ${formatScanDateTime(new Date(event.iso))}`)
   }
 
   const startScanner = async () => {

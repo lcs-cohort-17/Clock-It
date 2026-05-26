@@ -18,10 +18,13 @@ export function formatDateKey(date: Date) {
 }
 
 export function formatScanTime(date: Date) {
-  return date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+export function formatScanDateTime(date: Date) {
+  return `${formatDateKey(date).replace(/-/g, '/')} ${formatScanTime(date)}`
 }
 
 function formatTimeDifference(totalMinutes: number) {
