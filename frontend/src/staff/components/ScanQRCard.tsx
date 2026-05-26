@@ -7,6 +7,7 @@ import {
 } from './Features/attendanceEvents'
 
 const SCANNER_ELEMENT_ID = 'reader'
+const USED_QR_TOKENS_KEY = 'usedQrTokens'
 
 const SCANNER_CONFIG = {
   primaryCamera: { facingMode: 'environment' as const },
@@ -18,15 +19,32 @@ const SCANNER_CONFIG = {
 function getScanTypeFromCode(code: string): AttendanceScanType | null {
   const normalizedCode = code.trim().toUpperCase()
 
-  if (normalizedCode === 'CLOCK_IN') {
+  if (normalizedCode === 'CLOCK_IN' || normalizedCode.includes('CLOCKED IN')) {
     return 'clock-in'
   }
 
-  if (normalizedCode === 'CLOCK_OUT') {
+  if (normalizedCode === 'CLOCK_OUT' || normalizedCode.includes('CLOCKED OUT')) {
     return 'clock-out'
   }
 
   return null
+}
+
+function getScanTokenFromCode(code: string) {
+  return code.match(/token:\s*([^\s]+)/i)?.[1] ?? null
+}
+
+function getUsedQrTokens() {
+  return JSON.parse(localStorage.getItem(USED_QR_TOKENS_KEY) ?? '[]') as string[]
+}
+
+function hasUsedQrToken(token: string) {
+  return getUsedQrTokens().includes(token)
+}
+
+function markQrTokenAsUsed(token: string) {
+  const tokens = getUsedQrTokens()
+  localStorage.setItem(USED_QR_TOKENS_KEY, JSON.stringify([...new Set([...tokens, token])]))
 }
 
 function ScanQRCard() {
@@ -52,17 +70,28 @@ function ScanQRCard() {
 
   const handleScanSuccess = async (decodedText: string) => {
     const scanType = getScanTypeFromCode(decodedText)
+    const scanToken = getScanTokenFromCode(decodedText)
 
     if (!scanType) {
-      setScanError('Invalid QR code. Use CLOCK_IN or CLOCK_OUT.')
+      setScanError('Invalid QR code. Use a Clocked in or Clocked out QR code.')
+      setScanResult('')
+      await stopScanner()
+      return
+    }
+
+    if (scanToken && hasUsedQrToken(scanToken)) {
+      setScanError('This QR code has already been used. Please scan a new code.')
       setScanResult('')
       await stopScanner()
       return
     }
 
     recordAttendanceScan(scanType)
+    if (scanToken) {
+      markQrTokenAsUsed(scanToken)
+    }
     setScanError('')
-    setScanResult(decodedText.trim().toUpperCase())
+    setScanResult(scanType === 'clock-in' ? 'Clocked in' : 'Clocked out')
 
     await stopScanner()
   }

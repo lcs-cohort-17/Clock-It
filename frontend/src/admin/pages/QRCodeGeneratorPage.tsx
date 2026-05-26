@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 
 // Types
@@ -117,60 +118,6 @@ const QRDropdownButton: React.FC<{ onSelect: (type: QRType) => void }> = ({ onSe
   );
 };
 
-// Simple QR Code Component (placeholder - replace with actual QR library)
-const SimpleQRCode: React.FC<{ value: string; size: number }> = ({ value, size }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  useEffect(() => {
-    if (!canvasRef.current || !value) return;
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Draw a styled QR placeholder
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#002f4f';
-    
-    // Draw QR-like pattern
-    const blockSize = size / 8;
-    for (let i = 0; i < 8; i++) {
-      for (let j = 0; j < 8; j++) {
-        if ((i * j) % 3 === 0 || (i + j) % 4 === 0) {
-          ctx.fillRect(i * blockSize, j * blockSize, blockSize - 1, blockSize - 1);
-        }
-      }
-    }
-    
-    // Draw position markers
-    const markerSize = blockSize * 2;
-    ctx.fillStyle = '#002f4f';
-    ctx.fillRect(0, 0, markerSize, markerSize);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(blockSize * 0.5, blockSize * 0.5, blockSize, blockSize);
-    ctx.fillStyle = '#002f4f';
-    ctx.fillRect(blockSize * 0.75, blockSize * 0.75, blockSize * 0.5, blockSize * 0.5);
-    
-    ctx.fillStyle = '#002f4f';
-    ctx.fillRect(size - markerSize, 0, markerSize, markerSize);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(size - markerSize + blockSize * 0.5, blockSize * 0.5, blockSize, blockSize);
-    
-    ctx.fillStyle = '#002f4f';
-    ctx.fillRect(0, size - markerSize, markerSize, markerSize);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(blockSize * 0.5, size - markerSize + blockSize * 0.5, blockSize, blockSize);
-    
-    // Add small text
-    ctx.fillStyle = '#666666';
-    ctx.font = '10px monospace';
-    ctx.fillText(value.substring(0, 12), 10, size - 5);
-  }, [value, size]);
-  
-  return <canvas ref={canvasRef} width={size} height={size} className="rounded-lg shadow-md" />;
-};
-
 // QR Modal Component
 const QRModal: React.FC<{ isOpen: boolean; onClose: () => void; qrType: QRType | null }> = ({ isOpen, onClose, qrType }) => {
   const { qrData, status, errorMessage, generateQR, reset } = useQRCode();
@@ -185,9 +132,16 @@ const QRModal: React.FC<{ isOpen: boolean; onClose: () => void; qrType: QRType |
   
   useEffect(() => {
     if (!qrData || status !== 'active') return;
-    const interval = setInterval(() => {
+    const updateRemainingTime = () => {
       const remaining = Math.max(0, Math.floor((qrData.expiresAt - Date.now()) / 1000));
       setTimeLeft(remaining);
+      return remaining;
+    };
+
+    updateRemainingTime();
+
+    const interval = setInterval(() => {
+      const remaining = updateRemainingTime();
       if (remaining <= 0) clearInterval(interval);
     }, 1000);
     return () => clearInterval(interval);
@@ -214,21 +168,29 @@ const QRModal: React.FC<{ isOpen: boolean; onClose: () => void; qrType: QRType |
   
   const statusDisplay = getStatusDisplay();
   const isActive = status === 'active';
-  const qrValue = qrData ? JSON.stringify({ token: qrData.token, type: qrData.type, timestamp: qrData.createdAt }) : '';
+  const qrValue = qrData
+    ? `${qrData.type === 'clock-in' ? 'Clocked in' : 'Clocked out'}\nToken: ${qrData.token}`
+    : '';
   
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="qr-modal-title"
+    >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-[#002f4f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
             </svg>
-            <h2 className="text-xl font-semibold text-[#002f4f]">{qrType === 'clock-in' ? 'Clock In' : 'Clock Out'} QR Code</h2>
+            <h2 id="qr-modal-title" className="text-xl font-semibold text-[#002f4f]">{qrType === 'clock-in' ? 'Clock In' : 'Clock Out'} QR Code</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700">✕</button>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700" aria-label="Close modal">✕</button>
         </div>
         
         <div className="p-6 flex flex-col items-center text-center">
@@ -238,9 +200,16 @@ const QRModal: React.FC<{ isOpen: boolean; onClose: () => void; qrType: QRType |
           
           <div className="bg-white p-4 rounded-xl shadow-md border border-gray-100 mb-6">
             {isActive && qrData ? (
-              <div className="relative">
-                <SimpleQRCode value={qrValue} size={200} />
-                <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full shadow-md">Active</div>
+              <div>
+                <QRCodeCanvas
+                  value={qrValue}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                  fgColor="#002f4f"
+                  bgColor="#ffffff"
+                  className="rounded-lg"
+                />
               </div>
             ) : (
               <div className="w-[200px] h-[200px] bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200">

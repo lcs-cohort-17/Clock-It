@@ -28,9 +28,16 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, qrType }) => {
   useEffect(() => {
     if (!qrData || status !== 'active') return;
     
-    const interval = setInterval(() => {
+    const updateRemainingTime = () => {
       const remaining = Math.max(0, Math.floor((qrData.expiresAt - Date.now()) / 1000));
       setTimeLeft(remaining);
+      return remaining;
+    };
+
+    updateRemainingTime();
+
+    const interval = setInterval(() => {
+      const remaining = updateRemainingTime();
       
       if (remaining <= 0) {
         clearInterval(interval);
@@ -85,7 +92,9 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, qrType }) => {
   
   const statusDisplay = getStatusDisplay();
   const isActive = status === 'active';
-  const qrValue = qrData ? JSON.stringify({ token: qrData.token, type: qrData.type, timestamp: qrData.createdAt }) : '';
+  const qrValue = qrData
+    ? `${qrData.type === 'clock-in' ? 'Clocked in' : 'Clocked out'}\nToken: ${qrData.token}`
+    : '';
   
   if (!isOpen) return null;
   
@@ -134,17 +143,16 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, qrType }) => {
           {/* QR Code Display */}
           <div className="bg-white p-4 rounded-xl shadow-md border border-gray-100 mb-6">
             {isActive && qrData ? (
-              <div className="relative">
+              <div>
                 <QRCodeCanvas
                   value={qrValue}
                   size={200}
                   level="H"
                   includeMargin={true}
+                  fgColor="#002f4f"
+                  bgColor="#ffffff"
                   className="rounded-lg"
                 />
-                <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full shadow-md">
-                  Active
-                </div>
               </div>
             ) : (
               <div className="w-[200px] h-[200px] bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200">
@@ -171,7 +179,7 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, qrType }) => {
           </button>
           
           <p className="text-xs text-gray-400 mt-4">
-            ⚡ Single-use only • Expires after 60 seconds
+            Single-use only • Expires after 60 seconds
           </p>
         </div>
       </div>
