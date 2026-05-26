@@ -56,5 +56,5 @@ export const NULL_COUNTS: QueryResult[] = [
  */
 export async function importFresh() {
   vi.resetModules()
-  return import('../../src/routes/adminDashboardRoutes.ts')
+  return import('../../src/routes/adminDashboardRoutes.js')
 }
