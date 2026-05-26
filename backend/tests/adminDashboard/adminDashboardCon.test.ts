@@ -3,14 +3,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Supabase before importing anything that uses it
-vi.mock('../../src/config/supabase.ts', () => ({
+vi.mock('../../src/config/supabase.js', () => ({
   supabase: {
     from: vi.fn(),
   },
 }));
 
-vi.mock('../../src/models/adminDashboardDb.ts');
-vi.mock('../../src/services/adminDashboard.service.ts', () => ({
+vi.mock('../../src/models/adminDashboardDb.js');
+vi.mock('../../src/services/adminDashboard.service.js', () => ({
   formatRecentActivity: vi.fn((data) => data),
   formatOnsite: vi.fn((data) => data),
 }));

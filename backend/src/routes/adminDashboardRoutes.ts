@@ -1,7 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { handleGetStats } from "../controllers/adminDashboardController.ts";
+import { handleGetStats } from "../controllers/adminDashboardController.js";
 import { getRecentActivityController, getCurrentlyOnsiteController } from '../controllers/adminDashboardCon.js';
 
 const router = express.Router();
@@ -17,16 +17,14 @@ export function buildAdminDashboardRouter(supabase: SupabaseClient) {
 1
   router.get("/stats", statsRateLimiter, handleGetStats(supabase));
 
+    //Get Recent Activity and Onsite Staff routes
+
+  router.get('/recent-activity', getRecentActivityController);
+  router.get('/onsite', getCurrentlyOnsiteController);
   router.use((req, res) => {
     res.status(404).json({ error: "Not found" });
   });
 
   return router
 }
-
-//Get Recent Activity and Onsite Staff routes
-
-router.get('/recent-activity', getRecentActivityController);
-router.get('/onsite', getCurrentlyOnsiteController);
-export default router;
 
