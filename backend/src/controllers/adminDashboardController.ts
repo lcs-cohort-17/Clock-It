@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { fetchDashboardStats, type DashboardStats } from '../models/adminDashboardDb.ts'
+import { fetchDashboardStats, type DashboardStats } from '../models/adminDashboardDb.js'
 
 const statsCache = {
   data: null as null | DashboardStats,

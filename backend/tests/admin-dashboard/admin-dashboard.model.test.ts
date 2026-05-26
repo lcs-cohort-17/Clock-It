@@ -8,7 +8,7 @@ import {
   NULL_COUNTS,
   importFresh,
   type QueryResult,
-} from './admin-dashboard.test-helpers.ts'
+} from './admin-dashboard.test-helpers.js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 async function buildApp(results: QueryResult[]) {
