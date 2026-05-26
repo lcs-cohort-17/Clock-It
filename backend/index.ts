@@ -1,12 +1,20 @@
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err)
+  console.error('Stack:', err.stack)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION at:', promise)
+  console.error('Reason:', reason)
+})
+
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import attendanceRoutes from './src/routes/leaveRoutes.js'
 import profileRoutes from './src/routes/profileRoutes.js'
 import attendanceRoutes from './src/routes/leaveRoutes.js'
-import adminDashboardRoutes from './src/routes/adminDashboardRoutes.js'
-import { buildAdminDashboardRouter } from './src/routes/adminDashboardRoutes.ts'
-import { supabase } from './src/config/supabase.ts'
+import { buildAdminDashboardRouter } from './src/routes/adminDashboardRoutes.js'
+import { supabase } from './src/config/supabase.js'
 
 dotenv.config()
 
@@ -24,7 +32,6 @@ app.use((req: any, _res: any, next: any) => {
   next()
 })
 
-app.use('/api/leaves', attendanceRoutes)
 
 const port = process.env.PORT || 4321
 
@@ -36,7 +43,9 @@ app.use((req, res, next) => {
 // Test route
 app.get('/test', (req, res) => res.json({ message: 'Test route works!' }))
 
+app.use('/api/leaves', attendanceRoutes)
 app.use('/profiles', profileRoutes)
+app.use('/api/admin/dashboard', buildAdminDashboardRouter(supabase))
 
 app.use((req, res) => {
   res.status(404).json({ 
@@ -44,9 +53,6 @@ app.use((req, res) => {
     error: `Route not found: ${req.method} ${req.url}` 
   })
 })
-app.use('/api/admin/dashboard', buildAdminDashboardRouter(supabase))
-app.use('/api/admin/dashboard', adminDashboardRoutes)
-
 app.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`)
 })
