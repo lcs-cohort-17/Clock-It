@@ -1,0 +1,1 @@
+//profile interface to define the structure of the profile data
