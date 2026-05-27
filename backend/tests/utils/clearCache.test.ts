@@ -2,38 +2,42 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
-// --- mocks ---
-const mockKeys = vi.fn();
-const mockDel = vi.fn();
+// --- Use vi.hoisted() to define mocks that can be used in vi.mock() ---
+const { mockEq, mockUpdate, mockFrom, mockKeys, mockDel } = vi.hoisted(() => {
+  const mockKeys = vi.fn<() => string[]>(() => []);
+  const mockDel = vi.fn<(keys: string[]) => void>(() => undefined);
+  
+  const mockEq = vi.fn();
+  const mockUpdate = vi.fn(() => ({
+    eq: mockEq,
+  }));
 
-const mockEq = vi.fn();
-const mockUpdate = vi.fn(() => ({
-  eq: mockEq,
-}));
+  const mockFrom = vi.fn(() => ({
+    update: mockUpdate,
+  }));
 
-const mockFrom = vi.fn(() => ({
-  update: mockUpdate,
-}));
+  return { mockEq, mockUpdate, mockFrom, mockKeys, mockDel };
+});
 
 vi.mock('node-cache', () => {
+  // NodeCache needs to be a constructor
+  class MockNodeCache {
+    keys = mockKeys;
+    del = mockDel;
+  }
+  
   return {
-    default: vi.fn().mockImplementation(() => ({
-      keys: mockKeys,
-      del: mockDel,
-    })),
+    default: MockNodeCache,
   };
 });
 
-vi.mock('@supabase/supabase-js', () => {
-  return {
-    createClient: vi.fn(() => ({
-      from: mockFrom,
-    })),
-  };
-});
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(() => ({
+    from: mockFrom,
+  })),
+}));
 
-// IMPORTANT:
-// import AFTER mocks
+// IMPORTANT: import AFTER mocks
 import { clearCacheController } from '../../src/controllers/cacheController.js';
 
 describe('clearCacheController', () => {
