@@ -27,5 +27,6 @@ export function buildAdminDashboardRouter(supabase: SupabaseClient) {
     res.status(404).json({ error: "Not found" });
   });
 
-  return router;
+  return router
 }
+
