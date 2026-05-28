@@ -1,0 +1,243 @@
+body {
+    background: #EEF3F8;
+    font-family: Inter, Arial, sans-serif;
+    color: #0F274C;
+}
+
+.page-card {
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 24px 60px rgba(13, 38, 67, 0.08);
+    border: 1px solid rgba(13, 38, 67, 0.05);
+}
+
+.main-title {
+    font-size: 40px;
+    font-weight: 800;
+    color: #0B2A44;
+    margin-bottom: 0;
+}
+
+.subtitle {
+    color: #6C839B;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
+.btn-main {
+    background: #0B2A44;
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 12px 24px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 0.2s ease;
+}
+
+.btn-main:hover,
+.btn-main:focus {
+    background: #082139;
+    color: #ffffff;
+}
+
+.search-input {
+    height: 52px;
+    border-radius: 16px;
+    border: 1px solid #D7E0EA;
+    background: #F8FBFD;
+    color: #223248;
+}
+
+.search-box {
+    max-width: 460px;
+}
+
+.search-box::before {
+    content: "\1F50D";
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    transform: translateY(-50%);
+    color: #8B9BB5;
+    font-size: 16px;
+}
+
+.search-input::placeholder {
+    color: #8B9BB5;
+}
+
+.table-wrapper {
+    background: transparent;
+    border-radius: 24px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #ffffff;
+}
+
+table thead {
+    background: #F8FBFD;
+}
+
+table th {
+    padding: 20px 18px !important;
+    color: #4C6B86 !important;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: none !important;
+}
+
+table td {
+    padding: 18px !important;
+    color: #0F274C;
+    vertical-align: middle;
+    border-top: 1px solid #EEF1F5;
+}
+
+.avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #0B2A44;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.badge-admin {
+    background: #0B2A44;
+    color: #FFFFFF;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.badge-staff {
+    background: #F4F7FA;
+    color: #4C6B86;
+    border: 1px solid #D8E2EA;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.active {
+    background: #E6F8EE;
+    color: #1F8E4D;
+}
+
+.inactive {
+    background: #FEEFEF;
+    color: #C82333;
+}
+
+.btn-icon {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #223248;
+    border: 1px solid #E6EDEF;
+}
+
+.btn-icon:hover,
+.btn-icon:focus {
+    background: #F7FAFB;
+    color: #0B2A44;
+}
+
+.btn-light {
+    background: #ffffff !important;
+}
+
+.pagination-info {
+    color: #758296;
+    font-size: 14px;
+}
+
+.btn-outline-secondary {
+    border-radius: 14px;
+    border-color: #D8E2EA;
+    color: #52637A;
+    background: #ffffff;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    background: #F7FAFB;
+    border-color: #C7D2DC;
+}
+
+.btn-outline-secondary.disabled,
+.btn-outline-secondary:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.modal-overlay,
+.password-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 38, 67, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modal-box,
+.password-box {
+    background: #ffffff;
+    width: 100%;
+    max-width: 520px;
+    padding: 32px;
+    border-radius: 24px;
+}
+
+.password-display {
+    background: #F8FBFD;
+    border: 1px solid #D8E2EA;
+    padding: 18px;
+    border-radius: 16px;
+    font-family: Inter, monospace;
+    font-size: 20px;
+    color: #0F274C;
+}
+
+.btn-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: #7A8CA8;
+}
+
+.btn-close:hover,
+.btn-close:focus {
+    color: #0B2A44;
+}
