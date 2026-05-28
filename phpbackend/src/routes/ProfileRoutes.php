@@ -45,5 +45,8 @@ class ProfileRoutes
 
         $this->app->patch('/profiles/{employee_id}/reset-password', [$this->profileController, 'resetPassword']);
         $this->app->add(new AuthMiddleware());
+
+        $this->app->post('/profiles/clear-cache', [$this->profileController, 'clearCache']);
+        $this->app->add(new AuthMiddleware());
     }
 }

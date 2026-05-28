@@ -7,15 +7,49 @@ use PHPUnit\Framework\MockObject\MockObject;
 use App\Routes\ProfileRoutes;
 use App\Controllers\ProfileController;
 
+class TestApp
+{
+    public array $calls = [];
+
+    public function get($pattern, $handler = null)
+    {
+        $this->calls[] = ['method' => 'get', 'pattern' => $pattern];
+        return $this;
+    }
+
+    public function post($pattern, $handler = null)
+    {
+        $this->calls[] = ['method' => 'post', 'pattern' => $pattern];
+        return $this;
+    }
+
+    public function patch($pattern, $handler = null)
+    {
+        $this->calls[] = ['method' => 'patch', 'pattern' => $pattern];
+        return $this;
+    }
+
+    public function delete($pattern, $handler = null)
+    {
+        $this->calls[] = ['method' => 'delete', 'pattern' => $pattern];
+        return $this;
+    }
+
+    public function add($middleware)
+    {
+        $this->calls[] = ['method' => 'add', 'middleware' => $middleware];
+        return $this;
+    }
+}
 class ProfileRoutesTest extends TestCase
 {
     private ProfileRoutes $routes;
-    private MockObject $appMock;
+    private TestApp $appMock;
     private MockObject $controllerMock;
 
     protected function setUp(): void
     {
-        $this->appMock = $this->createMock(\Slim\App::class);
+        $this->appMock = new TestApp();
         $this->controllerMock = $this->createMock(ProfileController::class);
         $this->routes = new ProfileRoutes($this->appMock, $this->controllerMock);
     }
@@ -25,14 +59,12 @@ class ProfileRoutesTest extends TestCase
      */
     public function testLoginRouteIsPublic(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('post')
-            ->with('/profiles/login')
-            ->willReturnSelf();
-
         $this->routes->register();
 
-        $this->assertTrue(true);
+        $this->assertContains(
+            ['method' => 'post', 'pattern' => '/profiles/login'],
+            $this->appMock->calls
+        );
     }
 
     /**
@@ -40,17 +72,9 @@ class ProfileRoutesTest extends TestCase
      */
     public function testGetProfilesRouteExists(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
-
-        $this->assertTrue(true);
+        $this->assertContains(['method' => 'get', 'pattern' => '/profiles'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
     }
 
     /**
@@ -58,17 +82,9 @@ class ProfileRoutesTest extends TestCase
      */
     public function testGetProfileByIdRouteExists(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
-
-        $this->assertTrue(true);
+        $this->assertContains(['method' => 'get', 'pattern' => '/profiles/{employee_id}'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
     }
 
     /**
@@ -76,17 +92,9 @@ class ProfileRoutesTest extends TestCase
      */
     public function testCreateProfileRouteExists(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('post')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
-
-        $this->assertTrue(true);
+        $this->assertContains(['method' => 'post', 'pattern' => '/profiles'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
     }
 
     /**
@@ -94,17 +102,9 @@ class ProfileRoutesTest extends TestCase
      */
     public function testUpdateProfileRouteExists(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('patch')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
-
-        $this->assertTrue(true);
+        $this->assertContains(['method' => 'patch', 'pattern' => '/profiles/{employee_id}'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
     }
 
     /**
@@ -112,17 +112,9 @@ class ProfileRoutesTest extends TestCase
      */
     public function testDeleteProfileRouteExists(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('delete')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
-
-        $this->assertTrue(true);
+        $this->assertContains(['method' => 'delete', 'pattern' => '/profiles/{employee_id}'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
     }
 
     /**
@@ -130,17 +122,9 @@ class ProfileRoutesTest extends TestCase
      */
     public function testResetPasswordRouteExists(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('patch')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
-
-        $this->assertTrue(true);
+        $this->assertContains(['method' => 'patch', 'pattern' => '/profiles/{employee_id}/reset-password'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
     }
 
     /**
@@ -148,17 +132,19 @@ class ProfileRoutesTest extends TestCase
      */
     public function testUpdatePasswordRouteExists(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('patch')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
+        $this->assertContains(['method' => 'patch', 'pattern' => '/profiles/{employee_id}/update-password'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
+    }
 
-        $this->assertTrue(true);
+    /**
+     * Test POST /profiles/clear-cache route exists (protected)
+     */
+    public function testClearCacheRouteExists(): void
+    {
+        $this->routes->register();
+        $this->assertContains(['method' => 'post', 'pattern' => '/profiles/clear-cache'], $this->appMock->calls);
+        $this->assertGreaterThanOrEqual(1, count(array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add')));
     }
 
     /**
@@ -166,13 +152,9 @@ class ProfileRoutesTest extends TestCase
      */
     public function testAllProtectedRoutesRequireAuth(): void
     {
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('add')
-            ->willReturnSelf();
-
         $this->routes->register();
-
-        $this->assertTrue(true);
+        $addCalls = array_filter($this->appMock->calls, fn($call) => $call['method'] === 'add');
+        $this->assertGreaterThanOrEqual(8, count($addCalls));
     }
 
     /**
@@ -182,26 +164,16 @@ class ProfileRoutesTest extends TestCase
     {
         // Expecting: 1 POST (login) + 1 GET (all) + 1 GET (by id) + 1 POST (create)
         //           + 1 PATCH (update) + 1 DELETE + 1 PATCH (reset pwd) + 1 PATCH (update pwd)
-        $totalRoutes = 8;
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('post')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('patch')
-            ->willReturnSelf();
-
-        $this->appMock->expects($this->atLeastOnce())
-            ->method('delete')
-            ->willReturnSelf();
+        //           + 1 POST (clear cache)
+        $totalRoutes = 9;
 
         $this->routes->register();
 
-        $this->assertTrue(true);
+        $methods = array_column($this->appMock->calls, 'method');
+        $this->assertContains('post', $methods);
+        $this->assertContains('get', $methods);
+        $this->assertContains('patch', $methods);
+        $this->assertContains('delete', $methods);
+        $this->assertGreaterThanOrEqual(9, count(array_filter($this->appMock->calls, fn($call) => in_array($call['method'], ['get', 'post', 'patch', 'delete']))));
     }
 }
