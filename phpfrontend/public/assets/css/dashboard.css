@@ -1,0 +1,189 @@
+:root {
+  color-scheme: light;
+  --dashboard-bg: #f4f4f4;
+  --dashboard-border: #cbd7df;
+  --dashboard-ink: #00243d;
+  --dashboard-muted: #153f63;
+  --dashboard-icon: #0b4268;
+}
+
+[x-cloak] {
+  display: none !important;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--dashboard-bg);
+  color: var(--dashboard-ink);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 15px;
+}
+
+.dashboard-layout {
+  gap: 30px;
+}
+
+.dashboard-card {
+  color: var(--dashboard-ink);
+  border-color: var(--dashboard-border) !important;
+  box-shadow: 0 1px 2px rgba(13, 42, 62, 0.08) !important;
+}
+
+.dashboard-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.dashboard-card-title,
+.quick-action-title {
+  color: var(--dashboard-ink);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.dashboard-card-subtitle,
+.quick-action-description {
+  color: var(--dashboard-muted) !important;
+}
+
+.onsite-card {
+  min-height: 456px;
+}
+
+.onsite-card-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.onsite-empty-state {
+  min-height: 300px;
+}
+
+.activity-card {
+  min-height: 177px;
+}
+
+.activity-empty-state {
+  min-height: 70px;
+}
+
+.empty-state {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--dashboard-muted);
+  font-size: 18px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dashboard-ink);
+  font-size: 14px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.quick-action-card {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 152px;
+  padding: 27px 26px 22px;
+  color: var(--dashboard-ink);
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.quick-action-card:hover,
+.quick-action-card:focus {
+  color: var(--dashboard-ink);
+  border-color: #9eb5c5 !important;
+  box-shadow: 0 8px 20px rgba(13, 42, 62, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.quick-action-icon {
+  display: block;
+  color: var(--dashboard-icon);
+  font-size: 27px;
+  line-height: 1;
+}
+
+.quick-action-arrow {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  color: var(--dashboard-icon);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.quick-action-title {
+  margin: 16px 0 4px;
+}
+
+.avatar-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #e8f1ff;
+  color: #0d5f91;
+  font-weight: 700;
+}
+
+.min-width-0 {
+  min-width: 0;
+}
+
+@media (max-width: 991.98px) {
+  .quick-actions {
+    gap: 14px;
+    height: auto;
+  }
+
+  .quick-action-card {
+    flex: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .dashboard-layout {
+    gap: 18px;
+  }
+
+  .onsite-card {
+    min-height: 360px;
+  }
+}

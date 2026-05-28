@@ -28,6 +28,7 @@ function normalizeUser(user: User): UserProfileData {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 export default App  
   
 =======
@@ -122,3 +123,95 @@ export default App
   
 >>>>>>> dde662e74e581d98eca127855feca0b381a8c5f0
 >>>>>>> origin/Ntsapo/php-frontend/light-dark-mode-toggle
+=======
+function getStoredUser(): User | null {
+  const storedUser = localStorage.getItem('authUser');
+  return storedUser ? (JSON.parse(storedUser) as User) : null;
+}
+
+function StaffLayout({ user }: { user: UserProfileData }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  return (
+    <main className="h-screen overflow-hidden bg-[#F5F5F5] md:flex">
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+        />
+      )}
+
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={user} />
+
+      <div className="flex h-screen flex-1 flex-col overflow-hidden">
+        <Header onMenuClick={() => setIsSidebarOpen(true)} />
+
+        <div className="flex-1 overflow-y-auto">
+          <Outlet />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function App() {
+  const [currentUser, setCurrentUser] = useState<User | null>(() => getStoredUser());
+  const profileUser = currentUser ? normalizeUser(currentUser) : null;
+
+  const handleAuthenticated = (user: User) => {
+    setCurrentUser(user);
+  };
+
+  const requireRole = (role: User['role'], element: ReactElement) => {
+    if (!currentUser) {
+      return <Navigate to="/" replace />;
+    }
+
+    if (currentUser.role !== role) {
+      return <Navigate to={currentUser.role === 'admin' ? '/admin-dashboard' : '/staff-dashboard'} replace />;
+    }
+
+    return element;
+  };
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LoginPage onAuthenticated={handleAuthenticated} />} />
+
+        <Route
+          element={
+            profileUser
+              ? requireRole('staff', <StaffLayout user={profileUser} />)
+              : <Navigate to="/" replace />
+          }
+        >
+          <Route path="/staff-dashboard" element={<DashboardGrid user={profileUser!} />} />
+          <Route path="/scan-qr" element={<ScanQRPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/profile" element={<UserProfilePage user={profileUser!} />} />
+        </Route>
+
+        <Route path="/admin-dashboard" element={requireRole('admin', <AdminLayout />)}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="attendance" element={<AttendanceLogPage />} />
+          <Route path="qr-generator" element={<QRCodeGeneratorPage />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
+
+        <Route path="/admin" element={<Navigate to="/admin-dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+<<<<<<< HEAD
+export default App;
+=======
+export default App  
+  
+>>>>>>> dde662e74e581d98eca127855feca0b381a8c5f0
+>>>>>>> origin/Charlton/phpfrontend/bottomadmindashboard
