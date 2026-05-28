@@ -1,1 +1,27 @@
-/**app.css*/
+/**app.css*/body {
+    background: #f5f6fa;
+    font-family: Arial, sans-serif;
+}
+
+.app-shell {
+    display: flex;
+}
+
+.main-panel {
+    flex: 1;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.fake-qr {
+    width: 200px;
+    height: 200px;
+    background: #000;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    margin: auto;
+}
