@@ -1,0 +1,98 @@
+[
+  {
+    "name": "Shaheed Karlie",
+    "email": "shaheed@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP001",
+    "microsoftEmail": "shaheed@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Imaan Cummings",
+    "email": "imaan@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP002",
+    "microsoftEmail": "imaan@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Will Mxbanisi",
+    "email": "will@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP003",
+    "microsoftEmail": "will@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Joshua Jacobs",
+    "email": "joshua@clockit.com",
+    "password": "admin123",
+    "role": "admin",
+    "employeeId": "EMP004",
+    "microsoftEmail": "joshua@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Mujahid Ariefdien",
+    "email": "mujahid@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP005",
+    "microsoftEmail": "mujahid@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Nina Lewis",
+    "email": "nina@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP006",
+    "microsoftEmail": "nina@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Ebrahim Easton",
+    "email": "ebrahim@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP007",
+    "microsoftEmail": "ebrahim@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Taaraa Haron",
+    "email": "taaraa@clockit.com",
+    "password": "admin123",
+    "role": "admin",
+    "employeeId": "EMP008",
+    "microsoftEmail": "taaraa@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Natheefah Rayners",
+    "email": "natheefah@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP009",
+    "microsoftEmail": "natheefah@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Keanu Visagie",
+    "email": "keanu@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP010",
+    "microsoftEmail": "keanu@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Qaasim Davids",
+    "email": "qaasim@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP011",
+    "microsoftEmail": "qaasim@clockit.onmicrosoft.com"
+  },
+  {
+    "name": "Aiden Damon",
+    "email": "aiden@clockit.com",
+    "password": "staff123",
+    "role": "staff",
+    "employeeId": "EMP012",
+    "microsoftEmail": "aiden@clockit.onmicrosoft.com"
+  }
+]
