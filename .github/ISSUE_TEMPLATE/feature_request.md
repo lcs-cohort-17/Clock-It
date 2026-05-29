@@ -1,3 +1,9 @@
+---
+name: Feature Ticket
+description: Create a structured development ticket for the project.
+title: "feat: [Brief Description]"
+---
+
 ## 📄 Ticket Information
 * **Component:** [Frontend (`/frontend`) / Backend (`/backend`) / DevOps]
 * **Estimated Effort:** [Low / Medium / High]
@@ -43,5 +49,5 @@ The feature is complete when the following subtasks are built, tested, and fully
 ## 🏁 Definition of Done (DoD)
 1. All **[X] subtasks** listed above are fully checked off.
 2. Code passes local [TypeScript / language / linter] and compilation checks.
-3. Feature branch follows the `[name]/[component]/[ticket-title]` naming convention.
+3. Feature branch follows the `[name]/[team]/[ticket-title]` naming convention.
 4. A Pull Request is opened against `[target-branch]` using our official **🚀 PULL REQUEST DETAILS** layout template.
