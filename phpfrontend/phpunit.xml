@@ -1,0 +1,10 @@
+<phpunit bootstrap="vendor/autoload.php">
+<php>
+<ini name="session.save_path" value="C:\Users\Thina Maliwa\AppData\Local\Temp"/>
+</php>
+<testsuites>
+<testsuite name="Application Tests">
+<directory>tests</directory>
+</testsuite>
+</testsuites>
+</phpunit>
