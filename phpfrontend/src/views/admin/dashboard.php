@@ -25,3 +25,4 @@ $sheetsConnected = $repository->sheetsConnected();
     </div>
   </div>
 </div>
+/** Dashboard view */

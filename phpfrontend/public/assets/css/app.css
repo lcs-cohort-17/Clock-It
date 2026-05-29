@@ -3,6 +3,8 @@ body {
     background: #EEF3F8;
     font-family: Inter, Arial, sans-serif;
     color: #0F274C;
+    font-size: 16px;
+    line-height: 1.6;
 }
 
 .page-card {
@@ -13,7 +15,7 @@ body {
 }
 
 .main-title {
-    font-size: 40px;
+    font-size: 48px;
     font-weight: 800;
     color: #0B2A44;
     margin-bottom: 0;
@@ -21,24 +23,34 @@ body {
 
 .subtitle {
     color: #6C839B;
-    font-size: 16px;
+    font-size: 18px;
     margin-top: 8px;
 }
 
 .btn-main {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     background: #0B2A44;
     color: #ffffff;
-    border-radius: 14px;
-    padding: 12px 24px;
+    border: none;
+    border-radius: 16px;
+    padding: 14px 24px;
+    min-height: 52px;
+    min-width: 140px;
     font-weight: 600;
     letter-spacing: 0.01em;
-    transition: background 0.2s ease;
+    white-space: nowrap;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    font-size: 16px;
 }
 
 .btn-main:hover,
 .btn-main:focus {
     background: #082139;
     color: #ffffff;
+    transform: translateY(-1px);
 }
 
 .search-input {
@@ -70,7 +82,7 @@ body {
 .table-wrapper {
     background: transparent;
     border-radius: 24px;
-    overflow: hidden;
+    overflow-x: auto;
     margin-top: 8px;
 }
 
@@ -85,9 +97,9 @@ table thead {
 }
 
 table th {
-    padding: 20px 18px !important;
+    padding: 22px 18px !important;
     color: #4C6B86 !important;
-    font-size: 13px;
+    font-size: 14px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     border-bottom: none !important;
@@ -98,18 +110,19 @@ table td {
     color: #0F274C;
     vertical-align: middle;
     border-top: 1px solid #EEF1F5;
+    font-size: 15px;
 }
 
 .avatar {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: #0B2A44;
     color: #ffffff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -154,26 +167,42 @@ table td {
 }
 
 .btn-icon {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
     padding: 0;
-    border-radius: 14px;
+    margin: 0;
+    border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    color: #223248;
-    border: 1px solid #E6EDEF;
+    font-size: 18px;
+    transition: transform 0.12s ease;
 }
 
-.btn-icon:hover,
-.btn-icon:focus {
-    background: #F7FAFB;
-    color: #0B2A44;
+/* Normalize icon vertical alignment across different glyphs */
+.btn-icon i {
+    display: inline-block;
+    vertical-align: middle;
+    transform: translateY(-0.5px);
+}
+
+/* Slight specific nudge for the pencil icon which renders visually lower */
+.btn-icon i.bi-pencil,
+.btn-icon i.bi-pencil-fill {
+    /* removed special nudge */
 }
 
 .btn-light {
-    background: #ffffff !important;
+    background: transparent !important;
+    border: none !important;
+    color: #223248;
+}
+
+.btn-light:hover,
+.btn-light:focus {
+    background: rgba(11,42,68,0.04);
+    color: #0B2A44;
 }
 
 .pagination-info {
@@ -186,6 +215,17 @@ table td {
     border-color: #D8E2EA;
     color: #52637A;
     background: #ffffff;
+}
+
+.btn-outline-danger {
+    background: transparent;
+    border-color: rgba(200,0,0,0.14);
+    color: #c82333;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    background: rgba(200,0,0,0.04);
 }
 
 .btn-outline-secondary:hover,
@@ -242,4 +282,74 @@ table td {
 .btn-close:focus {
     color: #0B2A44;
 }
-/**app.css*/
+
+@media (max-width: 768px) {
+    .page-card {
+        padding: 24px 18px;
+        border-radius: 20px;
+    }
+
+    .main-title {
+        font-size: 32px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .search-box {
+        max-width: 100%;
+    }
+
+    .search-input {
+        height: 48px;
+        border-radius: 14px;
+    }
+
+    table th,
+    table td {
+        padding: 14px 12px !important;
+    }
+
+    table th {
+        font-size: 11px;
+    }
+
+    table td {
+        font-size: 14px;
+    }
+
+    .avatar {
+        width: 38px;
+        height: 38px;
+        font-size: 12px;
+    }
+
+    .badge-admin,
+    .badge-staff,
+    .status {
+        padding: 6px 14px;
+    }
+
+    .btn-main {
+        width: 100%;
+        padding: 12px 18px;
+    }
+
+    .modal-box,
+    .password-box {
+        max-width: 92%;
+        padding: 24px;
+    }
+
+    /* mobile: no special icon overrides */
+
+    .table-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(11, 42, 68, 0.15);
+        border-radius: 999px;
+    }
+}

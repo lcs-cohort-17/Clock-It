@@ -1,7 +1,5 @@
-```php
-<?php
-session_start();
-
+<?php ob_start(); ?>
+<?php 
 /* -----------------------------
    INITIAL USERS
 ------------------------------*/
@@ -457,11 +455,12 @@ $pageData = array_slice(
 
                     </td>
 
+
                     <td class="text-end">
 
                         <!-- EDIT -->
 
-                        <button class="btn btn-sm btn-icon btn-light"
+                        <button class="btn btn-sm btn-light"
 
                                 @click="
                                 showEditModal = true;
@@ -471,7 +470,7 @@ $pageData = array_slice(
                                 editRole = '<?= $u['role'] ?>';
                                 ">
 
-                            ✏️
+                            <i class="bi bi-pencil" aria-hidden="true"></i>
 
                         </button>
 
@@ -487,7 +486,7 @@ $pageData = array_slice(
                             <button name="reset_password"
                                     class="btn btn-sm btn-light">
 
-                                🔑
+                                <i class="bi bi-key" aria-hidden="true"></i>
 
                             </button>
 
@@ -503,9 +502,9 @@ $pageData = array_slice(
                                    value="<?= $u['id'] ?>">
 
                             <button name="toggle_status"
-                                    class="btn btn-sm btn-danger">
+                                    class="btn btn-sm btn-outline-danger">
 
-                                ⛔
+                                <i class="bi bi-slash-circle" aria-hidden="true"></i>
 
                             </button>
 
@@ -774,4 +773,6 @@ $pageData = array_slice(
     <?php endif; ?>
 
     </div>
-```
+
+
+<?php $content = ob_get_clean(); require __DIR__ . '/../layouts/app.php'; ?>
