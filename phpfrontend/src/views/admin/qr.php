@@ -1,11 +1,10 @@
 <?php
 /**
- * Admin Dashboard Page
- * Main dashboard with overview and stats
+ * QR Code Generator Page
+ * Admin page for creating and managing QR codes
  */
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-// Verify admin access
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ' . route_url('/login'));
     exit;
@@ -16,25 +15,35 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Clock-It</title>
+    <title>QR Code Generator - Clock-It</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
 </head>
 <body x-data="{ 
-    sidebarOpen: true, 
-    stats: {
-        totalEmployees: 45,
-        presentToday: 38,
-        absentToday: 7,
-        totalScans: 342
+    sidebarOpen: true,
+    showCreateModal: false,
+    qrCodes: [
+        { id: 1, label: 'Main Entrance', type: 'clock-in', location: 'Front Door', status: 'active', created: '2026-01-15' },
+        { id: 2, label: 'Office Exit', type: 'clock-out', location: 'Side Entrance', status: 'active', created: '2026-01-15' }
+    ],
+    newQR: {
+        label: '',
+        type: 'clock-in',
+        location: '',
+        expiresIn: ''
     },
-    recentEvents: []
+    generateQR() {
+        // Code generation logic
+        alert('QR Code generated: ' + this.newQR.label);
+        this.showCreateModal = false;
+    }
 }" @init="window.themeManager.initTheme()">
     
     <div style="display: flex;">
-        <!-- Admin Sidebar -->
+        <!-- Sidebar -->
         <aside class="app-sidebar" :style="{ width: sidebarOpen ? '16rem' : '0' }">
             <div>
                 <h1>Clock-It</h1>
@@ -42,7 +51,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             </div>
 
             <nav class="sidebar-nav">
-                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link active">
+                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                     <span>Dashboard</span>
                 </a>
@@ -57,7 +66,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
                     <span>Attendance Log</span>
                 </a>
 
-                <a href="<?= route_url('/admin-dashboard/qr-generator') ?>" class="sidebar-nav-link">
+                <a href="<?= route_url('/admin-dashboard/qr-generator') ?>" class="sidebar-nav-link active">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h1v4h-1v-4zm-4 4h4v1h-4v-1zm1-3h1v2h-1v-2z"/></svg>
                     <span>QR Generator</span>
                 </a>
@@ -82,66 +91,48 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
                     <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-outline-secondary" type="button">
                         <span>☰</span>
                     </button>
-                    <h2 style="margin: 0;">Admin Dashboard</h2>
+                    <h2 style="margin: 0;">QR Code Generator</h2>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1.5rem;">
                     <?php include __DIR__ . '/../partials/theme-toggle.php'; ?>
-                    <div style="font-size: 0.875rem; color: var(--slate-600);">
-                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?>
-                    </div>
                 </div>
             </header>
 
-            <!-- Dashboard Content -->
+            <!-- Page Content -->
             <main class="dashboard-section" style="padding: 2rem;">
                 <div class="container-fluid">
-                    <!-- Stats Cards -->
-                    <div class="row mb-4">
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Employees</p>
-                                    <h3 class="card-title" x-text="stats.totalEmployees" style="color: var(--primary-navy);"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Present Today</p>
-                                    <h3 class="card-title" x-text="stats.presentToday" style="color: var(--accent-success);"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Absent Today</p>
-                                    <h3 class="card-title" x-text="stats.absentToday" style="color: #dc3545;"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Scans</p>
-                                    <h3 class="card-title" x-text="stats.totalScans" style="color: var(--secondary-blue);"></h3>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4>Active QR Codes</h4>
+                        <button class="btn btn-success" @click="showCreateModal = true" type="button">
+                            + Create QR Code
+                        </button>
                     </div>
 
-                    <!-- Recent Activity -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="mb-0">Recent Activity</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted">Loading recent events...</p>
-                        </div>
+                    <!-- QR Codes Grid -->
+                    <div class="row">
+                        <template x-for="qr in qrCodes" :key="qr.id">
+                            <div class="col-md-6 mb-4">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title" x-text="qr.label"></h5>
+                                        <p class="text-muted small mb-2">
+                                            <strong>Type:</strong> <span x-text="qr.type"></span>
+                                        </p>
+                                        <p class="text-muted small mb-2">
+                                            <strong>Location:</strong> <span x-text="qr.location"></span>
+                                        </p>
+                                        <p class="text-muted small mb-3">
+                                            <strong>Created:</strong> <span x-text="qr.created"></span>
+                                        </p>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-secondary">📥 Download</button>
+                                            <button class="btn btn-sm btn-outline-secondary">📋 Duplicate</button>
+                                            <button class="btn btn-sm btn-outline-danger">Revoke</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </main>

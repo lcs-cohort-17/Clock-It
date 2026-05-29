@@ -1,11 +1,10 @@
 <?php
 /**
- * Admin Dashboard Page
- * Main dashboard with overview and stats
+ * User Management Page
+ * Admin page for managing users and roles
  */
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-// Verify admin access
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ' . route_url('/login'));
     exit;
@@ -16,25 +15,37 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Clock-It</title>
+    <title>User Management - Clock-It</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
 </head>
 <body x-data="{ 
-    sidebarOpen: true, 
-    stats: {
-        totalEmployees: 45,
-        presentToday: 38,
-        absentToday: 7,
-        totalScans: 342
+    sidebarOpen: true,
+    searchQuery: '',
+    users: [
+        { id: 1, name: 'John Doe', email: 'john@example.com', role: 'staff', status: 'active' },
+        { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'staff', status: 'active' },
+        { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'admin', status: 'active' }
+    ],
+    get filteredUsers() {
+        return this.users.filter(user => 
+            user.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
     },
-    recentEvents: []
+    showAddModal: false,
+    newUser: {
+        name: '',
+        email: '',
+        role: 'staff',
+        employeeId: ''
+    }
 }" @init="window.themeManager.initTheme()">
     
     <div style="display: flex;">
-        <!-- Admin Sidebar -->
+        <!-- Sidebar -->
         <aside class="app-sidebar" :style="{ width: sidebarOpen ? '16rem' : '0' }">
             <div>
                 <h1>Clock-It</h1>
@@ -42,12 +53,12 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             </div>
 
             <nav class="sidebar-nav">
-                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link active">
+                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                     <span>Dashboard</span>
                 </a>
 
-                <a href="<?= route_url('/admin-dashboard/users') ?>" class="sidebar-nav-link">
+                <a href="<?= route_url('/admin-dashboard/users') ?>" class="sidebar-nav-link active">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5h-12v-2c0-1.5 3.5-2.5 6-2.5s6 1 6 2.5v2z"/></svg>
                     <span>User Management</span>
                 </a>
@@ -82,66 +93,65 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
                     <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-outline-secondary" type="button">
                         <span>☰</span>
                     </button>
-                    <h2 style="margin: 0;">Admin Dashboard</h2>
+                    <h2 style="margin: 0;">User Management</h2>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1.5rem;">
                     <?php include __DIR__ . '/../partials/theme-toggle.php'; ?>
-                    <div style="font-size: 0.875rem; color: var(--slate-600);">
-                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?>
-                    </div>
                 </div>
             </header>
 
-            <!-- Dashboard Content -->
+            <!-- Page Content -->
             <main class="dashboard-section" style="padding: 2rem;">
                 <div class="container-fluid">
-                    <!-- Stats Cards -->
-                    <div class="row mb-4">
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Employees</p>
-                                    <h3 class="card-title" x-text="stats.totalEmployees" style="color: var(--primary-navy);"></h3>
-                                </div>
-                            </div>
+                    <!-- Toolbar -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div style="flex: 1; margin-right: 1rem;">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="Search users by name or email..."
+                                x-model="searchQuery"
+                            >
                         </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Present Today</p>
-                                    <h3 class="card-title" x-text="stats.presentToday" style="color: var(--accent-success);"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Absent Today</p>
-                                    <h3 class="card-title" x-text="stats.absentToday" style="color: #dc3545;"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Scans</p>
-                                    <h3 class="card-title" x-text="stats.totalScans" style="color: var(--secondary-blue);"></h3>
-                                </div>
-                            </div>
-                        </div>
+                        <button class="btn btn-primary" @click="showAddModal = true" type="button">
+                            + Add User
+                        </button>
                     </div>
 
-                    <!-- Recent Activity -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="mb-0">Recent Activity</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted">Loading recent events...</p>
-                        </div>
+                    <!-- Users Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover border">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="user in filteredUsers" :key="user.id">
+                                    <tr>
+                                        <td x-text="user.name"></td>
+                                        <td x-text="user.email"></td>
+                                        <td>
+                                            <span class="badge" :class="user.role === 'admin' ? 'bg-danger' : 'bg-secondary'" x-text="user.role"></span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success" x-text="user.status"></span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="filteredUsers.length === 0">
+                                    <td colspan="5" class="text-center text-muted py-4">No users found</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </main>

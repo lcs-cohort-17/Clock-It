@@ -1,11 +1,10 @@
 <?php
 /**
- * Admin Dashboard Page
- * Main dashboard with overview and stats
+ * Attendance Log Page
+ * Admin page for viewing and managing attendance records
  */
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-// Verify admin access
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ' . route_url('/login'));
     exit;
@@ -16,25 +15,33 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Clock-It</title>
+    <title>Attendance Log - Clock-It</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
 </head>
 <body x-data="{ 
-    sidebarOpen: true, 
-    stats: {
-        totalEmployees: 45,
-        presentToday: 38,
-        absentToday: 7,
-        totalScans: 342
-    },
-    recentEvents: []
+    sidebarOpen: true,
+    selectedTab: 'all',
+    searchQuery: '',
+    sortField: 'date',
+    sortOrder: 'desc',
+    attendanceRecords: [
+        { id: 1, employee: 'John Doe', type: 'clock-in', time: '2026-05-29 09:00:00', date: '2026-05-29' },
+        { id: 2, employee: 'Jane Smith', type: 'clock-in', time: '2026-05-29 09:15:00', date: '2026-05-29' },
+        { id: 3, employee: 'Bob Johnson', type: 'clock-out', time: '2026-05-29 17:30:00', date: '2026-05-29' }
+    ],
+    get filteredRecords() {
+        return this.attendanceRecords.filter(record => 
+            record.employee.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+            record.type.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+    }
 }" @init="window.themeManager.initTheme()">
     
     <div style="display: flex;">
-        <!-- Admin Sidebar -->
+        <!-- Sidebar -->
         <aside class="app-sidebar" :style="{ width: sidebarOpen ? '16rem' : '0' }">
             <div>
                 <h1>Clock-It</h1>
@@ -42,7 +49,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             </div>
 
             <nav class="sidebar-nav">
-                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link active">
+                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                     <span>Dashboard</span>
                 </a>
@@ -52,7 +59,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
                     <span>User Management</span>
                 </a>
 
-                <a href="<?= route_url('/admin-dashboard/attendance') ?>" class="sidebar-nav-link">
+                <a href="<?= route_url('/admin-dashboard/attendance') ?>" class="sidebar-nav-link active">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.46.37.84-1.39-.46-.37L12 13V8h-2z"/></svg>
                     <span>Attendance Log</span>
                 </a>
@@ -82,66 +89,59 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
                     <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-outline-secondary" type="button">
                         <span>☰</span>
                     </button>
-                    <h2 style="margin: 0;">Admin Dashboard</h2>
+                    <h2 style="margin: 0;">Attendance Log</h2>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1.5rem;">
                     <?php include __DIR__ . '/../partials/theme-toggle.php'; ?>
-                    <div style="font-size: 0.875rem; color: var(--slate-600);">
-                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?>
-                    </div>
                 </div>
             </header>
 
-            <!-- Dashboard Content -->
+            <!-- Page Content -->
             <main class="dashboard-section" style="padding: 2rem;">
                 <div class="container-fluid">
-                    <!-- Stats Cards -->
+                    <!-- Filters -->
                     <div class="row mb-4">
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Employees</p>
-                                    <h3 class="card-title" x-text="stats.totalEmployees" style="color: var(--primary-navy);"></h3>
-                                </div>
-                            </div>
+                        <div class="col-md-8">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="Search by employee or type..."
+                                x-model="searchQuery"
+                            >
                         </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Present Today</p>
-                                    <h3 class="card-title" x-text="stats.presentToday" style="color: var(--accent-success);"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Absent Today</p>
-                                    <h3 class="card-title" x-text="stats.absentToday" style="color: #dc3545;"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Scans</p>
-                                    <h3 class="card-title" x-text="stats.totalScans" style="color: var(--secondary-blue);"></h3>
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary w-100">
+                                📥 Export CSV
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Recent Activity -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="mb-0">Recent Activity</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted">Loading recent events...</p>
-                        </div>
+                    <!-- Records Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover border">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Type</th>
+                                    <th>Date & Time</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="record in filteredRecords" :key="record.id">
+                                    <tr>
+                                        <td x-text="record.employee"></td>
+                                        <td>
+                                            <span class="badge" :class="record.type === 'clock-in' ? 'bg-success' : 'bg-warning'" x-text="record.type.replace('-', ' ').toUpperCase()"></span>
+                                        </td>
+                                        <td x-text="new Date(record.time).toLocaleString()"></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-secondary">View</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </main>
