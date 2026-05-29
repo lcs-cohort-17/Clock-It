@@ -1,65 +1,35 @@
-```php
-<!DOCTYPE html>
-<html lang="en" 
-      x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }" 
-      :class="{ 'dark': darkMode }">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clock-It Staff Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
-</head> this is exactly what is in the staff-dashboard.php file
-<body class="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+<div :class="darkMode ? 'bg-[#0f172a] border-slate-800/60' : 'bg-white border-slate-200'" class="flex items-center justify-between w-full px-6 py-4 border-b h-[73px] flex-shrink-0 transition-colors duration-200">
+    <div></div>
 
-    <?php include __DIR__ . '/../partials/header.php'; ?>
-
-    <main class="max-w-7xl mx-auto p-6 md:p-8">
+    <div class="flex items-center space-x-4">
         
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-200 dark:border-slate-700 pb-6">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Staff Dashboard</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your attendance overview.</p>
-            </div>
-       </div>
-        
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mt-8">
+        <div :class="darkMode ? 'bg-[#1e293b]/60 border-slate-800' : 'bg-slate-100 border-slate-200'" class="flex items-center rounded-full px-3 py-1.5 border space-x-3 h-9 transition-colors duration-200">
             
-            <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 relative overflow-hidden transition-all">
-                <div class="flex items-center justify-between">
-                    <div class="p-3 bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-gray-300 rounded-lg">
-                        <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><circle cx="12" cy="11" r="3"></circle></svg>
-                    </div>
-                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-full">
-                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Live
-                    </span>
-                </div>
-                <div class="text-5xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">1</div>
-                <p class="font-medium text-gray-900 dark:text-gray-200 mt-2">Currently onsite</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Live count, updates within seconds</p>
-            </div>
+            <button 
+                @click="darkMode = !darkMode" 
+                type="button" 
+                class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="darkMode ? 'bg-slate-700' : 'bg-amber-400'">
+                
+                <span 
+                    class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out mt-0.5"
+                    :class="darkMode ? 'translate-x-[18px]' : 'translate-x-0.5'">
+                </span>
+            </button>
 
-            <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 relative overflow-hidden transition-all">
-                <div class="flex items-center justify-between">
-                    <div class="p-3 bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-gray-300 rounded-lg">
-                        <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 014-4 4 4 0 014 4 4 4 0 01-4 4 4 4 0 01-4-4z"></path></svg>
-                    </div>
-                </div>
-                <div class="text-5xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">2</div>
-                <p class="font-medium text-gray-900 dark:text-gray-200 mt-2">Total clocked in today</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tuesday</p>
-            </div>
-            
+            <svg :class="darkMode ? 'text-amber-500' : 'text-slate-400'" class="h-4 w-4 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M6.343 6.343l.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
         </div>
-    </main>
 
-</body>
-</html>
-```
+        <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center space-x-1.5 px-3 py-1 text-xs font-semibold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 rounded-full border border-emerald-500/20 uppercase tracking-wide">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
+                <span>Online</span>
+            </span>
+            <span :class="darkMode ? 'text-slate-300 bg-slate-800 border-slate-700' : 'text-slate-700 bg-slate-100 border-slate-200'" class="px-3 py-1 text-xs font-semibold rounded-full border uppercase tracking-wide transition-colors duration-200">
+                <?= isset($isAdminDashboard) && $isAdminDashboard ? 'Admin' : 'Staff' ?>
+            </span>
+        </div>
+    </div>
+</div>
