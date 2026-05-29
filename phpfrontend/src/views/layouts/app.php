@@ -9,7 +9,10 @@
     <script src="/assets/js/app.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body>
-    <?= $content ?? '' ?>
+<body class="min-vh-100 d-flex flex-column">
+    <div class="flex-grow-1">
+        <?= $content ?? '' ?>
+    </div>
+    <?php require __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>
