@@ -1,2 +1,6 @@
 .env
 node_modules/
+vendor/
+.phpunit.result.cache
+phpunit.xml
+.phpunit.cache

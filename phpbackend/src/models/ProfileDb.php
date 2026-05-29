@@ -1,5 +1,4 @@
 <?php
-// src/models/ProfileDb.php
 
 namespace App\Models;
 
@@ -15,17 +14,88 @@ class ProfileDb
         if ($db) {
             $this->db = $db;
         } else {
-            // Default connection for production
+            $config = $this->getDatabaseConfig();
+
             $this->db = new PDO(
-                "mysql:host=localhost;port=3307;dbname=clockit_db;charset=utf8mb4",
-                "root",
-                "",
+                sprintf(
+                    'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+                    $config['host'],
+                    $config['port'],
+                    $config['name'],
+                    $config['charset']
+                ),
+                $config['user'],
+                $config['pass'],
                 [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
                 ]
             );
         }
+    }
+
+    private function getDatabaseConfig(): array
+    {
+        $this->loadEnvFile(dirname(__DIR__, 2) . '/.env');
+
+        return [
+            'host' => $this->requiredEnv('DB_HOST'),
+            'port' => $this->env('DB_PORT', '3306'),
+            'name' => $this->requiredEnv('DB_NAME'),
+            'user' => $this->requiredEnv('DB_USER'),
+            'pass' => $this->env('DB_PASS', ''),
+            'charset' => $this->env('DB_CHARSET', 'utf8mb4'),
+        ];
+    }
+
+    private function loadEnvFile(string $path): void
+    {
+        if (!is_readable($path)) {
+            return;
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines === false) {
+            return;
+        }
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                continue;
+            }
+
+            [$key, $value] = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+
+            if ($key === '' || getenv($key) !== false) {
+                continue;
+            }
+
+            putenv($key . '=' . $value);
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
+    }
+
+    private function env(string $key, string $default = ''): string
+    {
+        $value = getenv($key);
+
+        return $value === false ? $default : $value;
+    }
+
+    private function requiredEnv(string $key): string
+    {
+        $value = $this->env($key);
+
+        if ($value === '') {
+            throw new PDOException("Missing required environment variable: {$key}");
+        }
+
+        return $value;
     }
     
     // HELPER FUNCTIONS
@@ -109,12 +179,6 @@ class ProfileDb
         // Generate plain text password and hash it
         $plainPassword = $this->generatePassword();
         $hashedPassword = password_hash($plainPassword, PASSWORD_BCRYPT);
-        
-        // Log both passwords (like the console.log in TypeScript)
-        error_log("─────────────────────────────");
-        error_log("Plain text password: " . $plainPassword);
-        error_log("Hashed password: " . $hashedPassword);
-        error_log("─────────────────────────────");
         
         try {
             $stmt = $this->db->prepare(
@@ -243,9 +307,10 @@ class ProfileDb
     {
         try {
             $newPassword = $this->generatePassword();
+            $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
             $stmt = $this->db->prepare("UPDATE profiles SET password = :password WHERE employee_id = :employee_id");
-            $stmt->execute(['password' => $newPassword, 'employee_id' => $employee_id]);
+            $stmt->execute(['password' => $hashedPassword, 'employee_id' => $employee_id]);
             
             if ($stmt->rowCount() === 0) {
                 return ['success' => false, 'error' => 'Profile not found'];
