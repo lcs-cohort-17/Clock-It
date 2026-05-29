@@ -198,6 +198,7 @@ bun.lockb
 *.backup-*
 *.save
 *.orig
+<<<<<<< HEAD
 *~
 
 # ============================================
@@ -216,3 +217,6 @@ vendor/bin/
 /storage/logs/
 /storage/framework/views/
 /bootstrap/cache/
+=======
+*~
+>>>>>>> 9716a91d75353481a26f2d4d69e6afb827275dd7
