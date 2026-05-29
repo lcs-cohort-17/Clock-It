@@ -5,6 +5,7 @@
         "This file is @generated automatically"
     ],
     "content-hash": "1f26691c194b6a8e36bf9715fdbe141c",
+    "content-hash": "08c4daa7f2c106bb10f44913e5e0d413",
     "packages": [
         {
             "name": "graham-campbell/result-type",
