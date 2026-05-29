@@ -1,7 +1,5 @@
-```php
-<?php
-session_start();
-
+<?php ob_start(); ?>
+<?php 
 /* -----------------------------
    INITIAL USERS
 ------------------------------*/
@@ -775,4 +773,6 @@ $pageData = array_slice(
     <?php endif; ?>
 
     </div>
-```
+
+
+<?php $content = ob_get_clean(); require __DIR__ . '/../layouts/app.php'; ?>
