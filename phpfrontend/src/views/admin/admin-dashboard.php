@@ -74,7 +74,7 @@
                     <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 3v4M21 3H16"></path></svg>
                     Sync now
                 </button>
-                <a href="/staff-dashboard" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-sky-800 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-600 text-white rounded-lg shadow-sm transition-colors duration-150">
+                <a href="<?= e($basePath) ?>/staff-dashboard" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-sky-800 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-600 text-white rounded-lg shadow-sm transition-colors duration-150">
                     <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     View Staff Dashboard
                 </a>

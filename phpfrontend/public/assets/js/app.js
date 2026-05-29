@@ -18,6 +18,7 @@ function userManager() {
     }
 
 }
+
 /**app.js */
 function openSidebar() {
   document.getElementById('sidebar')?.classList.add('open');
@@ -50,6 +51,8 @@ function downloadCsv() {
 
 document.addEventListener('alpine:init', () => {
   window.attendanceDashboard = function attendanceDashboard() {
+    const basePath = window.clockItBasePath || '';
+
     return {
       onsiteStaff: [],
       recentActivity: [],
@@ -73,7 +76,7 @@ document.addEventListener('alpine:init', () => {
         try {
           this.loading = true;
           this.error = null;
-          const response = await fetch('/api/onsite.php', { headers: { Accept: 'application/json' } });
+          const response = await fetch(`${basePath}/api/onsite.php`, { headers: { Accept: 'application/json' } });
 
           if (!response.ok) {
             throw new Error('Unable to fetch onsite staff.');
@@ -91,7 +94,7 @@ document.addEventListener('alpine:init', () => {
         try {
           this.loading = true;
           this.error = null;
-          const response = await fetch('/api/activity.php', { headers: { Accept: 'application/json' } });
+          const response = await fetch(`${basePath}/api/activity.php`, { headers: { Accept: 'application/json' } });
 
           if (!response.ok) {
             throw new Error('Unable to fetch recent activity.');
