@@ -1,7 +1,4 @@
 <?php
-// FRONTEND-ONLY ROUTER
-// No Composer, no vendor folder, no backend models/controllers, no PHPUnit needed.
-// This file only provides sample data so the PHP pages can display in the browser.
 
 declare(strict_types=1);
 
@@ -44,7 +41,9 @@ function view(string $view, array $data = []): void
     global $basePath;
 
     $data = ['basePath' => $basePath] + $data;
+
     extract($data);
+
     require __DIR__ . '/../src/views/' . $view . '.php';
 }
 
@@ -53,10 +52,13 @@ function layout_view(string $view, array $data = []): void
     global $basePath;
 
     $data = ['basePath' => $basePath] + $data;
+
     extract($data);
 
     ob_start();
+
     require __DIR__ . '/../src/views/' . $view . '.php';
+
     $content = ob_get_clean();
 
     require __DIR__ . '/../src/views/layouts/app.php';
@@ -67,64 +69,38 @@ function redirect_to(string $path): never
     global $basePath;
 
     header('Location: ' . $basePath . $path);
+
     exit;
 }
 
 switch ($path) {
+
     case '/':
         redirect_to('/admin-dashboard');
-        
+        break;
+
     case '/admin-dashboard':
         $title = 'Admin Dashboard | Clock-It';
         layout_view('admin/dashboard', ['title' => $title]);
         break;
-        
+
     case '/staff-dashboard':
         $title = 'Staff Dashboard | Clock-It';
         view('staff/staff-dashboard');
         break;
-        
+
     case '/testing':
         $title = 'Testing | Clock-It';
         view('admin/testing');
         break;
-        
+
+    case '/usermanagement':
+        $title = 'User Management | Clock-It';
+        view('admin/usermanagement', ['title' => $title]);
+        break;
+
     default:
         http_response_code(404);
         view('404');
-}
-
-declare(strict_types=1);
-
-session_start();
-
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
-function view(string $view, array $data = []): void
-{
-    extract($data);
-
-    require __DIR__ . '/../src/views/' . $view . '.php';
-}
-
-function redirect_to(string $path): never
-{
-    header('Location: ' . $path);
-    exit;
-}
-
-
-switch ($path) {
-
-    case '/':
-        $title = 'User Management | Clock-It';
-        view ('admin/usermanagement', compact ('title'));
-        break;
-        
-    default:
-        http_response_code(404);
-        $title = 'Not Found | Clock-It';
-        view('404', compact('title'));
         break;
 }

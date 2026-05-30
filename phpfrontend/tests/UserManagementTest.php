@@ -2,262 +2,349 @@
 
 use PHPUnit\Framework\TestCase;
 
-class ThemeToggleTest extends TestCase
+class UserManagementTest extends TestCase
 {
-    private string $dashboardPath;
-    private string $headerPath;
+    private string $viewPath;
 
     protected function setUp(): void
     {
-        $this->dashboardPath =
-            __DIR__ . '/../src/views/staff/staff-dashboard.php';
-
-        $this->headerPath =
-            __DIR__ . '/../src/views/partials/header.php';
+        $this->viewPath =
+            __DIR__ . '/../src/views/admin/usermanagement.php';
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | FILES EXIST
-    |--------------------------------------------------------------------------
-    */
-
-    public function testDashboardFileExists()
+    public function testUserManagementPageExists()
     {
-        $this->assertFileExists($this->dashboardPath);
+        $this->assertFileExists($this->viewPath);
     }
 
-    public function testHeaderFileExists()
+    public function testPageContainsUserManagementTitle()
     {
-        $this->assertFileExists($this->headerPath);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | GET FILE CONTENTS
-    |--------------------------------------------------------------------------
-    */
-
-    private function getCombinedContent(): string
-    {
-        return
-            file_get_contents($this->dashboardPath)
-            .
-            file_get_contents($this->headerPath);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | THEME TOGGLE EXISTS
-    |--------------------------------------------------------------------------
-    */
-
-    public function testThemeToggleExists()
-    {
-        $content = $this->getCombinedContent();
-
-        $this->assertTrue(
-            str_contains($content, 'darkMode') ||
-            str_contains($content, 'theme') ||
-            str_contains($content, 'toggle')
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CLICK FUNCTIONALITY EXISTS
-    |--------------------------------------------------------------------------
-    */
-
-    public function testToggleHasClickFunctionality()
-    {
-        $content = $this->getCombinedContent();
-
-        $this->assertTrue(
-            str_contains($content, '@click') ||
-            str_contains($content, 'onclick') ||
-            str_contains($content, 'addEventListener')
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | DARK MODE CLASSES EXIST
-    |--------------------------------------------------------------------------
-    */
-
-    public function testDarkModeClassesExist()
-    {
-        $content = $this->getCombinedContent();
-
-        $this->assertTrue(
-            str_contains($content, 'dark:bg') ||
-            str_contains($content, 'dark:text') ||
-            str_contains($content, ':class')
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | LOCAL STORAGE EXISTS
-    |--------------------------------------------------------------------------
-    */
-
-    public function testLocalStorageExists()
-    {
-        $content = $this->getCombinedContent();
+        $content = file_get_contents($this->viewPath);
 
         $this->assertStringContainsString(
-            'localStorage',
+            'User Management',
             $content
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SYSTEM PREFERENCE SUPPORT
-    |--------------------------------------------------------------------------
-    */
-
-    public function testSystemPreferenceSupportExists()
+    public function testSubtitleExists()
     {
-        $content = $this->getCombinedContent();
+        $content = file_get_contents($this->viewPath);
 
-        $this->assertTrue(
-            str_contains($content, 'prefers-color-scheme') ||
-
-            str_contains($content, 'matchMedia')
+        $this->assertStringContainsString(
+            'self-registration is disabled',
+            strtolower($content)
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SUN / MOON ICONS EXIST
-    |--------------------------------------------------------------------------
-    */
-
-    public function testSunOrMoonIconsExist()
+    public function testAddUserButtonExists()
     {
-        $content = $this->getCombinedContent();
+        $content = file_get_contents($this->viewPath);
 
-        $this->assertTrue(
-            str_contains($content, 'sun') ||
-            str_contains($content, 'moon') ||
-            str_contains($content, '☀') ||
-            str_contains($content, '🌙')
+        $this->assertStringContainsString(
+            'Add User',
+            $content
+        );
+
+        $this->assertStringContainsString(
+            'showAddModal',
+            $content
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | BODY HAS DARK MODE CLASSES
-    |--------------------------------------------------------------------------
-    */
-
-    public function testBodyContainsDarkModeClasses()
+    public function testAddUserFormFieldsExist()
     {
-        $content = file_get_contents($this->dashboardPath);
+        $content = file_get_contents($this->viewPath);
 
-        $this->assertTrue(
-            str_contains($content, 'dark:bg') &&
-            str_contains($content, 'dark:text')
+        $this->assertStringContainsString(
+            'name="name"',
+            $content
+        );
+
+        $this->assertStringContainsString(
+            'name="email"',
+            $content
+        );
+
+        $this->assertStringContainsString(
+            'name="role"',
+            $content
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RESPONSIVE CLASSES EXIST
-    |--------------------------------------------------------------------------
-    */
-
-    public function testResponsiveClassesExist()
+    public function testCreateFunctionalityExists()
     {
-        $content = $this->getCombinedContent();
+        $content = file_get_contents($this->viewPath);
 
-        $this->assertTrue(
-            str_contains($content, 'sm:') ||
-            str_contains($content, 'md:') ||
-            str_contains($content, 'lg:')
+        $this->assertStringContainsString(
+            'add_user',
+            $content
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GRID RESPONSIVENESS EXISTS
-    |--------------------------------------------------------------------------
-    */
-
-    public function testResponsiveGridExists()
+    public function testEmployeeIdGenerationExists()
     {
-        $content = file_get_contents($this->dashboardPath);
+        $content = file_get_contents($this->viewPath);
 
-        $this->assertTrue(
-            str_contains($content, 'grid-cols-1') &&
-            str_contains($content, 'sm:grid-cols-2')
+        $this->assertStringContainsString(
+            'generateEmployeeId',
+            $content
+        );
+
+        $this->assertStringContainsString(
+            'A-',
+            $content
+        );
+
+        $this->assertStringContainsString(
+            'S-',
+            $content
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | ALPINE JS LOADED
-    |--------------------------------------------------------------------------
-    */
-
-    public function testAlpineJsLoaded()
+    public function testRandomPasswordGenerationExists()
     {
-        $content = file_get_contents($this->dashboardPath);
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertStringContainsString(
+            'generatePassword',
+            $content
+        );
+    }
+
+    public function testPasswordModalExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertStringContainsString(
+            'Temporary Password',
+            $content
+        );
+    }
+
+    public function testUsersTableExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertStringContainsString(
+            '<table',
+            $content
+        );
+    }
+
+    public function testTableColumnsExist()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $columns = [
+            'Name',
+            'Email',
+            'Employee ID',
+            'Role',
+            'Status',
+            'Actions'
+        ];
+
+        foreach ($columns as $column) {
+            $this->assertStringContainsString(
+                $column,
+                $content
+            );
+        }
+    }
+
+    public function testAvatarInitialsFeatureExists()
+    {
+        $content = file_get_contents($this->viewPath);
 
         $this->assertTrue(
-            str_contains($content, 'alpinejs') ||
+            str_contains(
+                strtolower($content),
+                'avatar'
+            )
+            ||
+            str_contains(
+                strtolower($content),
+                'initials'
+            )
+        );
+    }
+
+    public function testRoleBadgesExist()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
+            str_contains($content, 'badge-admin')
+            ||
+            str_contains($content, 'badge-staff')
+        );
+    }
+
+    public function testStatusBadgesExist()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
+            str_contains(
+                strtolower($content),
+                'active'
+            )
+            ||
+            str_contains(
+                strtolower($content),
+                'inactive'
+            )
+        );
+    }
+
+    public function testEditFunctionalityExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertStringContainsString(
+            'showEditModal',
+            $content
+        );
+
+        $this->assertStringContainsString(
+            'edit_user',
+            $content
+        );
+    }
+
+    public function testDisableFunctionalityExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertStringContainsString(
+            'toggle_status',
+            $content
+        );
+    }
+
+    public function testActionButtonsExist()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
+            str_contains($content, 'showEditModal')
+            &&
+            str_contains($content, 'reset_password')
+            &&
+            str_contains($content, 'toggle_status')
+        );
+    }
+
+    public function testSearchFunctionalityExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
+            str_contains($content, 'Search')
+            ||
+            str_contains($content, 'search')
+        );
+    }
+
+    public function testPaginationExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertStringContainsString(
+            'Previous',
+            $content
+        );
+
+        $this->assertStringContainsString(
+            'Next',
+            $content
+        );
+    }
+
+    public function testUsesAlpineJs()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
             str_contains($content, 'x-data')
+            ||
+            str_contains($content, 'x-show')
+            ||
+            str_contains($content, 'x-model')
+            ||
+            str_contains($content, '@click')
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | TAILWIND LOADED
-    |--------------------------------------------------------------------------
-    */
-
-    public function testTailwindLoaded()
+    public function testUsesBootstrap()
     {
-        $content = file_get_contents($this->dashboardPath);
-
-        $this->assertStringContainsString(
-            'tailwindcss',
-            $content
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | VIEWPORT META TAG EXISTS
-    |--------------------------------------------------------------------------
-    */
-
-    public function testViewportMetaTagExists()
-    {
-        $content = file_get_contents($this->dashboardPath);
-
-        $this->assertStringContainsString(
-            'viewport',
-            $content
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | TRANSITION EFFECTS EXIST
-    |--------------------------------------------------------------------------
-    */
-
-    public function testTransitionClassesExist()
-    {
-        $content = file_get_contents($this->dashboardPath);
+        $content = file_get_contents($this->viewPath);
 
         $this->assertTrue(
-            str_contains($content, 'transition') ||
-            str_contains($content, 'duration-')
+            str_contains($content, 'container-fluid')
+            ||
+            str_contains($content, 'btn')
+            ||
+            str_contains($content, 'form-control')
+            ||
+            str_contains($content, 'd-flex')
+        );
+    }
+
+    public function testDoesNotUseTailwind()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertFalse(
+            str_contains($content, 'bg-gray')
+        );
+
+        $this->assertFalse(
+            str_contains($content, 'text-gray')
+        );
+
+        $this->assertFalse(
+            str_contains($content, 'grid-cols')
+        );
+
+        $this->assertFalse(
+            str_contains($content, 'flex-col')
+        );
+    }
+
+    public function testRealUserDataStructureExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
+            str_contains($content, '$users')
+            ||
+            str_contains($content, 'foreach')
+        );
+    }
+
+    public function testButtonsHaveClickFunctionality()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
+            str_contains($content, '@click')
+            ||
+            str_contains($content, 'onclick')
+        );
+    }
+
+    public function testResponsiveLayoutExists()
+    {
+        $content = file_get_contents($this->viewPath);
+
+        $this->assertTrue(
+            str_contains($content, 'flex-wrap')
+            ||
+            str_contains($content, 'table-wrapper')
+            ||
+            str_contains($content, 'container-fluid')
         );
     }
 }
