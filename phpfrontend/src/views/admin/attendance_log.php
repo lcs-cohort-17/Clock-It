@@ -529,7 +529,7 @@ sort($typeList);
 </style>
 
 <div class="app-shell">
-    <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
+    <?php require __DIR__ . '/../partials/side_bar.php'; ?>
     <div class="main-panel">
         <?php // require __DIR__ . '/../partials/header.php'; // add when ready ?>
         <main class="content">
