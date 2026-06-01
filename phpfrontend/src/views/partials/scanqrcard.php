@@ -13,6 +13,12 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Scan QR Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.4/build/html5-qrcode.min.js"></script>
+    <script defer src="/assets/js/app.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </head>
   <body class="scan-page-body">
     <main class="scan-page min-vh-100 py-4 d-flex align-items-center">
@@ -26,6 +32,7 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
 
 <div id="scan-qr-card" x-data="scanQrCard()" class="card scan-card border-0 shadow-sm">
   <div id="scanner-ui" class="card-body p-4 p-md-5 text-center">
+    <?php // Camera preview and scan controls live here. ?>
     <div x-show="!isScanning" x-cloak>
       <div class="scan-icon d-inline-flex align-items-center justify-content-center rounded-4 mb-3">
         <svg viewBox="0 0 24 24" width="37" height="37" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
@@ -69,6 +76,7 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
       </div>
     </div>
 
+    <?php // This is the live camera preview box shown during scanning. ?>
     <div x-show="isScanning" x-cloak class="text-center">
       <div id="reader" x-ref="reader" class="mx-auto"></div>
       <button
@@ -80,18 +88,36 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
     </div>
   </div>
 
+  <?php // Bootstrap modal for scan success and scan errors. ?>
   <div
-    x-show="error"
-    x-cloak
-    x-text="error"
-    class="alert scan-alert-danger mb-0"
-  ></div>
-  <div
-    x-show="result"
-    x-cloak
-    x-text="result"
-    class="alert scan-alert-success mt-3 mb-0"
-  ></div>
+    x-ref="feedbackModal"
+    class="modal fade"
+    id="scanFeedbackModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header" :class="modalVariant === 'success' ? 'bg-success text-white' : 'bg-danger text-white'">
+          <h2 class="modal-title fs-5 fw-bold" x-text="modalTitle"></h2>
+          <button
+            type="button"
+            class="btn-close"
+            :class="modalVariant === 'success' ? 'btn-close-white' : ''"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2" x-text="modalMessage"></p>
+          <p class="small text-body-secondary mb-0" x-show="result" x-text="result"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <?php if ($isStandalone): ?>
             </div>
