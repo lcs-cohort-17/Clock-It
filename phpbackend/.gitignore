@@ -1,5 +1,5 @@
 .env
 node_modules/
-.vendor/
+vendor/
 phpunit.xml
 .phpunit.result.cache
