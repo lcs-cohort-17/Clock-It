@@ -2,7 +2,9 @@
  
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use App\Middleware\AuthMiddleware;
  
+require_once __DIR__ . '/../../src/middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../src/types/LeaveInterface.php';
 require_once __DIR__ . '/../../src/utils/LeaveValidator.php';
 require_once __DIR__ . '/../../src/models/LeaveDb.php';
@@ -13,6 +15,7 @@ class LeaveControllerTest extends TestCase {
     /** @var LeaveRequestModel&MockObject */
     private $mockModel;
     private LeaveController $controller;
+    private AuthMiddleware $authMiddleware;
  
     private function futureDate(int $days): string {
         return date('Y-m-d', strtotime("+{$days} days"));
@@ -23,8 +26,9 @@ class LeaveControllerTest extends TestCase {
     }
  
     protected function setUp(): void {
-        $this->mockModel  = $this->createMock(LeaveRequestModel::class);
-        $this->controller = new LeaveController($this->mockModel);
+        $this->mockModel    = $this->createMock(LeaveRequestModel::class);
+        $this->authMiddleware = new AuthMiddleware('test_secret_key');
+        $this->controller   = new LeaveController($this->mockModel, $this->authMiddleware);
     }
  
     // Mirrors: it('returns 201 when request succeeds') in leave.controller.test.ts

@@ -1,8 +1,10 @@
 <?php
 
+use App\Middleware\AuthMiddleware;
+
 class LeaveController
 {
-    public function __construct(private LeaveRequestModel $model)
+    public function __construct(private LeaveRequestModel $model, private AuthMiddleware $auth)
     {
     }
 
@@ -12,9 +14,9 @@ class LeaveController
     public function submitLeave(array $auth, array $body): void
     {
         try {
-            $userId = $auth['userId'] ?? null;
-            if ($userId === null || $userId === '') {
-                $this->respond(401, ['message' => 'Unauthorized']);
+            $guard = $this->auth->requireLoginFromAuth($auth);
+            if ($guard !== null) {
+                $this->respond($guard['status'], $guard['body']);
                 return;
             }
 
@@ -27,6 +29,7 @@ class LeaveController
                 return;
             }
 
+            $userId = $auth['userId'] ?? null;
             $user = $this->model->findActiveUser((string) $userId);
             if ($user === null || empty($user['is_active'])) {
                 // 403 because the user cannot submit if the account is missing or inactive
@@ -63,14 +66,14 @@ class LeaveController
     public function updateLeaveStatus(array $auth, string $leaveId, array $body): void
     {
         try {
-            $userId = $auth['userId'] ?? null;
-            if ($userId === null || $userId === '') {
-                $this->respond(401, ['message' => 'Unauthorized']);
+            $guard = $this->auth->requireAdminFromAuth($auth);
+            if ($guard !== null) {
+                $this->respond($guard['status'], $guard['body']);
                 return;
             }
 
-            // Ensure the token role matches the database user role and that the user is active
-            $user = $this->model->findActiveUser((string) $userId);
+            // Cross-check token role against the database to guard against stale tokens
+            $user = $this->model->findActiveUser((string) ($auth['userId'] ?? ''));
             if ($user === null || empty($user['is_active']) || ($user['role'] ?? null) !== 'admin') {
                 $this->respond(403, ['message' => 'Forbidden']);
                 return;
@@ -115,9 +118,9 @@ class LeaveController
     public function getCalendar(array $auth, array $query): void
     {
         try {
-            $userId = $auth['userId'] ?? null;
-            if ($userId === null || $userId === '') {
-                $this->respond(401, ['message' => 'Unauthorized']);
+            $guard = $this->auth->requireLoginFromAuth($auth);
+            if ($guard !== null) {
+                $this->respond($guard['status'], $guard['body']);
                 return;
             }
 
@@ -163,9 +166,9 @@ class LeaveController
     public function getLeave(array $auth, array $query = []): void
     {
         try {
-            $userId = $auth['userId'] ?? null;
-            if ($userId === null || $userId === '') {
-                $this->respond(401, ['message' => 'Unauthorized']);
+            $guard = $this->auth->requireLoginFromAuth($auth);
+            if ($guard !== null) {
+                $this->respond($guard['status'], $guard['body']);
                 return;
             }
 
@@ -200,14 +203,14 @@ class LeaveController
     public function updateLeave(array $auth, string $leaveId, array $body): void
     {
         try {
-            $userId = $auth['userId'] ?? null;
-            if ($userId === null || $userId === '') {
-                $this->respond(401, ['message' => 'Unauthorized']);
+            $guard = $this->auth->requireAdminFromAuth($auth);
+            if ($guard !== null) {
+                $this->respond($guard['status'], $guard['body']);
                 return;
             }
 
-            // Ensure token role matches database role and that the user is active
-            $user = $this->model->findActiveUser((string) $userId);
+            // Cross-check token role against the database to guard against stale tokens
+            $user = $this->model->findActiveUser((string) ($auth['userId'] ?? ''));
             if ($user === null || empty($user['is_active']) || ($user['role'] ?? null) !== 'admin') {
                 $this->respond(403, ['message' => 'Forbidden']);
                 return;

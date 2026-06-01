@@ -32,9 +32,8 @@ function jsonResponse(array $payload, int $status): void
 try {
     $pdo = Database::getInstance()->getConnection();
     $model = new LeaveDbModel(new LeaveDb($pdo));
-    $controller = new LeaveController($model);
-
     $jwtSecret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: '';
+
     if ($jwtSecret === '') {
         jsonResponse([
             'message' => 'JWT secret is not configured',
@@ -43,6 +42,7 @@ try {
     }
 
     $middleware = new \App\Middleware\AuthMiddleware($jwtSecret);
+    $controller = new LeaveController($model, $middleware);
     $request = buildLeaveRequest();
 
     $response = $middleware->handle($request, function (array $request) use ($controller): array {

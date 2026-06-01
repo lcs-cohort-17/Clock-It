@@ -47,6 +47,51 @@ class AuthMiddleware
         }
     }
 
+    public function requireLoginFromAuth(array $auth): ?array
+    {
+        $userId = $auth['userId'] ?? null;
+
+        if ($userId === null || $userId === '') {
+            return [
+                'status' => 401,
+                'body' => ['message' => 'Unauthorized'],
+            ];
+        }
+
+        return null;
+    }
+
+    public function requireAdminFromAuth(array $auth): ?array
+    {
+        $guard = $this->requireLoginFromAuth($auth);
+        if ($guard !== null) {
+            return $guard;
+        }
+
+        if (($auth['role'] ?? '') !== 'admin') {
+            return [
+                'status' => 403,
+                'body' => ['message' => 'Forbidden'],
+            ];
+        }
+
+        return null;
+    }
+
+    public function requireRoleFromAuth(array $auth, string $role): ?array
+    {
+        $guard = $this->requireLoginFromAuth($auth);
+        if ($guard !== null) {
+            return $guard;
+        }
+
+        if (($auth['role'] ?? '') !== $role) {
+            return $this->unauthorizedResponse("Role '$role' required", 403);
+        }
+
+        return null;
+    }
+
     private function unauthorizedResponse(string $message, int $status): array
     {
         return [
