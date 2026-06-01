@@ -176,7 +176,7 @@ function attendanceApp() {
         
         // Get sort icon
         getSortIcon(field) {
-            if (this.sortField !== field) return '↕️';
+            if (this.sortField !== field) return '';
             return this.sortOrder === 'asc' ? '↑' : '↓';
         },
         
