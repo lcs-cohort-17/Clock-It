@@ -9,11 +9,21 @@ final class LoginTest extends TestCase
     private function renderLoginPage(): string
     {
         $title = 'Login | Clock-It';
+        $bufferLevel = ob_get_level();
 
         ob_start();
-        require __DIR__ . '/../src/views/Login.php';
 
-        return (string) ob_get_clean();
+        try {
+            require __DIR__ . '/../src/views/Login.php';
+
+            return (string) ob_get_clean();
+        } catch (Throwable $throwable) {
+            while (ob_get_level() > $bufferLevel) {
+                ob_end_clean();
+            }
+
+            throw $throwable;
+        }
     }
 
     public function testLoginPageRendersRequiredBootstrapFormElements(): void
