@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
 
+require_once __DIR__ . '/../src/views/partials/QRCodeHelpers.php';
+require_once __DIR__ . '/../src/views/partials/CreateQRForm.php';
+require_once __DIR__ . '/../src/views/partials/QRDropdownButton.php';
+require_once __DIR__ . '/../src/views/partials/QRCodeListItem.php';
+require_once __DIR__ . '/../src/views/partials/QRModal.php';
+require_once __DIR__ . '/../src/views/admin/QRCodeGeneratorLayout.php';
+
 final class QRCodeAcceptanceCriteriaTest extends TestCase
 {
     public function testQrFeatureMeetsTechnicalRequirementsAndAcceptanceCriteria(): void
