@@ -1,12 +1,8 @@
-index.php
-
-
 <?php
+declare(strict_types=1);
 // FRONTEND-ONLY ROUTER
 // No Composer, no vendor folder, no backend models/controllers, no PHPUnit needed.
 // This file only provides sample data so the PHP pages can display in the browser.
-
-declare(strict_types=1);
 
 session_start();
 
