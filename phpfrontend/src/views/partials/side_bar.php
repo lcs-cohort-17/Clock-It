@@ -1,1 +1,1 @@
-/** side bar component */ 
+/** side bar component */

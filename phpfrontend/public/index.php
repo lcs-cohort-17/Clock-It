@@ -1,8 +1,12 @@
 <?php
+declare(strict_types=1);
+// FRONTEND-ONLY ROUTER
+// No Composer, no vendor folder, no backend models/controllers, no PHPUnit needed.
+// This file only provides sample data so the PHP pages can display in the browser.
 
 session_start();
 
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 $staffUser = [
@@ -58,12 +62,6 @@ function redirect_to(string $path): never
     exit;
 }
 
-if ($path === '/api/attendance/clock-events' && $method === 'GET') {
-    header('Content-Type: application/json');
-    echo json_encode(['data' => $events]);
-    exit;
-}
-
 // Frontend-only login simulation: no real authentication.
 if ($path === '/login' && $method === 'POST') {
     $identifier = strtolower(trim((string) ($_POST['identifier'] ?? '')));
@@ -89,6 +87,10 @@ switch ($path) {
         $title = 'Staff Dashboard | Clock-It';
         $user = $staffUser;
         view('staff/dashboard', compact('title', 'user', 'stats', 'events'));
+        break;
+
+        case '/password':
+        require __DIR__ . '/../src/views/staff/password/password.php';
         break;
 
     case '/scan-qr':
@@ -151,4 +153,3 @@ switch ($path) {
         view('404', compact('title'));
         break;
 }
-/**router file */  

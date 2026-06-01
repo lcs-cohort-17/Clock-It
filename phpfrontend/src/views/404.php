@@ -6,4 +6,3 @@
     </section>
 </main>
 <?php $content = ob_get_clean(); require __DIR__ . '/layouts/app.php'; ?>
- 
