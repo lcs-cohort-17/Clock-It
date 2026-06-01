@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../partials/CreateQRForm.php';
+require_once __DIR__ . '/../partials/QRDropdownButton.php';
+require_once __DIR__ . '/../partials/QRCodeListItem.php';
+
 function render_qr_generator_layout(array $qrList, bool $showCreateForm, string $modal, string $statusFilter = 'all'): void
 {
     $filterLinks = [
@@ -19,6 +23,29 @@ function render_qr_generator_layout(array $qrList, bool $showCreateForm, string 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    async function requestQrToken(payload) {
+      const status = document.querySelector('[data-qr-status]');
+      if (status) status.textContent = 'Loading QR code...';
+
+      try {
+        const response = await fetch('/api/qr-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error('QR generation error');
+        }
+
+        return await response.json();
+      } catch (error) {
+        if (status) status.textContent = 'QR generation error. Please try again.';
+        throw error;
+      }
+    }
+  </script>
   <style>
     :root { --navy: #002f4f; --text: #1f2937; --muted: #6b7280; --bg: #f4f4f4; --border: #e5e7eb; }
     * { box-sizing: border-box; }
@@ -72,6 +99,7 @@ function render_qr_generator_layout(array $qrList, bool $showCreateForm, string 
     <header>
       <h1>QR Code Generator</h1>
       <p class="muted">Create unique QR codes for clock-in/clock-out points.</p>
+      <p class="visually-hidden" data-qr-status aria-live="polite"></p>
     </header>
 
     <section class="actions">
