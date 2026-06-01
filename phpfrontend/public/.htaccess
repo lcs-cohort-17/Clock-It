@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# If the requested filename exists as a file or directory, serve it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, send the request to index.php
+RewriteRule ^ index.php [L]
+
+Options -Indexes
