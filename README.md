@@ -1,5 +1,21 @@
 # 🛠️ Development & Git Guide
 
+## Running the PHP demo locally
+
+From the `Clock-It` project folder, run:
+
+```bash
+php -S localhost:8000
+```
+
+Then open:
+
+```text
+http://localhost:8000
+```
+
+The root `index.php` forwards the request to `public/index.php`, so the login page, assets, and demo API calls work from the project root. This workspace also has a parent-level forwarder for running the same command one folder above `Clock-It`.
+
 To keep our codebase from breaking, everyone must strictly follow this Git workflow.
 
 ---
