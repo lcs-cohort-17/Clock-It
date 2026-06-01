@@ -1,4 +1,6 @@
 <?php
+
+use ClockIt\Data\AttendanceRepository;
 /**
  * attendance.php  (src/views/admin/attendance.php)
  *
@@ -19,519 +21,25 @@
 // Mock data  (swap for API calls: GET /api/admin/attendance
 //             and GET /api/admin/attendance/audit — BE-06)
 // ─────────────────────────────────────────────────────────────
-$clockEvents = [
-    [
-        'id'        => 1,
-        'staff'     => 'Amara Nwosu',
-        'type'      => 'Clock In',
-        'timestamp' => '2026-05-27 08:02:14',
-        'device'    => 'Terminal A',
-        'location'  => 'Main Office',
-        'sync'      => 'Synced',
-    ],
-    [
-        'id'        => 2,
-        'staff'     => 'Amara Nwosu',
-        'type'      => 'Clock Out',
-        'timestamp' => '2026-05-27 17:05:33',
-        'device'    => 'Terminal A',
-        'location'  => 'Main Office',
-        'sync'      => 'Synced',
-    ],
-    [
-        'id'        => 3,
-        'staff'     => 'Sipho Dlamini',
-        'type'      => 'Clock In',
-        'timestamp' => '2026-05-27 07:58:01',
-        'device'    => 'Terminal B',
-        'location'  => 'Warehouse',
-        'sync'      => 'Synced',
-    ],
-    [
-        'id'        => 4,
-        'staff'     => 'Sipho Dlamini',
-        'type'      => 'Clock Out',
-        'timestamp' => '2026-05-27 16:30:44',
-        'device'    => 'Terminal B',
-        'location'  => 'Warehouse',
-        'sync'      => 'Pending',
-    ],
-    [
-        'id'        => 5,
-        'staff'     => 'Naledi Khumalo',
-        'type'      => 'Clock In',
-        'timestamp' => '2026-05-27 09:15:22',
-        'device'    => 'Mobile App',
-        'location'  => 'Remote',
-        'sync'      => 'Synced',
-    ],
-    [
-        'id'        => 6,
-        'staff'     => 'Naledi Khumalo',
-        'type'      => 'Clock Out',
-        'timestamp' => '2026-05-27 18:01:09',
-        'device'    => 'Mobile App',
-        'location'  => 'Remote',
-        'sync'      => 'Synced',
-    ],
-    [
-        'id'        => 7,
-        'staff'     => 'Themba Mthembu',
-        'type'      => 'Clock In',
-        'timestamp' => '2026-05-26 08:45:00',
-        'device'    => 'Terminal A',
-        'location'  => 'Main Office',
-        'sync'      => 'Synced',
-    ],
-    [
-        'id'        => 8,
-        'staff'     => 'Themba Mthembu',
-        'type'      => 'Clock Out',
-        'timestamp' => '2026-05-26 17:30:18',
-        'device'    => 'Terminal A',
-        'location'  => 'Main Office',
-        'sync'      => 'Synced',
-    ],
-];
-
-$auditTrail = [
-    [
-        'id'        => 1,
-        'timestamp' => '2026-05-27 14:30:00',
-        'actor'     => 'Admin Jane',
-        'action'    => 'EDIT',
-        'details'   => 'Modified clock-out time for Amara Nwosu (17:00 → 17:05)',
-    ],
-    [
-        'id'        => 2,
-        'timestamp' => '2026-05-27 11:12:45',
-        'actor'     => 'Admin Jane',
-        'action'    => 'OVERRIDE',
-        'details'   => 'Manual clock-in added for Sipho Dlamini',
-    ],
-    [
-        'id'        => 3,
-        'timestamp' => '2026-05-26 16:55:10',
-        'actor'     => 'Admin Kobus',
-        'action'    => 'DELETE',
-        'details'   => 'Removed duplicate clock-out entry for Naledi Khumalo',
-    ],
-    [
-        'id'        => 4,
-        'timestamp' => '2026-05-26 09:03:22',
-        'actor'     => 'Admin Kobus',
-        'action'    => 'EDIT',
-        'details'   => 'Corrected device from "Unknown" to "Terminal A" for Themba Mthembu',
-    ],
-];
 
 // Pre-compute lists for PHP-rendered dropdown options
+$repository = new AttendanceRepository();
+
+$clockEvents = $repository->getClockEvents();
+$auditTrail  = $repository->getAuditTrail();
+
 $staffList = array_values(array_unique(array_column($clockEvents, 'staff')));
 $typeList  = array_values(array_unique(array_column($clockEvents, 'type')));
 sort($staffList);
 sort($typeList);
 ?>
+
 <?php ob_start(); ?>
 
-<style>
-    /* ── Page ── */
-    body {
-        background-color: #e8ecf0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                     'Helvetica Neue', Arial, sans-serif;
-        min-height: 100vh;
-    }
-
-    /* ── Page header typography ── */
-    .page-title {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1a2332;
-        line-height: 1.2;
-        margin-bottom: 4px;
-    }
-    .page-subtitle {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin-bottom: 0;
-    }
-
-    /* ── Tab toggle ──
-       Active tab:   white card, bold, bordered.
-       Inactive tab: transparent, muted text.
-    */
-    .tab-group {
-        display: flex;
-        gap: 4px;
-    }
-    .tab-btn {
-        padding: 6px 18px;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        border: 1px solid transparent;
-        background: transparent;
-        color: #94a3b8;
-        transition: background 0.15s ease, color 0.15s ease,
-                    border-color 0.15s ease, box-shadow 0.15s ease;
-        white-space: nowrap;
-    }
-    .tab-btn:hover:not(.active) {
-        color: #475569;
-    }
-    .tab-btn.active {
-        background: #ffffff;
-        color: #1e293b;
-        font-weight: 700;
-        border-color: #e2e8f0;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    /* ── Filter bar ── */
-    .filter-bar {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 12px 16px;
-    }
-
-    /* ── Search input ── */
-    .search-wrapper {
-        position: relative;
-    }
-    .search-icon {
-        position: absolute;
-        left: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-        pointer-events: none;
-    }
-    .search-input {
-        width: 100%;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 8px 12px 8px 36px;
-        font-size: 0.875rem;
-        color: #1e293b;
-        background: #ffffff;
-        outline: none;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .search-input::placeholder {
-        color: #94a3b8;
-    }
-    .search-input:focus {
-        border-color: #1e293b;
-        box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.08);
-    }
-
-    /* ── Custom dropdown ──
-       Selected item: green #6aad2d, white checkmark.
-    */
-    .custom-dropdown {
-    position: relative;
-    z-index: 200;
-    }
-    .custom-dropdown-btn {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 8px 12px;
-        font-size: 0.875rem;
-        color: #1e293b;
-        background: #ffffff;
-        cursor: pointer;
-        outline: none;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        gap: 8px;
-    }
-    .custom-dropdown-btn:focus,
-    .custom-dropdown-btn[aria-expanded="true"] {
-        border-color: #1e293b;
-        box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.08);
-    }
-    .custom-dropdown-btn .chevron {
-        flex-shrink: 0;
-        color: #94a3b8;
-        transition: transform 0.2s ease;
-    }
-    .custom-dropdown-btn[aria-expanded="true"] .chevron {
-        transform: rotate(180deg);
-    }
-    .custom-dropdown-menu {
-        position: absolute;
-        top: calc(100% + 4px);
-        left: 0;
-        right: 0;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        z-index: 100;
-        overflow: hidden;
-    }
-    .custom-dropdown-item {
-        display: flex;
-        align-items: center;
-        padding: 10px 14px;
-        font-size: 0.875rem;
-        color: #1e293b;
-        cursor: pointer;
-        user-select: none;
-        transition: background 0.1s ease;
-        gap: 8px;
-    }
-    .custom-dropdown-item:not(.selected):hover {
-    background: #6aad2d;
-    color: #ffffff;
-    }
-    .custom-dropdown-item.selected {
-        background: #6aad2d;
-        color: #ffffff;
-    }
-    .item-check {
-        width: 16px;
-        flex-shrink: 0;
-    }
-    .item-check.hidden {
-        visibility: hidden;
-    }
-
-    /* ── Data table card ── */
-    .data-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    /* ── Table ── */
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .data-table thead th {
-        padding: 12px 16px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #94a3b8;
-        border-bottom: 1px solid #e2e8f0;
-        background: #ffffff;
-        white-space: nowrap;
-    }
-    .data-table tbody td {
-        padding: 14px 16px;
-        font-size: 0.875rem;
-        color: #374151;
-        border-bottom: 1px solid #f1f5f9;
-        vertical-align: middle;
-    }
-    .data-table tbody tr:last-child td {
-        border-bottom: none;
-    }
-    .data-table tbody tr:hover td {
-        background: #f8fafc;
-    }
-
-    /* ── No-records row ── */
-    .no-records {
-        text-align: center;
-        padding: 56px 16px;
-        color: #94a3b8;
-        font-size: 0.875rem;
-    }
-
-    /* ── Sort button (Timestamp column in audit trail) ── */
-    .sort-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #94a3b8;
-        font-size: 0.7rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        padding: 0;
-        transition: color 0.15s ease;
-    }
-    .sort-btn:hover {
-        color: #1e293b;
-    }
-    .sort-icon {
-        display: inline-flex;
-        flex-direction: column;
-        gap: 1px;
-        line-height: 1;
-    }
-
-    /* ── Export / action buttons ──
-       Idle: white bg, slate border.
-       Hover: green #6aad2d bg, white text.
-    */
-    .export-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        background: #ffffff;
-        color: #1e293b;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-    .export-btn:hover {
-        background: #6aad2d;
-        border-color: #6aad2d;
-        color: #ffffff;
-    }
-
-    /* ── Request Leave/Sick button ── */
-    .request-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        background: #ffffff;
-        color: #1e293b;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-        white-space: nowrap;
-    }
-    .request-btn:hover {
-    background: #6aad2d;
-    border-color: #6aad2d;
-    color: #ffffff;
-    }
-
-    /* ── Sync badges ── */
-    .sync-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 500;
-    }
-    .sync-badge.synced  { background: #dcfce7; color: #16a34a; }
-    .sync-badge.pending { background: #fef9c3; color: #a16207; }
-    .sync-badge.failed  { background: #fee2e2; color: #dc2626; }
-
-    /* ── Action edit button ── */
-    .action-btn {
-        padding: 4px 10px;
-        font-size: 0.75rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        background: #ffffff;
-        color: #475569;
-        cursor: pointer;
-        transition: border-color 0.15s ease, color 0.15s ease;
-    }
-    .action-btn:hover {
-        border-color: #94a3b8;
-        color: #1e293b;
-    }
-
-    /* ── Audit action badges ── */
-    .audit-action {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-    }
-    .audit-action.edit     { background: #dbeafe; color: #1d4ed8; }
-    .audit-action.override { background: #fef3c7; color: #b45309; }
-    .audit-action.delete   { background: #fee2e2; color: #dc2626; }
-    .audit-action.create   { background: #dcfce7; color: #16a34a; }
-
-    /* ── Modal backdrop ──
-       Controlled by Alpine x-show, not Bootstrap's JS.
-    */
-    .modal-backdrop-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1040;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        overflow-y: auto;
-    }
-    .modal-box {
-        background: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        width: 100%;
-        max-width: 500px;
-        position: relative;
-    }
-    .modal-header-custom {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 24px 16px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    .modal-title-custom {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1a2332;
-        margin: 0;
-    }
-    .modal-close-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #94a3b8;
-        padding: 4px;
-        border-radius: 4px;
-        line-height: 1;
-        transition: color 0.15s ease, background 0.15s ease;
-    }
-    .modal-close-btn:hover {
-        color: #1e293b;
-        background: #f1f5f9;
-    }
-    .modal-body-custom {
-        padding: 24px;
-    }
-    .modal-footer-custom {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        padding: 16px 24px 20px;
-        border-top: 1px solid #e2e8f0;
-    }
-
-    /* ── Tab transition ── */
-    [x-cloak] { display: none !important; }
-</style>
-
 <div class="app-shell">
-    <?php require __DIR__ . '/../partials/side_bar.php'; ?>
+    <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
     <div class="main-panel">
-        <?php // require __DIR__ . '/../partials/header.php'; // add when ready ?>
+        <?php require __DIR__ . '/../partials/header.php'; ?>
         <main class="content">
 
             <!-- ── PHP → JS data bridge ─────────────────────── -->
@@ -543,7 +51,7 @@ sort($typeList);
             </script>
 
             <!-- ── Utility functions (pure, injectable, testable) ── -->
-            <script src="/assets/js/attendance_log_utils.js"></script>
+            <script src="<?= e(app_url('/assets/js/attendance_log_utils.js')) ?>"></script>
 
             <!-- ═══════════════════════════════════════════════════
                  Page root — single Alpine component
@@ -556,7 +64,6 @@ sort($typeList);
             >
 
                 <!-- ── Page header ──────────────────────────── -->
-                 <?php require __DIR__ . '/../partials/header.php'; ?>
                 <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
                     <div>
                         <h1 class="page-title">Attendance Logs</h1>
@@ -572,7 +79,9 @@ sort($typeList);
                             Request Leave/Sick
                         </button>
 
-                        <?php include __DIR__ . '/../partials/export_csv_button.php'; ?>
+                        <div aria-label="Export CSV">
+                            <?php include __DIR__ . '/../partials/export_csv_button.php'; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -607,7 +116,11 @@ sort($typeList);
                     x-transition:leave="transition-opacity duration-100"
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
-                >
+            >
+                <div class="attendance-loading py-4" x-show="loading" role="status">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span class="ms-2">Loading attendance logs...</span>
+                </div>
                     <!-- Filter bar -->
                     <div class="filter-bar mb-3">
                         <div class="row g-3 align-items-center">
@@ -631,6 +144,7 @@ sort($typeList);
 
                             <!-- All staff dropdown -->
                             <div class="col-12 col-md-4">
+                                <span class="visually-hidden">Staff Filter</span>
                                 <div class="custom-dropdown" @click.away="staffDropdownOpen = false">
                                     <button
                                         class="custom-dropdown-btn"
@@ -674,7 +188,7 @@ sort($typeList);
                                             :class="{ selected: staffFilter === <?= json_encode($staff) ?> }"
                                             @click="staffFilter = '<?= htmlspecialchars($staff, ENT_QUOTES) ?>'; staffDropdownOpen = false"
                                             role="option"
-                                            :aria-selected="staffFilter === '<?= htmlspecialchars($staff, ENT_QUOTES) ?>'
+                                            :aria-selected="staffFilter === <?= json_encode($staff) ?>"
                                         >
                                             <svg class="item-check" :class="{ hidden: staffFilter !== <?= json_encode($staff) ?> }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                 <polyline points="20 6 9 17 4 12"/>
@@ -688,6 +202,7 @@ sort($typeList);
 
                             <!-- All statuses dropdown -->
                             <div class="col-12 col-md-3">
+                                <span class="visually-hidden">Status Filter</span>
                                 <div class="custom-dropdown" @click.away="statusDropdownOpen = false">
                                     <button
                                         class="custom-dropdown-btn"
@@ -748,6 +263,7 @@ sort($typeList);
 
                     <!-- Clock events table -->
                     <div class="data-card">
+                        <div class="table-responsive">
                         <table class="data-table" aria-label="Clock events">
                             <thead>
                                 <tr>
@@ -786,12 +302,16 @@ sort($typeList);
                                             ></span>
                                         </td>
                                         <td>
-                                            <button class="action-btn" :aria-label="'Edit ' + event.staff + ' record'">Edit</button>
+                                            <button class="action-btn" :aria-label="'Edit ' + event.staff + ' record'">
+                                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                Edit
+                                            </button>
                                         </td>
                                     </tr>
                                 </template>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div><!-- /clock-events tab -->
 
@@ -822,6 +342,7 @@ sort($typeList);
 
                     <!-- Audit trail table -->
                     <div class="data-card">
+                        <div class="table-responsive">
                         <table class="data-table" aria-label="Audit trail">
                             <thead>
                                 <tr>
@@ -881,6 +402,7 @@ sort($typeList);
                                 </template>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div><!-- /audit-trail tab -->
 
@@ -1020,8 +542,8 @@ sort($typeList);
             <!-- ═══════════════════════════════════════════════
                  Alpine.js component — defined in attendance_log_page.js.
                  ═══════════════════════════════════════════════ -->
-            <script src="/assets/js/export_csv_button.js"></script>
-            <script src="/assets/js/attendance_log_page.js"></script>
+            <script src="<?= e(app_url('/assets/js/export_csv_button.js')) ?>"></script>
+            <script src="<?= e(app_url('/assets/js/attendance_log_page.js')) ?>"></script>
 
         </main>
     </div>

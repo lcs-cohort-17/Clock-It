@@ -1,309 +1,10 @@
-<?php ob_start(); ?>
-<?php 
-/* -----------------------------
-   INITIAL USERS
-------------------------------*/
-if (!isset($_SESSION['users'])) {
-
-    $_SESSION['users'] = [
-
-        [
-            "id" => "1",
-            "name" => "Priya Singh",
-            "email" => "admin@clockit.app",
-            "employeeId" => "A-001",
-            "role" => "Admin",
-            "status" => "Active",
-            "password" => "Temp1234"
-        ],
-
-        [
-            "id" => "2",
-            "name" => "David Okafor",
-            "email" => "david@clockit.app",
-            "employeeId" => "A-002",
-            "role" => "Admin",
-            "status" => "Active",
-            "password" => "Temp5678"
-        ],
-
-        [
-            "id" => "3",
-            "name" => "David Naidoo",
-            "email" => "david.naidoo@clockit.app",
-            "employeeId" => "A-003",
-            "role" => "Admin",
-            "status" => "Active",
-            "password" => "Temp9012"
-        ],
-
-        [
-            "id" => "4",
-            "name" => "Sarah Mthembu",
-            "email" => "sarah@clockit.app",
-            "employeeId" => "S-101",
-            "role" => "Staff",
-            "status" => "Active",
-            "password" => "Temp3456"
-        ],
-
-        [
-            "id" => "5",
-            "name" => "John Adams",
-            "email" => "john@clockit.app",
-            "employeeId" => "S-102",
-            "role" => "Staff",
-            "status" => "Active",
-            "password" => "Temp7890"
-        ],
-
-        [
-            "id" => "6",
-            "name" => "Mary Chen",
-            "email" => "mary@clockit.app",
-            "employeeId" => "S-103",
-            "role" => "Staff",
-            "status" => "Active",
-            "password" => "Temp1122"
-        ]
-        ,[
-            "id" => "7",
-            "name" => "Mia Patel",
-            "email" => "mia@clockit.app",
-            "employeeId" => "S-104",
-            "role" => "Staff",
-            "status" => "Active",
-            "password" => "Temp3344"
-        ],
-        [
-            "id" => "8",
-            "name" => "Ethan Brown",
-            "email" => "ethan@clockit.app",
-            "employeeId" => "S-105",
-            "role" => "Staff",
-            "status" => "Active",
-            "password" => "Temp5566"
-        ],
-        [
-            "id" => "9",
-            "name" => "Aisha Khan",
-            "email" => "aisha@clockit.app",
-            "employeeId" => "S-106",
-            "role" => "Staff",
-            "status" => "Active",
-            "password" => "Temp7788"
-        ],
-        [
-            "id" => "10",
-            "name" => "Noah Williams",
-            "email" => "noah@clockit.app",
-            "employeeId" => "A-004",
-            "role" => "Admin",
-            "status" => "Active",
-            "password" => "Temp9900"
-        ],
-        [
-            "id" => "11",
-            "name" => "Olivia Rodriguez",
-            "email" => "olivia@clockit.app",
-            "employeeId" => "S-107",
-            "role" => "Staff",
-            "status" => "Active",
-            "password" => "Temp2233"
-        ],
-        [
-            "id" => "12",
-            "name" => "Lukas Müller",
-            "email" => "lukas@clockit.app",
-            "employeeId" => "A-005",
-            "role" => "Admin",
-            "status" => "Active",
-            "password" => "Temp4455"
-        ]
-    ];
-}
-
-$users = &$_SESSION['users'];
-
-/* -----------------------------
-   HELPERS
-------------------------------*/
-
-function initials($name)
-{
-    $parts = explode(" ", $name);
-
-    $initials = "";
-
-    foreach ($parts as $part) {
-        $initials .= strtoupper($part[0]);
-    }
-
-    return substr($initials, 0, 2);
-}
-
-function generateEmployeeId($role, $users)
-{
-    $prefix = $role === "Admin" ? "A" : "S";
-
-    $existing = array_filter($users, function ($u) use ($role) {
-        return $u['role'] === $role;
-    });
-
-    $baseNumber = $role === "Admin" ? 1 : 101;
-
-    return $prefix . "-" . str_pad(
-        $baseNumber + count($existing),
-        3,
-        "0",
-        STR_PAD_LEFT
-    );
-}
-
-function generatePassword($length = 10)
-{
-    $chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    $password = "";
-
-    for ($i = 0; $i < $length; $i++) {
-
-        $password .= $chars[rand(0, strlen($chars) - 1)];
-    }
-
-    return $password;
-}
-
-/* -----------------------------
-   ADD USER
-------------------------------*/
-
-if (isset($_POST['add_user'])) {
-
-    $password = generatePassword();
-
-    $users[] = [
-
-        "id" => uniqid(),
-
-        "name" => $_POST['name'],
-
-        "email" => $_POST['email'],
-
-        "employeeId" => generateEmployeeId(
-            $_POST['role'],
-            $users
-        ),
-
-        "role" => $_POST['role'],
-
-        "status" => "Active",
-
-        "password" => $password
-    ];
-
-    $_SESSION['generated_password'] = $password;
-
-    header("Location: /");
-    exit;
-}
-
-/* -----------------------------
-   EDIT USER
-------------------------------*/
-
-if (isset($_POST['edit_user'])) {
-
-    foreach ($users as &$u) {
-
-        if ($u['id'] === $_POST['id']) {
-
-            $u['name'] = $_POST['name'];
-
-            $u['email'] = $_POST['email'];
-
-            $u['role'] = $_POST['role'];
-        }
-    }
-
-    header("Location: /");
-    exit;
-}
-
-/* -----------------------------
-   TOGGLE STATUS
-------------------------------*/
-
-if (isset($_POST['toggle_status'])) {
-
-    foreach ($users as &$u) {
-
-        if ($u['id'] === $_POST['id']) {
-
-            $u['status'] =
-                $u['status'] === "Active"
-                ? "Inactive"
-                : "Active";
-        }
-    }
-
-    header("Location: /");
-    exit;
-}
-
-/* -----------------------------
-   RESET PASSWORD
-------------------------------*/
-
-if (isset($_POST['reset_password'])) {
-
-    foreach ($users as &$u) {
-
-        if ($u['id'] === $_POST['id']) {
-
-            $newPassword = generatePassword();
-
-            $u['password'] = $newPassword;
-
-            $_SESSION['generated_password'] = $newPassword;
-        }
-    }
-
-    header("Location: /");
-    exit;
-}
-
-/* -----------------------------
-   SEARCH
-------------------------------*/
-
-$query = strtolower($_GET['q'] ?? '');
-
-$filtered = array_filter($users, function ($u) use ($query) {
-
-    return !$query ||
-
-        str_contains(
-            strtolower($u['name']),
-            $query
-        ) ||
-
-        str_contains(
-            strtolower($u['email']),
-            $query
-        ) ||
-
-        str_contains(
-            strtolower($u['employeeId']),
-            $query
-        );
-});
-
+<?php
+$query = $_GET['q'] ?? '';
 /* -----------------------------
    PAGINATION
 ------------------------------*/
 
-$page = $_GET['page'] ?? 1;
+$page = max(1, (int) ($_GET['page'] ?? 1));
 
 $pageSize = 5;
 
@@ -311,6 +12,8 @@ $totalPages = max(
     1,
     ceil(count($filtered) / $pageSize)
 );
+
+$page = min($page, $totalPages);
 
 $start = ($page - 1) * $pageSize;
 
@@ -320,8 +23,14 @@ $pageData = array_slice(
     $pageSize
 );
 
-?>
+ob_start(); ?>
+<div class="app-shell">
+    <?php include __DIR__ . '/../partials/admin_sidebar.php'; ?>
 
+    <div class="main-panel">
+        <?php include __DIR__ . '/../partials/header.php'; ?>
+
+        <div class="content">
 <div class="container-fluid py-5 px-4"
      x-data="userManager()">
 
@@ -352,16 +61,26 @@ $pageData = array_slice(
 
     </div>
 
+    <?php if (isset($_SESSION['flash_success'])): ?>
+        <div class="alert alert-success d-flex align-items-center gap-2" role="status">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <?= e($_SESSION['flash_success']) ?>
+        </div>
+        <?php unset($_SESSION['flash_success']); ?>
+    <?php endif; ?>
+
     <!-- SEARCH -->
 
-    <form method="GET"
+    <form method="GET" action="<?= e(app_url('/admin-dashboard/users')) ?>"
           class="mb-4">
 
         <div class="search-box position-relative w-100">
 
+            <i class="bi bi-search search-icon" aria-hidden="true"></i>
+
             <input type="text"
                    name="q"
-                   value="<?= htmlspecialchars($query) ?>"
+                   value="<?= e($query) ?>"
                    placeholder="Search by name, email, or employee ID"
                    class="form-control search-input ps-5">
 
@@ -409,13 +128,13 @@ $pageData = array_slice(
 
                             <div class="avatar">
 
-                                <?= initials($u['name']) ?>
+                                <?= e(initials($u['name'])) ?>
 
                             </div>
 
                             <div class="fw-semibold">
 
-                                <?= $u['name'] ?>
+                                <?= e($u['name']) ?>
 
                             </div>
 
@@ -423,9 +142,9 @@ $pageData = array_slice(
 
                     </td>
 
-                    <td><?= $u['email'] ?></td>
+                    <td><?= e($u['email']) ?></td>
 
-                    <td><?= $u['employeeId'] ?></td>
+                    <td><?= e($u['employeeId']) ?></td>
 
                     <td>
 
@@ -449,7 +168,7 @@ $pageData = array_slice(
 
                         <span class="status <?= strtolower($u['status']) ?>">
 
-                            <?= $u['status'] ?>
+                            <?= e($u['status']) ?>
 
                         </span>
 
@@ -457,18 +176,22 @@ $pageData = array_slice(
 
 
                     <td class="text-end">
+                        <div class="action-buttons">
 
                         <!-- EDIT -->
 
-                        <button class="btn btn-sm btn-light"
+                        <button
+                          type="button"
+                          class="btn btn-light btn-icon"
+                          title="Edit user"
+                          aria-label="Edit <?= e($u['name']) ?>"
 
-                                @click="
-                                showEditModal = true;
-                                editId = '<?= $u['id'] ?>';
-                                editName = '<?= $u['name'] ?>';
-                                editEmail = '<?= $u['email'] ?>';
-                                editRole = '<?= $u['role'] ?>';
-                                ">
+                                @click='openEditModal(<?= e(json_encode([
+                                    'id' => $u['id'],
+                                    'name' => $u['name'],
+                                    'email' => $u['email'],
+                                    'role' => $u['role'],
+                                ], JSON_THROW_ON_ERROR | JSON_HEX_APOS)) ?>)'>
 
                             <i class="bi bi-pencil" aria-hidden="true"></i>
 
@@ -476,15 +199,19 @@ $pageData = array_slice(
 
                         <!-- RESET PASSWORD -->
 
-                        <form method="POST"
-                              class="d-inline">
-
+                        <form method="POST" action="<?= e(app_url('/admin-dashboard/users')) ?>"
+                              class="d-inline-flex">
                             <input type="hidden"
                                    name="id"
-                                   value="<?= $u['id'] ?>">
+                                   value="<?= e($u['id']) ?>">
 
-                            <button name="reset_password"
-                                    class="btn btn-sm btn-light">
+                            <button
+    type="submit"
+    name="reset_password"
+    value="1"
+    class="btn btn-light btn-icon"
+    title="Reset password"
+    aria-label="Reset password for <?= e($u['name']) ?>">
 
                                 <i class="bi bi-key" aria-hidden="true"></i>
 
@@ -494,15 +221,20 @@ $pageData = array_slice(
 
                         <!-- TOGGLE -->
 
-                        <form method="POST"
-                              class="d-inline">
+                        <form method="POST" action="<?= e(app_url('/admin-dashboard/users')) ?>"
+                              class="d-inline-flex">
 
                             <input type="hidden"
                                    name="id"
-                                   value="<?= $u['id'] ?>">
+                                   value="<?= e($u['id']) ?>">
 
-                            <button name="toggle_status"
-                                    class="btn btn-sm btn-outline-danger">
+                           <button
+    type="submit"
+    name="toggle_status"
+    value="1"
+    class="btn btn-outline-danger btn-icon"
+    title="<?= $u['status'] === 'Active' ? 'Disable user' : 'Enable user' ?>"
+    aria-label="<?= $u['status'] === 'Active' ? 'Disable' : 'Enable' ?> <?= e($u['name']) ?>">
 
                                 <i class="bi bi-slash-circle" aria-hidden="true"></i>
 
@@ -510,6 +242,7 @@ $pageData = array_slice(
 
                         </form>
 
+                        </div>
                     </td>
 
                 </tr>
@@ -534,7 +267,7 @@ $pageData = array_slice(
 
         <div class="d-flex align-items-center gap-2">
 
-            <a href="?page=<?= max(1, $page - 1) ?>&q=<?= $query ?>"
+            <a href="<?= e(app_url('/admin-dashboard/users')) ?>?page=<?= max(1, $page - 1) ?>&q=<?= urlencode($query) ?>"
                class="btn btn-outline-secondary <?= $page <= 1 ? 'disabled' : '' ?>">
                 Previous
             </a>
@@ -543,7 +276,7 @@ $pageData = array_slice(
                 Page <?= $page ?> of <?= $totalPages ?>
             </span>
 
-            <a href="?page=<?= min($totalPages, $page + 1) ?>&q=<?= $query ?>"
+            <a href="<?= e(app_url('/admin-dashboard/users')) ?>?page=<?= min($totalPages, $page + 1) ?>&q=<?= urlencode($query) ?>"
                class="btn btn-outline-secondary <?= $page >= $totalPages ? 'disabled' : '' ?>">
                 Next
             </a>
@@ -557,7 +290,8 @@ $pageData = array_slice(
     <!-- ADD MODAL -->
 
     <div class="modal-overlay"
-         x-show="showAddModal">
+         x-show="showAddModal"
+         x-cloak>
 
         <div class="modal-box">
 
@@ -571,7 +305,7 @@ $pageData = array_slice(
 
             </div>
 
-            <form method="POST">
+            <form method="POST" action="<?= e(app_url('/admin-dashboard/users')) ?>">
 
                 <div class="mb-3">
 
@@ -644,7 +378,8 @@ $pageData = array_slice(
     <!-- EDIT MODAL -->
 
     <div class="modal-overlay"
-         x-show="showEditModal">
+         x-show="showEditModal"
+         x-cloak>
 
         <div class="modal-box">
 
@@ -658,7 +393,7 @@ $pageData = array_slice(
 
             </div>
 
-            <form method="POST">
+            <form method="POST" action="<?= e(app_url('/admin-dashboard/users')) ?>">
 
                 <input type="hidden"
                        name="id"
@@ -710,9 +445,10 @@ $pageData = array_slice(
 
                 <div class="d-flex justify-content-end gap-2">
 
-                    <button type="button"
-                            class="btn btn-outline-secondary"
-                            @click="showEditModal = false">
+                    <button
+    type="button"
+    class="btn btn-outline-secondary"
+    @click="showEditModal = false">
 
                         Cancel
 
@@ -751,13 +487,13 @@ $pageData = array_slice(
 
                 <div class="password-display">
 
-                    <?= $_SESSION['generated_password'] ?>
+                    <?= e($_SESSION['generated_password']) ?>
 
                 </div>
 
                 <div class="text-end mt-4">
 
-                    <a href="clear_password.php"
+                    <a href="<?= e(app_url('/admin-dashboard/users/clear-password')) ?>"
                        class="btn btn-main">
 
                         Close
@@ -773,6 +509,8 @@ $pageData = array_slice(
     <?php endif; ?>
 
     </div>
+</div>
+</div>
 
 
 <?php $content = ob_get_clean(); require __DIR__ . '/../layouts/app.php'; ?>

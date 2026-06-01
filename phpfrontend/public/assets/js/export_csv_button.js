@@ -136,6 +136,22 @@
   }
 
   // ── UI state helpers ──────────────────────────────────────────────────────────
+function downloadCsv() {
+  const rows = [
+    ['Name', 'Type', 'Timestamp'],
+    ['Sarah Mthembu', 'in', new Date().toISOString()],
+    ['John Adams', 'out', new Date().toISOString()],
+  ];
+  const csv = rows.map((row) => row.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = 'attendance-log.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
   function setLoadingUI(isLoading) {
     if (!btn) return;

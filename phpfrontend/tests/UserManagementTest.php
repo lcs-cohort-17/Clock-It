@@ -1,350 +1,270 @@
 <?php
 
+declare(strict_types=1);
+
 use PHPUnit\Framework\TestCase;
 
-class UserManagementTest extends TestCase
+final class UserManagementTest extends TestCase
 {
     private string $viewPath;
+    private string $helperPath;
 
     protected function setUp(): void
     {
-        $this->viewPath =
-            __DIR__ . '/../src/views/admin/usermanagement.php';
+        $this->viewPath = __DIR__ . '/../src/views/admin/usermanagement.php';
+        $this->helperPath = __DIR__ . '/../src/helpers/user-helper.php';
     }
 
-    public function testUserManagementPageExists()
+    private function viewContent(): string
+    {
+        return file_get_contents($this->viewPath);
+    }
+
+    public function testUserManagementPageExists(): void
     {
         $this->assertFileExists($this->viewPath);
     }
 
-    public function testPageContainsUserManagementTitle()
+    public function testPageContainsTitleAndSubtitle(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = strtolower($this->viewContent());
 
-        $this->assertStringContainsString(
-            'User Management',
-            $content
-        );
+        $this->assertStringContainsString('user management', $content);
+        $this->assertStringContainsString('self-registration is disabled', $content);
     }
 
-    public function testSubtitleExists()
+    public function testAddUserButtonAndModalExist(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertStringContainsString(
-            'self-registration is disabled',
-            strtolower($content)
-        );
+        $this->assertStringContainsString('Add User', $content);
+        $this->assertStringContainsString('showAddModal', $content);
+        $this->assertStringContainsString('x-show="showAddModal"', $content);
     }
 
-    public function testAddUserButtonExists()
+    public function testAddUserFormHasRequiredFields(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertStringContainsString(
-            'Add User',
-            $content
-        );
-
-        $this->assertStringContainsString(
-            'showAddModal',
-            $content
-        );
+        $this->assertStringContainsString('name="name"', $content);
+        $this->assertStringContainsString('name="email"', $content);
+        $this->assertStringContainsString('name="role"', $content);
+        $this->assertStringContainsString('add_user', $content);
     }
 
-    public function testAddUserFormFieldsExist()
+    public function testEmployeeIdGenerationWorks(): void
     {
-        $content = file_get_contents($this->viewPath);
+        require_once $this->helperPath;
 
-        $this->assertStringContainsString(
-            'name="name"',
-            $content
-        );
-
-        $this->assertStringContainsString(
-            'name="email"',
-            $content
-        );
-
-        $this->assertStringContainsString(
-            'name="role"',
-            $content
-        );
+        $this->assertSame('A-001', generateEmployeeId('Admin', []));
+        $this->assertSame('S-101', generateEmployeeId('Staff', []));
     }
 
-    public function testCreateFunctionalityExists()
+    public function testEmployeeIdFormatIsCorrect(): void
     {
-        $content = file_get_contents($this->viewPath);
+        require_once $this->helperPath;
 
-        $this->assertStringContainsString(
-            'add_user',
-            $content
-        );
+        $adminId = generateEmployeeId('Admin', []);
+        $staffId = generateEmployeeId('Staff', []);
+
+        $this->assertMatchesRegularExpression('/^A-\d{3}$/', $adminId);
+        $this->assertMatchesRegularExpression('/^S-\d{3}$/', $staffId);
     }
 
-    public function testEmployeeIdGenerationExists()
+    public function testRandomPasswordGenerationWorks(): void
     {
-        $content = file_get_contents($this->viewPath);
+        require_once $this->helperPath;
 
-        $this->assertStringContainsString(
-            'generateEmployeeId',
-            $content
-        );
+        $password = generatePassword();
 
-        $this->assertStringContainsString(
-            'A-',
-            $content
-        );
-
-        $this->assertStringContainsString(
-            'S-',
-            $content
-        );
+        $this->assertNotEmpty($password);
+        $this->assertGreaterThanOrEqual(10, strlen($password));
     }
 
-    public function testRandomPasswordGenerationExists()
+    public function testTemporaryPasswordModalExists(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertStringContainsString(
-            'generatePassword',
-            $content
-        );
+        $this->assertStringContainsString('Temporary Password', $content);
+        $this->assertStringContainsString('generated_password', $content);
     }
 
-    public function testPasswordModalExists()
+    public function testUsersTableExistsWithCorrectColumns(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertStringContainsString(
-            'Temporary Password',
-            $content
-        );
-    }
+        $this->assertStringContainsString('<table', $content);
 
-    public function testUsersTableExists()
-    {
-        $content = file_get_contents($this->viewPath);
-
-        $this->assertStringContainsString(
-            '<table',
-            $content
-        );
-    }
-
-    public function testTableColumnsExist()
-    {
-        $content = file_get_contents($this->viewPath);
-
-        $columns = [
-            'Name',
-            'Email',
-            'Employee ID',
-            'Role',
-            'Status',
-            'Actions'
-        ];
-
-        foreach ($columns as $column) {
-            $this->assertStringContainsString(
-                $column,
-                $content
-            );
+        foreach (['Name', 'Email', 'Employee ID', 'Role', 'Status', 'Actions'] as $column) {
+            $this->assertStringContainsString($column, $content);
         }
     }
 
-    public function testAvatarInitialsFeatureExists()
+    public function testAvatarInitialsExist(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = strtolower($this->viewContent());
 
         $this->assertTrue(
-            str_contains(
-                strtolower($content),
-                'avatar'
-            )
-            ||
-            str_contains(
-                strtolower($content),
-                'initials'
-            )
+            str_contains($content, 'avatar') ||
+            str_contains($content, 'initials')
         );
     }
 
-    public function testRoleBadgesExist()
+    public function testRoleBadgesExist(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
         $this->assertTrue(
-            str_contains($content, 'badge-admin')
-            ||
+            str_contains($content, 'badge-admin') &&
             str_contains($content, 'badge-staff')
         );
     }
 
-    public function testStatusBadgesExist()
+    public function testStatusBadgesExist(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
         $this->assertTrue(
-            str_contains(
-                strtolower($content),
-                'active'
-            )
-            ||
-            str_contains(
-                strtolower($content),
-                'inactive'
-            )
+            str_contains($content, 'status') &&
+            str_contains($content, 'Active') ||
+            str_contains($content, 'Inactive')
         );
     }
 
-    public function testEditFunctionalityExists()
+    public function testEditFunctionalityExists(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertStringContainsString(
-            'showEditModal',
-            $content
-        );
-
-        $this->assertStringContainsString(
-            'edit_user',
-            $content
-        );
+        $this->assertStringContainsString('showEditModal', $content);
+        $this->assertStringContainsString('edit_user', $content);
+        $this->assertStringContainsString('x-model="editName"', $content);
+        $this->assertStringContainsString('x-model="editEmail"', $content);
+        $this->assertStringContainsString('x-model="editRole"', $content);
     }
 
-    public function testDisableFunctionalityExists()
+    public function testDisableFunctionalityExists(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertStringContainsString(
-            'toggle_status',
-            $content
-        );
+        $this->assertStringContainsString('toggle_status', $content);
     }
 
-    public function testActionButtonsExist()
+    public function testResetPasswordFunctionalityExists(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
+
+        $this->assertStringContainsString('reset_password', $content);
+        $this->assertStringContainsString('bi-key', $content);
+    }
+
+    public function testShareOrCopyLinkActionExists(): void
+    {
+        $content = strtolower($this->viewContent());
 
         $this->assertTrue(
-            str_contains($content, 'showEditModal')
-            &&
-            str_contains($content, 'reset_password')
-            &&
-            str_contains($content, 'toggle_status')
+            str_contains($content, 'copy') ||
+            str_contains($content, 'share') ||
+            str_contains($content, 'bi-link') ||
+            str_contains($content, 'bi-clipboard')
         );
     }
 
-    public function testSearchFunctionalityExists()
+    public function testActionsColumnHasExpectedButtons(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
+
+        $this->assertStringContainsString('bi-pencil', $content);
+        $this->assertStringContainsString('bi-key', $content);
+        $this->assertStringContainsString('bi-slash-circle', $content);
+    }
+
+    public function testSearchExists(): void
+    {
+        $content = strtolower($this->viewContent());
 
         $this->assertTrue(
-            str_contains($content, 'Search')
-            ||
-            str_contains($content, 'search')
+            str_contains($content, 'search') &&
+            str_contains($content, 'name="q"')
         );
     }
 
-    public function testPaginationExists()
+    public function testPaginationExists(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertStringContainsString(
-            'Previous',
-            $content
-        );
-
-        $this->assertStringContainsString(
-            'Next',
-            $content
-        );
+        $this->assertStringContainsString('Previous', $content);
+        $this->assertStringContainsString('Next', $content);
+        $this->assertStringContainsString('page=', $content);
     }
 
-    public function testUsesAlpineJs()
+    public function testUsesAlpineJs(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
         $this->assertTrue(
-            str_contains($content, 'x-data')
-            ||
-            str_contains($content, 'x-show')
-            ||
-            str_contains($content, 'x-model')
-            ||
+            str_contains($content, 'x-data') ||
+            str_contains($content, 'x-show') ||
+            str_contains($content, 'x-model') ||
             str_contains($content, '@click')
         );
     }
 
-    public function testUsesBootstrap()
+    public function testUsesBootstrapAndCustomCssOnly(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
         $this->assertTrue(
-            str_contains($content, 'container-fluid')
-            ||
-            str_contains($content, 'btn')
-            ||
-            str_contains($content, 'form-control')
-            ||
-            str_contains($content, 'd-flex')
+            str_contains($content, 'container-fluid') ||
+            str_contains($content, 'btn') ||
+            str_contains($content, 'form-control') ||
+            str_contains($content, 'd-flex') ||
+            str_contains($content, 'table')
         );
     }
 
-    public function testDoesNotUseTailwind()
+    public function testDoesNotUseTailwind(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
-        $this->assertFalse(
-            str_contains($content, 'bg-gray')
-        );
+        $tailwindClasses = [
+            'bg-gray',
+            'text-gray',
+            'grid-cols',
+            'flex-col',
+            'rounded-xl',
+            'p-6',
+            'md:',
+            'lg:',
+            'dark:'
+        ];
 
-        $this->assertFalse(
-            str_contains($content, 'text-gray')
-        );
-
-        $this->assertFalse(
-            str_contains($content, 'grid-cols')
-        );
-
-        $this->assertFalse(
-            str_contains($content, 'flex-col')
-        );
+        foreach ($tailwindClasses as $class) {
+            $this->assertFalse(
+                str_contains($content, $class),
+                "Tailwind class found: {$class}"
+            );
+        }
     }
 
-    public function testRealUserDataStructureExists()
+    public function testResponsiveLayoutExists(): void
     {
-        $content = file_get_contents($this->viewPath);
+        $content = $this->viewContent();
 
         $this->assertTrue(
-            str_contains($content, '$users')
-            ||
-            str_contains($content, 'foreach')
-        );
-    }
-
-    public function testButtonsHaveClickFunctionality()
-    {
-        $content = file_get_contents($this->viewPath);
-
-        $this->assertTrue(
-            str_contains($content, '@click')
-            ||
-            str_contains($content, 'onclick')
-        );
-    }
-
-    public function testResponsiveLayoutExists()
-    {
-        $content = file_get_contents($this->viewPath);
-
-        $this->assertTrue(
+            str_contains($content, 'container-fluid') ||
+            str_contains($content, 'table-wrapper') ||
+            str_contains($content, 'table-responsive') ||
             str_contains($content, 'flex-wrap')
-            ||
-            str_contains($content, 'table-wrapper')
-            ||
-            str_contains($content, 'container-fluid')
+        );
+    }
+
+    public function testRealUserDataLoopExists(): void
+    {
+        $content = $this->viewContent();
+
+        $this->assertTrue(
+            str_contains($content, '$users') ||
+            str_contains($content, 'foreach ($pageData as $u)')
         );
     }
 }

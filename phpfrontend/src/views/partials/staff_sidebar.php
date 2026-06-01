@@ -1,17 +1,61 @@
-<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out border-r border-slate-800">
-    <div class="flex flex-col h-full p-4 space-y-6">
-        <div class="text-2xl font-bold px-4">Clock-It</div>
-        
-        <nav class="flex-1 space-y-1">
-            <a href="/staff-dashboard" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-slate-800">Dashboard</a>
-            <a href="/scan-qr" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-slate-800">Scan QR</a>
-            <a href="/history" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-slate-800">History</a>
-            <a href="/calendar" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-slate-800">Calendar</a>
-            <a href="/profile" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-slate-800 bg-slate-800">Profile</a>
-        </nav>
-        
-        <div>
-            <a href="/logout" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white">Logout</a>
-        </div>
+<?php
+
+$currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
+
+if (($basePath ?? '') !== '' && str_starts_with($currentPath, $basePath)) {
+    $currentPath = substr($currentPath, strlen($basePath)) ?: '/';
+}
+
+function staffNavLinkClass(string $route, string $currentPath): string
+{
+    return $route === $currentPath
+        ? 'nav-link active'
+        : 'nav-link text-white';
+}
+?>
+
+<aside id="sidebar" class="bg-dark text-white p-3" style="width:280px;">
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">Clock It</h2>
+        <small class="text-light">Attendance Suite</small>
+    </div>
+
+    <ul class="nav flex-column gap-2">
+        <li class="nav-item">
+            <a href="<?= e(app_url('/staff-dashboard')) ?>"
+               class="<?= staffNavLinkClass('/staff-dashboard', $currentPath) ?>">
+                <i class="bi bi-grid me-2" aria-hidden="true"></i>
+                Dashboard
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="<?= e(app_url('/scan-qr')) ?>"
+               class="<?= staffNavLinkClass('/scan-qr', $currentPath) ?>">
+                <i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>
+                Scan QR
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="<?= e(app_url('/history')) ?>"
+               class="<?= staffNavLinkClass('/history', $currentPath) ?>">
+                <i class="bi bi-clock-history me-2" aria-hidden="true"></i>
+                History
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="<?= e(app_url('/profile')) ?>"
+               class="<?= staffNavLinkClass('/profile', $currentPath) ?>">
+                <i class="bi bi-person me-2" aria-hidden="true"></i>
+                Profile
+            </a>
+        </li>
+    </ul>
+
+    <div class="mt-auto pt-4">
+        <h6><?= e($user['name']) ?></h6>
+        <small><?= e($user['email']) ?></small>
     </div>
 </aside>

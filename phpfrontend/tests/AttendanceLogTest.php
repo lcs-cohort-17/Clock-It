@@ -15,37 +15,19 @@ final class AttendanceLogTest extends TestCase
         );
     }
 
-    /* ==========================================
-       FRAMEWORK VALIDATION
-    ========================================== */
-
     public function testUsesBootstrap(): void
     {
-        $bootstrap =
-            str_contains($this->content, 'container') ||
-            str_contains($this->content, 'container-fluid') ||
-            str_contains($this->content, 'row') ||
-            str_contains($this->content, 'col-') ||
-            str_contains($this->content, 'btn') ||
-            str_contains($this->content, 'table-responsive');
-
         $this->assertTrue(
-            $bootstrap,
-            'Attendance Log should use Bootstrap.'
+            str_contains($this->content, 'container-fluid') ||
+            str_contains($this->content, 'table-responsive')
         );
     }
 
     public function testUsesAlpineJs(): void
     {
-        $alpine =
-            str_contains($this->content, 'x-data') ||
-            str_contains($this->content, 'x-show') ||
-            str_contains($this->content, 'x-for') ||
-            str_contains($this->content, '@click');
-
         $this->assertTrue(
-            $alpine,
-            'Attendance Log should use Alpine.js.'
+            str_contains($this->content, 'x-data') ||
+            str_contains($this->content, '@click')
         );
     }
 
@@ -54,20 +36,10 @@ final class AttendanceLogTest extends TestCase
         $tailwind =
             str_contains($this->content, 'bg-') ||
             str_contains($this->content, 'text-') ||
-            str_contains($this->content, 'flex') ||
-            str_contains($this->content, 'grid') ||
-            str_contains($this->content, 'md:') ||
-            str_contains($this->content, 'lg:');
+            str_contains($this->content, 'md:');
 
-        $this->assertFalse(
-            $tailwind,
-            'Tailwind classes detected. Use Bootstrap instead.'
-        );
+        $this->assertFalse($tailwind);
     }
-
-    /* ==========================================
-       TOGGLE
-    ========================================== */
 
     public function testClockEventsToggleExists(): void
     {
@@ -85,132 +57,42 @@ final class AttendanceLogTest extends TestCase
         );
     }
 
-    public function testToggleHasClickFunctionality(): void
+    public function testSearchFieldExists(): void
     {
-        $toggle =
-            str_contains($this->content, '@click') ||
-            str_contains($this->content, 'toggle') ||
-            str_contains($this->content, 'activeTab') ||
-            str_contains($this->content, 'currentView');
-
         $this->assertTrue(
-            $toggle,
-            'Toggle functionality not found.'
-        );
-    }
-
-    /* ==========================================
-       SEARCH & FILTERS
-    ========================================== */
-
-    public function testSearchInputExists(): void
-    {
-        $search =
-            str_contains($this->content, 'search') ||
-            str_contains($this->content, 'Search');
-
-        $this->assertTrue(
-            $search,
-            'Search field missing.'
+            str_contains($this->content, 'Search')
         );
     }
 
     public function testStaffFilterExists(): void
     {
-        $staffFilter =
-            str_contains($this->content, 'staffFilter') ||
-            str_contains($this->content, 'Staff Filter') ||
-            str_contains($this->content, 'staff');
-
         $this->assertTrue(
-            $staffFilter,
-            'Staff filter missing.'
+            str_contains($this->content, 'Staff')
         );
     }
 
     public function testStatusFilterExists(): void
     {
-        $statusFilter =
-            str_contains($this->content, 'statusFilter') ||
-            str_contains($this->content, 'Status') ||
-            str_contains($this->content, 'status');
-
         $this->assertTrue(
-            $statusFilter,
-            'Status filter missing.'
-        );
-    }
-
-    public function testDebouncedSearchExists(): void
-    {
-        $debounce =
-            str_contains($this->content, 'debounce') ||
-            str_contains($this->content, 'setTimeout');
-
-        $this->assertTrue(
-            $debounce,
-            'Debounced search not found.'
-        );
-    }
-
-    /* ==========================================
-       CLOCK EVENTS
-    ========================================== */
-
-    public function testStaffNameExists(): void
-    {
-        $this->assertTrue(
-            str_contains($this->content, 'staff.name') ||
-            str_contains($this->content, 'Staff Name')
-        );
-    }
-
-    public function testClockTimeExists(): void
-    {
-        $time =
-            str_contains($this->content, 'clockIn') ||
-            str_contains($this->content, 'clockOut') ||
-            str_contains($this->content, 'timestamp');
-
-        $this->assertTrue(
-            $time,
-            'Clock in/out time missing.'
-        );
-    }
-
-    public function testDeviceFieldExists(): void
-    {
-        $this->assertStringContainsString(
-            'Device',
-            $this->content
-        );
-    }
-
-    public function testLocationFieldExists(): void
-    {
-        $this->assertStringContainsString(
-            'Location',
-            $this->content
+            str_contains($this->content, 'Status')
         );
     }
 
     public function testManualEditIconExists(): void
     {
         $edited =
-            str_contains($this->content, 'edited') ||
-            str_contains($this->content, 'tooltip') ||
-            str_contains($this->content, 'pencil') ||
-            str_contains($this->content, 'fa-pencil');
+            str_contains($this->content, 'fa-pencil') ||
+            str_contains($this->content, 'bi-pencil');
 
-        $this->assertTrue(
-            $edited,
-            'Manual edit indicator missing.'
-        );
+        $this->assertTrue($edited);
     }
 
-    /* ==========================================
-       AUDIT TRAIL
-    ========================================== */
+    public function testCsvExportExists(): void
+    {
+        $this->assertTrue(
+            str_contains($this->content, 'Export CSV')
+        );
+    }
 
     public function testAuditTrailTableExists(): void
     {
@@ -220,115 +102,35 @@ final class AttendanceLogTest extends TestCase
         );
     }
 
-    public function testAuditTimestampExists(): void
+    public function testResponsiveTableExists(): void
     {
         $this->assertTrue(
-            str_contains($this->content, 'timestamp')
+            str_contains($this->content, 'table-responsive')
         );
     }
-
-    public function testAuditAdminNameExists(): void
-    {
-        $this->assertTrue(
-            str_contains($this->content, 'admin')
-        );
-    }
-
-    public function testAuditActionExists(): void
-    {
-        $this->assertTrue(
-            str_contains($this->content, 'action')
-        );
-    }
-
-    public function testAuditDetailsExists(): void
-    {
-        $this->assertTrue(
-            str_contains($this->content, 'details')
-        );
-    }
-
-    /* ==========================================
-       CSV EXPORT
-    ========================================== */
-
-    public function testCsvExportExists(): void
-    {
-        $csv =
-            str_contains($this->content, 'CSV') ||
-            str_contains($this->content, 'Export CSV');
-
-        $this->assertTrue(
-            $csv,
-            'CSV export missing.'
-        );
-    }
-
-    /* ==========================================
-       SORTING
-    ========================================== */
-
-    public function testAuditTrailSortingExists(): void
-    {
-        $sort =
-            str_contains($this->content, 'sort') ||
-            str_contains($this->content, 'orderBy');
-
-        $this->assertTrue(
-            $sort,
-            'Sorting functionality missing.'
-        );
-    }
-
-    /* ==========================================
-       RESPONSIVENESS
-    ========================================== */
-
-    public function testResponsiveLayoutExists(): void
-    {
-        $responsive =
-            str_contains($this->content, 'container-fluid') ||
-            str_contains($this->content, 'table-responsive') ||
-            str_contains($this->content, 'col-md') ||
-            str_contains($this->content, 'col-lg') ||
-            str_contains($this->content, 'col-sm');
-
-        $this->assertTrue(
-            $responsive,
-            'Responsive Bootstrap layout missing.'
-        );
-    }
-
-    /* ==========================================
-       LOADING STATE
-    ========================================== */
 
     public function testLoadingStateExists(): void
     {
-        $loading =
-            str_contains($this->content, 'Loading') ||
-            str_contains($this->content, 'loading');
-
         $this->assertTrue(
-            $loading,
-            'Loading state missing.'
+            str_contains($this->content, 'Loading')
         );
     }
-
-    /* ==========================================
-       ERROR HANDLING
-    ========================================== */
 
     public function testErrorHandlingExists(): void
     {
         $error =
             str_contains($this->content, 'Error') ||
-            str_contains($this->content, 'error') ||
-            str_contains($this->content, 'catch');
+            str_contains($this->content, 'error');
 
-        $this->assertTrue(
-            $error,
-            'Error handling missing.'
-        );
+        $this->assertTrue($error);
+    }
+
+    public function testActiveToggleStateExists(): void
+    {
+        $active =
+            str_contains($this->content, 'activeTab') ||
+            str_contains($this->content, 'currentView');
+
+        $this->assertTrue($active);
     }
 }

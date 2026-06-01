@@ -62,6 +62,7 @@
 
       // ── Clock events data + filters (Ticket 2 — R2.1) ──
       clockEvents:        _data.clockEvents.slice(),
+      loading:            false,
       search:             '',
       staffFilter:        '',
       statusFilter:       '',
