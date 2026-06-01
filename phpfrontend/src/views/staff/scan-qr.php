@@ -17,6 +17,7 @@ if (!isset($_SESSION['user_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan QR Code - Clock-It</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.2.11/minified/html5-qrcode.min.js"></script>
@@ -29,36 +30,65 @@ if (!isset($_SESSION['user_id'])) {
     manualInput: '',
     lastScan: null,
     scanner: null,
+    scannerStarting: false,
     
-    startScanner() {
+    async startScanner() {
+        if (this.scannerOpen || this.scannerStarting) return;
+        const allowed = window.confirm('Clock-It needs camera access to scan a QR code. Choose OK, then allow camera access in your browser prompt.');
+        if (!allowed) return;
+
+        this.scanError = '';
+        this.scanResult = '';
+        this.scannerStarting = true;
         this.scannerOpen = true;
-        this.$nextTick(() => {
+
+        this.$nextTick(async () => {
             if (!this.scanner) {
                 this.scanner = new Html5Qrcode('reader');
             }
-            this.scanner.start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 220, height: 220 } },
-                (decodedText) => this.handleScan(decodedText),
-                () => {}
-            ).catch(() => {
-                this.scanner.start(
-                    { facingMode: 'user' },
+
+            try {
+                await this.scanner.start(
+                    { facingMode: 'environment' },
                     { fps: 10, qrbox: { width: 220, height: 220 } },
                     (decodedText) => this.handleScan(decodedText),
                     () => {}
                 );
-            });
+            } catch (environmentError) {
+                try {
+                    await this.scanner.start(
+                    { facingMode: 'user' },
+                    { fps: 10, qrbox: { width: 220, height: 220 } },
+                    (decodedText) => this.handleScan(decodedText),
+                    () => {}
+                    );
+                } catch (userError) {
+                    this.scanError = 'Camera access was blocked or no camera was found. Allow camera permission and try again.';
+                    this.scannerOpen = false;
+                    this.scanner = null;
+                }
+            } finally {
+                this.scannerStarting = false;
+            }
         });
     },
     
-    stopScanner() {
+    async stopScanner() {
         if (this.scanner) {
-            this.scanner.stop().then(() => {
+            try {
+                await this.scanner.stop();
+                await this.scanner.clear();
+            } catch (error) {
+            } finally {
                 this.scanner = null;
                 this.scannerOpen = false;
-            });
+                this.scannerStarting = false;
+            }
+            return;
         }
+
+        this.scannerOpen = false;
+        this.scannerStarting = false;
     },
     
     handleScan(code) {
@@ -113,11 +143,11 @@ if (!isset($_SESSION['user_id'])) {
 
                                     <!-- Scanner Controls -->
                                     <div class="d-flex gap-2 mb-3">
-                                        <button class="btn btn-primary flex-grow-1" @click="startScanner()" x-show="!scannerOpen" type="button">
-                                            📱 Start Scanner
+                                        <button class="btn btn-primary flex-grow-1" @click="startScanner()" x-show="!scannerOpen" :disabled="scannerStarting" type="button">
+                                            <i class="bi bi-camera-video me-1" aria-hidden="true"></i><span x-text="scannerStarting ? 'Starting...' : 'Start Scanner'"></span>
                                         </button>
                                         <button class="btn btn-secondary flex-grow-1" @click="stopScanner()" x-show="scannerOpen" type="button">
-                                            ⏹️ Stop Scanner
+                                            <i class="bi bi-stop-circle me-1" aria-hidden="true"></i>Stop Scanner
                                         </button>
                                     </div>
 
@@ -139,10 +169,10 @@ if (!isset($_SESSION['user_id'])) {
                                     <!-- Demo Buttons -->
                                     <div class="d-grid gap-2">
                                         <button class="btn btn-outline-success" @click="demo('CLOCK_IN')" type="button">
-                                            ✅ Demo Clock In
+                                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Demo Clock In
                                         </button>
                                         <button class="btn btn-outline-warning" @click="demo('CLOCK_OUT')" type="button">
-                                            ⏹️ Demo Clock Out
+                                            <i class="bi bi-stop-circle me-1" aria-hidden="true"></i>Demo Clock Out
                                         </button>
                                     </div>
                                 </div>
@@ -153,13 +183,16 @@ if (!isset($_SESSION['user_id'])) {
                             <!-- Scan Result -->
                             <div class="card border-0 shadow-sm" x-show="scanResult">
                                 <div class="card-header" :class="scanResult.includes('CLOCK_IN') ? 'bg-success' : 'bg-warning'" style="color: white;">
-                                    <h5 class="mb-0" x-text="scanResult.includes('CLOCK_IN') ? '✅ Clock In Recorded' : '⏹️ Clock Out Recorded'"></h5>
+                                    <h5 class="mb-0">
+                                        <i class="bi" :class="scanResult.includes('CLOCK_IN') ? 'bi-check-circle' : 'bi-stop-circle'" aria-hidden="true"></i>
+                                        <span x-text="scanResult.includes('CLOCK_IN') ? 'Clock In Recorded' : 'Clock Out Recorded'"></span>
+                                    </h5>
                                 </div>
                                 <div class="card-body text-center">
                                     <p class="lead mb-2" x-text="scanResult"></p>
                                     <p class="text-muted small" x-text="'Recorded at: ' + lastScan"></p>
                                     <button class="btn btn-primary" @click="scanResult = ''; lastScan = null;" type="button">
-                                        ✅ Done
+                                        <i class="bi bi-check-lg me-1" aria-hidden="true"></i>Done
                                     </button>
                                 </div>
                             </div>
@@ -169,7 +202,7 @@ if (!isset($_SESSION['user_id'])) {
 
                             <!-- Instructions -->
                             <div class="alert alert-info" x-show="!scanResult && !scanError">
-                                <h6 class="alert-heading">📖 Instructions</h6>
+                                <h6 class="alert-heading"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Instructions</h6>
                                 <ul class="mb-0 small">
                                     <li>Click "Start Scanner" to activate your device camera</li>
                                     <li>Position the QR code in front of your camera</li>

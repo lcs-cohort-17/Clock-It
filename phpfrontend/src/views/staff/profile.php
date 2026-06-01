@@ -17,6 +17,7 @@ if (!isset($_SESSION['user_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Clock-It</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
@@ -36,6 +37,44 @@ if (!isset($_SESSION['user_id'])) {
         newPassword: '',
         confirmPassword: ''
     },
+    photoPreview: '',
+    passwordVisible: {
+        currentPassword: false,
+        newPassword: false,
+        confirmPassword: false
+    },
+    get passwordStrength() {
+        const password = this.passwordForm.newPassword;
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[a-z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+
+        if (!password) return { label: 'Enter a new password', className: 'text-muted', percent: 0 };
+        if (score <= 2) return { label: 'Weak password', className: 'text-danger', percent: 33 };
+        if (score <= 4) return { label: 'Good password', className: 'text-warning', percent: 66 };
+        return { label: 'Strong password', className: 'text-success', percent: 100 };
+    },
+    togglePassword(field) {
+        this.passwordVisible[field] = !this.passwordVisible[field];
+    },
+    uploadPhoto(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert('Please choose an image file.');
+            event.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            this.photoPreview = reader.result;
+        };
+        reader.readAsDataURL(file);
+    },
     saveProfile() {
         alert('Profile saved successfully!');
         this.editMode = false;
@@ -43,6 +82,10 @@ if (!isset($_SESSION['user_id'])) {
     changePassword() {
         if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
             alert('Passwords do not match!');
+            return;
+        }
+        if (this.passwordStrength.percent < 66) {
+            alert('Please choose a stronger password before saving.');
             return;
         }
         alert('Password changed successfully!');
@@ -71,7 +114,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Profile Information</h5>
                                     <button class="btn btn-sm btn-outline-primary" @click="editMode = !editMode" type="button">
-                                        <span x-show="!editMode">✏️ Edit</span>
+                                        <span x-show="!editMode"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit</span>
                                         <span x-show="editMode">Cancel</span>
                                     </button>
                                 </div>
@@ -110,7 +153,7 @@ if (!isset($_SESSION['user_id'])) {
                                         x-show="editMode"
                                         type="button"
                                     >
-                                        💾 Save Changes
+                                        <i class="bi bi-save me-1" aria-hidden="true"></i>Save Changes
                                     </button>
                                 </div>
                             </div>
@@ -134,7 +177,7 @@ if (!isset($_SESSION['user_id'])) {
                                         <input type="password" class="form-control" x-model="passwordForm.confirmPassword">
                                     </div>
                                     <button class="btn btn-primary" @click="changePassword()" type="button">
-                                        🔐 Change Password
+                                        <i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Change Password
                                     </button>
                                 </div>
                             </div>
@@ -146,11 +189,11 @@ if (!isset($_SESSION['user_id'])) {
                             <div class="card border-0 shadow-sm mb-4 text-center">
                                 <div class="card-body">
                                     <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-navy), var(--secondary-blue)); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
-                                        👤
+                                        <i class="bi bi-person" aria-hidden="true"></i>
                                     </div>
                                     <p class="text-muted small">Profile Picture</p>
                                     <button class="btn btn-sm btn-outline-secondary" type="button">
-                                        📤 Upload Photo
+                                        <i class="bi bi-upload me-1" aria-hidden="true"></i>Upload Photo
                                     </button>
                                 </div>
                             </div>

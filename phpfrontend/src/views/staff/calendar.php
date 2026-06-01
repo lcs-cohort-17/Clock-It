@@ -17,12 +17,15 @@ if (!isset($_SESSION['user_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Calendar - Clock-It</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
 </head>
 <body x-data="{ 
     currentDate: new Date(),
+    selectedDate: new Date(),
+    today: new Date(),
     
     get month() {
         return this.currentDate.getMonth();
@@ -49,10 +52,10 @@ if (!isset($_SESSION['user_id'])) {
     get calendarDays() {
         const days = [];
         for (let i = 0; i < this.firstDay; i++) {
-            days.push(null);
+            days.push({ key: `${this.year}-${this.month}-blank-${i}`, day: null });
         }
         for (let i = 1; i <= this.daysInMonth; i++) {
-            days.push(i);
+            days.push({ key: `${this.year}-${this.month}-${i}`, day: i });
         }
         return days;
     },
@@ -89,17 +92,42 @@ if (!isset($_SESSION['user_id'])) {
         };
         return text[status] || 'Unknown';
     },
+
+    isToday(day) {
+        return day
+            && day === this.today.getDate()
+            && this.month === this.today.getMonth()
+            && this.year === this.today.getFullYear();
+    },
+
+    isSelected(day) {
+        return day
+            && day === this.selectedDate.getDate()
+            && this.month === this.selectedDate.getMonth()
+            && this.year === this.selectedDate.getFullYear();
+    },
+
+    selectDay(day) {
+        if (!day) return;
+        this.selectedDate = new Date(this.year, this.month, day);
+    },
     
     previousMonth() {
-        this.currentDate = new Date(this.year, this.month - 1);
+        const nextDate = new Date(this.year, this.month - 1, 1);
+        this.currentDate = nextDate;
+        this.selectedDate = nextDate;
     },
     
     nextMonth() {
-        this.currentDate = new Date(this.year, this.month + 1);
+        const nextDate = new Date(this.year, this.month + 1, 1);
+        this.currentDate = nextDate;
+        this.selectedDate = nextDate;
     },
     
     goToToday() {
-        this.currentDate = new Date();
+        this.today = new Date();
+        this.currentDate = new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate());
+        this.selectedDate = new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate());
     }
 }" @init="window.themeManager.initTheme()">
     
@@ -117,56 +145,57 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="container-fluid">
                     <h2 class="mb-4">Attendance Calendar</h2>
 
-                    <div class="row">
-                        <div class="col-lg-8">
+                    <div class="row justify-content-center">
+                        <div class="col-xl-7 col-lg-8">
                             <!-- Calendar -->
                             <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-light">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <button class="btn btn-sm btn-outline-secondary" @click="previousMonth()" type="button">
-                                            ←
+                                            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Previous month</span>
                                         </button>
                                         <h5 class="mb-0" x-text="monthName + ' ' + year"></h5>
                                         <button class="btn btn-sm btn-outline-secondary" @click="nextMonth()" type="button">
-                                            →
+                                            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Next month</span>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body calendar-card-body">
                                     <!-- Day headers -->
-                                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+                                    <div class="calendar-weekdays">
                                         <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day">
-                                            <div style="text-align: center; font-weight: bold; padding: 0.5rem; background-color: #f0f0f0; border-radius: 0.25rem;" x-text="day"></div>
+                                            <div x-text="day"></div>
                                         </template>
                                     </div>
 
                                     <!-- Calendar days -->
-                                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">
-                                        <template x-for="day in calendarDays" :key="day">
-                                            <div 
-                                                x-show="day"
-                                                :class="getDayStatusColor(getDayStatus(day))"
-                                                style="aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 0.5rem; cursor: pointer; color: white; font-weight: bold; transition: transform 0.2s;"
-                                                @mouseenter="$el.style.transform = 'scale(1.1)'"
-                                                @mouseleave="$el.style.transform = 'scale(1)'"
+                                    <div class="attendance-calendar-grid">
+                                        <template x-for="item in calendarDays" :key="item.key">
+                                            <button
+                                                class="calendar-day"
+                                                :class="[item.day ? getDayStatusColor(getDayStatus(item.day)) : 'calendar-day-placeholder', isToday(item.day) ? 'is-today' : '', isSelected(item.day) ? 'is-selected' : '']"
+                                                :disabled="!item.day"
+                                                type="button"
+                                                @click="selectDay(item.day)"
                                             >
-                                                <div x-text="day" style="font-size: 1.25rem;"></div>
-                                                <small x-text="getDayStatusText(getDayStatus(day))" style="font-size: 0.65rem; opacity: 0.9;"></small>
-                                            </div>
-                                            <div x-show="!day" style="aspect-ratio: 1;"></div>
+                                                <span x-text="item.day"></span>
+                                                <small x-text="getDayStatusText(getDayStatus(item.day))"></small>
+                                            </button>
                                         </template>
                                     </div>
 
                                     <div class="d-flex justify-content-center gap-2 mt-4">
                                         <button class="btn btn-primary" @click="goToToday()" type="button">
-                                            📅 Today
+                                            <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>Today
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-lg-4">
+                        <div class="col-xl-4 col-lg-4">
                             <!-- Legend -->
                             <div class="card border-0 shadow-sm mb-4">
                                 <div class="card-header bg-light">

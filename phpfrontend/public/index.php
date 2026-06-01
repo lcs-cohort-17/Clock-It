@@ -16,6 +16,7 @@ $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/index.php');
 $baseUrl = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
 $baseUrl = $baseUrl === '' ? '' : $baseUrl;
+$GLOBALS['baseUrl'] = $baseUrl;
 
 if (str_starts_with($requestPath, $scriptName)) {
     $path = substr($requestPath, strlen($scriptName)) ?: '/';
@@ -108,6 +109,10 @@ if ($path === '/login' && $method === 'POST') {
     redirect_to(str_contains($identifier, 'admin') ? '/admin-dashboard' : '/staff-dashboard');
 }
 
+if ($path === '/auth/google' && $method === 'POST') {
+    redirect_to('/staff-dashboard');
+}
+
 if ($path === '/logout') {
     redirect_to('/');
 }
@@ -154,6 +159,14 @@ switch ($path) {
         $user = $staffUser;
         login_as($user);
         view('staff/calendar', compact('title', 'user'));
+        break;
+
+    case '/leave-requests':
+    case '/leave-requests.php':
+        $title = 'Leave Requests | Clock-It';
+        $user = $staffUser;
+        login_as($user);
+        view('staff/leave-requests', compact('title', 'user'));
         break;
 
     case '/profile':

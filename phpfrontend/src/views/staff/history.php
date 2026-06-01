@@ -17,6 +17,7 @@ if (!isset($_SESSION['user_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance History - Clock-It</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
@@ -112,10 +113,14 @@ if (!isset($_SESSION['user_id'])) {
                             <thead class="table-light">
                                 <tr>
                                     <th style="cursor: pointer;" @click="sort('date')">
-                                        Date <span x-show="sortField === 'date'" x-text="sortOrder === 'asc' ? '▲' : '▼'"></span>
+                                        Date
+                                        <i class="bi bi-caret-up-fill ms-1" x-show="sortField === 'date' && sortOrder === 'asc'" aria-hidden="true"></i>
+                                        <i class="bi bi-caret-down-fill ms-1" x-show="sortField === 'date' && sortOrder === 'desc'" aria-hidden="true"></i>
                                     </th>
                                     <th style="cursor: pointer;" @click="sort('time')">
-                                        Time <span x-show="sortField === 'time'" x-text="sortOrder === 'asc' ? '▲' : '▼'"></span>
+                                        Time
+                                        <i class="bi bi-caret-up-fill ms-1" x-show="sortField === 'time' && sortOrder === 'asc'" aria-hidden="true"></i>
+                                        <i class="bi bi-caret-down-fill ms-1" x-show="sortField === 'time' && sortOrder === 'desc'" aria-hidden="true"></i>
                                     </th>
                                     <th>Type</th>
                                     <th>Location</th>
