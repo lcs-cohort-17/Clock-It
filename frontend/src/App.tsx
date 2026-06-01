@@ -106,3 +106,5 @@ function App() {
 // DEFAULT EXPORT (now the App router)
 // ============================
 export default App;
+export default App;
+>>>>>>> Gazelle/QA-team/testing
