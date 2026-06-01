@@ -130,6 +130,38 @@ function dashboard_path_for(array $user): string
         : '/staff-dashboard';
 }
 
+function admin_settings_file(): string
+{
+    return dirname(__DIR__) . '/phpfrontend/storage/settings_mock.json';
+}
+
+function admin_settings_read(): array
+{
+    $file = admin_settings_file();
+
+    if (!file_exists($file)) {
+        return [
+            'session_timeout' => 30,
+            'data_retention_days' => 90,
+        ];
+    }
+
+    $settings = json_decode((string) file_get_contents($file), true);
+
+    return is_array($settings) ? $settings : [
+        'session_timeout' => 30,
+        'data_retention_days' => 90,
+    ];
+}
+
+function admin_settings_write(array $settings): void
+{
+    file_put_contents(
+        admin_settings_file(),
+        json_encode($settings, JSON_THROW_ON_ERROR)
+    );
+}
+
 /*
 |--------------------------------------------------------------------------
 | ROUTES
@@ -222,6 +254,56 @@ switch ($path) {
         ]);
         break;
 
+    case '/api/admin/settings':
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+        if ($method === 'GET') {
+            login_json_response(admin_settings_read());
+        }
+
+        if ($method !== 'PUT') {
+            login_json_response(['error' => 'Method not allowed.'], 405);
+        }
+
+        $payload = login_request_data();
+        $sessionTimeout = (int) ($payload['session_timeout'] ?? 0);
+        $retentionDays = (int) ($payload['data_retention_days'] ?? 0);
+
+        if ($sessionTimeout <= 0 || $retentionDays <= 0) {
+            login_json_response(['error' => 'Values must be positive integers.'], 400);
+        }
+
+        admin_settings_write([
+            'session_timeout' => $sessionTimeout,
+            'data_retention_days' => $retentionDays,
+        ]);
+
+        login_json_response([
+            'success' => true,
+            'message' => 'Settings saved.',
+        ]);
+        break;
+
+    case '/api/admin/data-retention/purge':
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            login_json_response(['error' => 'Method not allowed.'], 405);
+        }
+
+        $settings = admin_settings_read();
+        $retentionDays = (int) ($settings['data_retention_days'] ?? 90);
+        $purgeLog = dirname(__DIR__) . '/phpfrontend/storage/purge_log.txt';
+        file_put_contents(
+            $purgeLog,
+            date('Y-m-d H:i:s') . " - Purged records older than {$retentionDays} days\n",
+            FILE_APPEND
+        );
+
+        login_json_response([
+            'success' => true,
+            'message' => "Purged records older than {$retentionDays} days.",
+        ]);
+        break;
+
     /*
     |--------------------------------------------------------------------------
     | ADMIN
@@ -273,6 +355,18 @@ switch ($path) {
             'title',
             'user',
             'stats',
+            'isAdminDashboard'
+        ));
+        break;
+
+    case '/admin-dashboard/settings':
+        $title = 'Admin Settings';
+        $user = $adminUser;
+        $isAdminDashboard = true;
+
+        view('admin/admin_settings', compact(
+            'title',
+            'user',
             'isAdminDashboard'
         ));
         break;

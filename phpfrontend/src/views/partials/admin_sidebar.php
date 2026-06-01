@@ -48,6 +48,14 @@ function navLinkClass(string $route, string $currentPath): string
             </a>
         </li>
 
+        <li class="nav-item">
+            <a href="<?= e(app_url('/admin-dashboard/settings')) ?>"
+               class="<?= navLinkClass('/admin-dashboard/settings', $currentPath) ?>">
+                <i class="bi bi-gear me-2" aria-hidden="true"></i>
+                Settings
+            </a>
+        </li>
+
     </ul>
 
     <div class="mt-auto pt-4">

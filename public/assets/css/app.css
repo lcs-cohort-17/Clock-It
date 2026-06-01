@@ -332,6 +332,34 @@ body {
   overflow: hidden;
 }
 
+.settings-page {
+  max-width: 1240px;
+}
+
+.settings-admin-badge {
+  background: var(--mid-blue);
+  color: #ffffff;
+}
+
+.settings-card {
+  border-top: 4px solid var(--mid-blue);
+}
+
+.settings-purge-btn {
+  border: 1px solid var(--olive-green);
+  border-radius: 8px;
+  background: var(--olive-green);
+  color: var(--deep-navy);
+  font-weight: 700;
+}
+
+.settings-purge-btn:hover,
+.settings-purge-btn:focus {
+  border-color: #87a066;
+  background: #87a066;
+  color: var(--deep-navy);
+}
+
 .history-status {
   display: inline-flex;
   min-width: 76px;
