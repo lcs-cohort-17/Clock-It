@@ -1,83 +1,145 @@
 <?php
 
-declare(strict_types=1);
-
 namespace ClockIt\Data;
 
-final class AttendanceRepository
+class AttendanceRepository
 {
+    private array $data;
+
+    public function __construct()
+    {
+        $this->data = require __DIR__ . '/MockData.php';
+    }
+
     public function onsiteStaff(): array
     {
-        return [
-            [
-                'id' => 1,
-                'name' => 'Rhea Morgan',
-                'role' => 'Site Manager',
-                'signedInAt' => '8:12 AM',
-                'avatar' => 'RM',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Elijah Park',
-                'role' => 'Technician',
-                'signedInAt' => '8:24 AM',
-                'avatar' => 'EP',
-            ],
-            [
-                'id' => 3,
-                'name' => 'Maya Chen',
-                'role' => 'Field Engineer',
-                'signedInAt' => '9:03 AM',
-                'avatar' => 'MC',
-            ],
-        ];
+        return $this->data['onsiteStaff'];
     }
 
     public function recentActivity(): array
     {
-        return [
-            [
-                'id' => 10,
-                'name' => 'Noah Silva',
-                'action' => 'Clock Out',
-                'timestamp' => '5:01 PM',
-                'type' => 'out',
-            ],
-            [
-                'id' => 9,
-                'name' => 'Maya Chen',
-                'action' => 'Clock In',
-                'timestamp' => '9:03 AM',
-                'type' => 'in',
-            ],
-            [
-                'id' => 8,
-                'name' => 'Elijah Park',
-                'action' => 'Clock In',
-                'timestamp' => '8:24 AM',
-                'type' => 'in',
-            ],
-            [
-                'id' => 7,
-                'name' => 'Rhea Morgan',
-                'action' => 'Clock In',
-                'timestamp' => '8:12 AM',
-                'type' => 'in',
-            ],
-        ];
+        return $this->data['recentActivity'];
     }
 
-    public function quickActions(): array
+    public function attendanceLogs(): array
     {
-        return [
-            ['label' => 'QR Generator', 'href' => '/qr-generator', 'variant' => 'light'],
-            ['label' => 'Attendance Logs', 'href' => '/attendance-logs', 'variant' => 'light'],
-            ['label' => 'Sheets Integration', 'href' => '/sheets', 'variant' => 'light'],
-        ];
+        return $this->data['attendanceLogs'];
     }
 
-    public function sheetsConnected(): bool
+    private array $clockEvents = [
+    [
+        'id'        => 1,
+        'staff'     => 'Amara Nwosu',
+        'type'      => 'Clock In',
+        'timestamp' => '2026-05-27 08:02:14',
+        'device'    => 'Terminal A',
+        'location'  => 'Main Office',
+        'sync'      => 'Synced',
+    ],
+    [
+        'id'        => 2,
+        'staff'     => 'Amara Nwosu',
+        'type'      => 'Clock Out',
+        'timestamp' => '2026-05-27 17:05:33',
+        'device'    => 'Terminal A',
+        'location'  => 'Main Office',
+        'sync'      => 'Synced',
+    ],
+    [
+        'id'        => 3,
+        'staff'     => 'Sipho Dlamini',
+        'type'      => 'Clock In',
+        'timestamp' => '2026-05-27 07:58:01',
+        'device'    => 'Terminal B',
+        'location'  => 'Warehouse',
+        'sync'      => 'Synced',
+    ],
+    [
+        'id'        => 4,
+        'staff'     => 'Sipho Dlamini',
+        'type'      => 'Clock Out',
+        'timestamp' => '2026-05-27 16:30:44',
+        'device'    => 'Terminal B',
+        'location'  => 'Warehouse',
+        'sync'      => 'Pending',
+    ],
+    [
+        'id'        => 5,
+        'staff'     => 'Naledi Khumalo',
+        'type'      => 'Clock In',
+        'timestamp' => '2026-05-27 09:15:22',
+        'device'    => 'Mobile App',
+        'location'  => 'Remote',
+        'sync'      => 'Synced',
+    ],
+    [
+        'id'        => 6,
+        'staff'     => 'Naledi Khumalo',
+        'type'      => 'Clock Out',
+        'timestamp' => '2026-05-27 18:01:09',
+        'device'    => 'Mobile App',
+        'location'  => 'Remote',
+        'sync'      => 'Synced',
+    ],
+    [
+        'id'        => 7,
+        'staff'     => 'Themba Mthembu',
+        'type'      => 'Clock In',
+        'timestamp' => '2026-05-26 08:45:00',
+        'device'    => 'Terminal A',
+        'location'  => 'Main Office',
+        'sync'      => 'Synced',
+    ],
+    [
+        'id'        => 8,
+        'staff'     => 'Themba Mthembu',
+        'type'      => 'Clock Out',
+        'timestamp' => '2026-05-26 17:30:18',
+        'device'    => 'Terminal A',
+        'location'  => 'Main Office',
+        'sync'      => 'Synced',
+    ],
+];
+
+    private array $auditTrail = [
+    [
+        'id'        => 1,
+        'timestamp' => '2026-05-27 14:30:00',
+        'actor'     => 'Admin Jane',
+        'action'    => 'EDIT',
+        'details'   => 'Modified clock-out time for Amara Nwosu (17:00 → 17:05)',
+    ],
+    [
+        'id'        => 2,
+        'timestamp' => '2026-05-27 11:12:45',
+        'actor'     => 'Admin Jane',
+        'action'    => 'OVERRIDE',
+        'details'   => 'Manual clock-in added for Sipho Dlamini',
+    ],
+    [
+        'id'        => 3,
+        'timestamp' => '2026-05-26 16:55:10',
+        'actor'     => 'Admin Kobus',
+        'action'    => 'DELETE',
+        'details'   => 'Removed duplicate clock-out entry for Naledi Khumalo',
+    ],
+    [
+        'id'        => 4,
+        'timestamp' => '2026-05-26 09:03:22',
+        'actor'     => 'Admin Kobus',
+        'action'    => 'EDIT',
+        'details'   => 'Corrected device from "Unknown" to "Terminal A" for Themba Mthembu',
+    ],
+];
+
+    public function getClockEvents(): array
     {
-        return false;
+        return $this->clockEvents;
     }
+
+    public function getAuditTrail(): array
+    {
+        return $this->auditTrail;
+    }
+
 }
