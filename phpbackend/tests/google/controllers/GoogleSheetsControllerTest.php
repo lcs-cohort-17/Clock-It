@@ -4,32 +4,50 @@ use PHPUnit\Framework\TestCase;
 
 class GoogleSheetsControllerTest extends TestCase
 {
-    private GoogleSheetsController $controller; 
+    private function makeController(
+        bool $connected = false,
+        array $pendingRecords = []
+    ): GoogleSheetsController {
+        $mockService = $this->createMock(GoogleSheetsService::class);
+        $mockService->method('isConnected')->willReturn($connected);
+        $mockService->method('createSpreadsheet')->willReturn('mock-sheet-id');
+        $mockService->method('writeAttendanceData')->willReturn(true);
+        $mockService->method('generateSheetUrl')->willReturn(
+            'https://docs.google.com/spreadsheets/d/mock-sheet-id'
+        );
 
-    protected function setUp(): void
-    {
-        $this->controller = new GoogleSheetsController();
+        $mockModel = $this->createMock(GoogleSheetsModel::class);
+        $mockModel->method('getPendingAttendance')->willReturn($pendingRecords);
+        $mockModel->method('getAttendanceByDateRange')->willReturn([]);
+        $mockModel->method('saveSyncFrequency')->willReturn(true);
+        $mockModel->method('saveSheetId')->willReturn(true);
+        $mockModel->method('getSheetId')->willReturn('mock-sheet-id');
+
+        return new GoogleSheetsController($mockService, $mockModel);
     }
 
     public function testStatusReturnsDisconnectedWhenNotConfigured(): void
     {
-        $response = $this->controller->status();
+        $controller = $this->makeController(connected: false);
+        $response   = $controller->status();
 
         $this->assertFalse($response['connected']);
     }
 
     public function testStatusReturnsConnectedWhenConfigured(): void
     {
-        $response = $this->controller->status();
+        $controller = $this->makeController(connected: true);
+        $response   = $controller->status();
 
         $this->assertArrayHasKey('connected', $response);
     }
 
     public function testExportReturnsSheetUrl(): void
     {
-        $response = $this->controller->export([
+        $controller = $this->makeController(connected: true);
+        $response   = $controller->export([
             'start_date' => '2026-01-01',
-            'end_date' => '2026-01-31'
+            'end_date'   => '2026-01-31'
         ]);
 
         $this->assertArrayHasKey('sheet_url', $response);
@@ -39,26 +57,34 @@ class GoogleSheetsControllerTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $this->controller->export([]);
+        $this->makeController()->export([]);
     }
 
     public function testSyncReturnsSuccessResponse(): void
     {
-        $response = $this->controller->sync();
+        $controller = $this->makeController(
+            connected: true,
+            pendingRecords: [
+                ['employee_id' => 'EMP001', 'event_type' => 'in']
+            ]
+        );
+        $response = $controller->sync();
 
         $this->assertTrue($response['success']);
     }
 
     public function testDisconnectRemovesConfiguration(): void
     {
-        $response = $this->controller->disconnect();
+        $controller = $this->makeController();
+        $response   = $controller->disconnect();
 
         $this->assertTrue($response['success']);
     }
 
     public function testSaveSyncFrequency(): void
     {
-        $response = $this->controller->updateSettings([ 
+        $controller = $this->makeController();
+        $response   = $controller->updateSettings([
             'sync_frequency' => '15m'
         ]);
 
@@ -69,7 +95,7 @@ class GoogleSheetsControllerTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $this->controller->updateSettings([
+        $this->makeController()->updateSettings([
             'sync_frequency' => 'abc123'
         ]);
     }

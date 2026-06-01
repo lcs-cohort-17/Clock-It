@@ -1,75 +1,52 @@
 <?php
+// src/models/GoogleSheetsModel.php
 
 class GoogleSheetsModel
 {
-    private string $storageFile;
-
-    public function __construct()
-    {
-        $this->storageFile = sys_get_temp_dir() . '/clockit_google_sheets.json';
-    }
+    private static array $store = [
+        'sync_frequency' => null,
+        'sheet_id'       => null,
+        'attendance'     => [],
+    ];
 
     public function saveSyncFrequency(string $frequency): bool
     {
-        $data = $this->loadData();
-        $data['sync_frequency'] = $frequency;
-
-        return $this->saveData($data);
+        self::$store['sync_frequency'] = $frequency;
+        return true;
     }
 
     public function getSyncFrequency(): ?string
     {
-        $data = $this->loadData();
-
-        return $data['sync_frequency'] ?? null;
-    }
-
-    public function saveSheetId(string $sheetId): bool
-    {
-        $data = $this->loadData();
-        $data['sheet_id'] = $sheetId;
-
-        return $this->saveData($data);
-    }
-
-    public function getSheetId(): ?string
-    {
-        $data = $this->loadData();
-
-        return $data['sheet_id'] ?? null;
+        return self::$store['sync_frequency'];
     }
 
     public function updateAttendanceSyncStatus(string $attendanceId, string $status): bool
     {
+        self::$store['attendance'][$attendanceId] = $status;
         return true;
     }
 
     public function getPendingAttendance(): array
     {
-        return [];
+        return array_filter(
+            self::$store['attendance'],
+            fn($status) => $status === 'pending'
+        );
     }
 
     public function getAttendanceByDateRange(string $startDate, string $endDate): array
     {
-        return [];
+        return self::$store['attendance'];
     }
 
-    private function loadData(): array
+    public function saveSheetId(string $sheetId): bool
     {
-        if (!file_exists($this->storageFile)) {
-            return [];
-        }
-
-        $contents = file_get_contents($this->storageFile);
-        $data = json_decode($contents, true);
-
-        return is_array($data) ? $data : [];
+        self::$store['sheet_id'] = $sheetId;
+        return true;
     }
 
-    private function saveData(array $data): bool
+    public function getSheetId(): ?string
     {
-        $json = json_encode($data, JSON_PRETTY_PRINT);
-
-        return file_put_contents($this->storageFile, $json) !== false;
+        return self::$store['sheet_id'];
     }
 }

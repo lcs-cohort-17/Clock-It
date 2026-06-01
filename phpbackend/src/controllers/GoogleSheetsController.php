@@ -1,60 +1,68 @@
 <?php
-
-require_once __DIR__ . '/../models/GoogleSheetsModel.php';
+// src/controllers/GoogleSheetsController.php
 
 class GoogleSheetsController
 {
+    private GoogleSheetsService $service;
+    private GoogleSheetsModel $model;
+
+    public function __construct(
+        ?GoogleSheetsService $service = null,
+        ?GoogleSheetsModel $model = null
+    ) {
+        $this->service = $service ?? new GoogleSheetsService();
+        $this->model   = $model   ?? new GoogleSheetsModel();
+    }
+
     public function status(): array
     {
-        // TDD: This will fail the test - implement to return actual status
-        return ['connected' => false];
+        return ['connected' => $this->service->isConnected()];
     }
 
     public function export(array $params): array
     {
-        // TDD: This will fail - implement export logic
         if (empty($params['start_date']) || empty($params['end_date'])) {
-            throw new InvalidArgumentException('Date range is required');
+            throw new InvalidArgumentException('Date range required');
         }
 
-        return ['sheet_url' => ''];
+        $data     = $this->model->getAttendanceByDateRange(
+            $params['start_date'],
+            $params['end_date']
+        );
+        $sheetId  = $this->service->createSpreadsheet('Attendance Export');
+
+        if (empty($sheetId)) {
+            throw new RuntimeException('Unable to create Google Sheet');
+        }
+
+        $this->model->saveSheetId($sheetId);
+        $this->service->writeAttendanceData($data);
+
+        return ['sheet_url' => $this->service->generateSheetUrl($sheetId)];
     }
 
     public function sync(): array
     {
-        // TDD: This will fail - implement sync logic
-        return ['success' => false];
+        $pending = $this->model->getPendingAttendance();
+        $result  = $this->service->writeAttendanceData($pending);
+
+        return ['success' => $result];
     }
+
     public function disconnect(): array
     {
-        $model = new GoogleSheetsModel();
-        $success = true;
-
-        if (method_exists($model, 'saveSheetId')) {
-            $success = $model->saveSheetId('') === true;
-        }
-
-        return ['success' => $success];
+        $this->model->saveSheetId('');
+        return ['success' => true];
     }
 
-    public function updateSettings(array $settings): array
+    public function updateSettings(array $params): array
     {
-        if (empty($settings['sync_frequency'])) {
-            throw new InvalidArgumentException('Sync frequency is required');
-        }
-
-        $syncFrequency = $settings['sync_frequency'];
-
-        if (!preg_match('/^[1-9]\d*[smhd]$/i', $syncFrequency)) {
+        if (empty($params['sync_frequency']) ||
+            !SyncFrequencyValidator::isValid($params['sync_frequency'])) {
             throw new InvalidArgumentException('Invalid sync frequency');
         }
 
-        $model = new GoogleSheetsModel();
-        $success = true;
-
-        if (method_exists($model, 'saveSyncFrequency')) {
-            $success = $model->saveSyncFrequency($syncFrequency);
-        }
-
-        return ['success' => $success === true];
-    }}
+        $result = $this->model->saveSyncFrequency($params['sync_frequency']);
+        return ['success' => $result];
+    }
+}

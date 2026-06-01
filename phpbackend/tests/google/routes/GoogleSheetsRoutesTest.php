@@ -6,7 +6,7 @@ class GoogleSheetsRoutesTest extends TestCase
 {
     public function testStatusRouteExists(): void
     {
-        $routes = require __DIR__ . '/../../routes/google.php';
+        $routes = require __DIR__ . '/../../../src/routes/google.php';
 
         $this->assertArrayHasKey(
             'GET /api/admin/sheets/status',
@@ -16,7 +16,7 @@ class GoogleSheetsRoutesTest extends TestCase
 
     public function testExportRouteExists(): void
     {
-        $routes = require __DIR__ . '/../../routes/google.php';
+        $routes = require __DIR__ . '/../../../src/routes/google.php';
 
         $this->assertArrayHasKey(
             'POST /api/admin/sheets/export',
@@ -26,7 +26,7 @@ class GoogleSheetsRoutesTest extends TestCase
 
     public function testSyncRouteExists(): void
     {
-        $routes = require __DIR__ . '/../../routes/google.php';
+        $routes = require __DIR__ . '/../../../src/routes/google.php';
 
         $this->assertArrayHasKey(
             'POST /api/admin/sheets/sync',
@@ -36,7 +36,7 @@ class GoogleSheetsRoutesTest extends TestCase
 
     public function testDisconnectRouteExists(): void
     {
-        $routes = require __DIR__ . '/../../routes/google.php';
+        $routes = require __DIR__ . '/../../../src/routes/google.php';
 
         $this->assertArrayHasKey(
             'POST /api/admin/sheets/disconnect',
