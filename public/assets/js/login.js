@@ -266,7 +266,7 @@
             socialLogin: async function (provider) {
                 // Demo: ask user which account to use for social login (this simulates
                 // the provider returning an account for the current device).
-                var picked = prompt('Demo social login — enter the email for ' + provider + ' account:');
+                var picked = prompt('Demo social login - enter the email for ' + provider + ' account:');
                 if (!picked) return;
 
                 try {

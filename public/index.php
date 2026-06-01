@@ -7,8 +7,15 @@ declare(strict_types=1);
 
 session_start();
 
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
+$clockitPublicBase = $clockitPublicBase ?? '';
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($path === '/index.php') {
+    $path = '/';
+} elseif (str_starts_with($path, '/index.php/')) {
+    $path = substr($path, strlen('/index.php'));
+}
 
 $staffUser = [
     'id' => 'staff-001',
@@ -69,9 +76,41 @@ function view(string $view, array $data = []): void
     require __DIR__ . '/../src/views/' . $view . '.php';
 }
 
+function clockit_asset(string $path): string
+{
+    global $clockitPublicBase;
+
+    return rtrim($clockitPublicBase, '/') . '/' . ltrim($path, '/');
+}
+
+function clockit_route(string $path): string
+{
+    $path = '/' . ltrim($path, '/');
+
+    if ($path === '/index.php' || str_starts_with($path, '/index.php/')) {
+        return $path;
+    }
+
+    return $path === '/' ? '/index.php' : '/index.php' . $path;
+}
+
+if (!function_exists('clockit_asset')) {
+    function clockit_asset(string $path): string
+    {
+        return '/' . ltrim($path, '/');
+    }
+}
+
+if (!function_exists('clockit_route')) {
+    function clockit_route(string $path): string
+    {
+        return $path === '/' ? '/' : '/' . ltrim($path, '/');
+    }
+}
+
 function redirect_to(string $path): never
 {
-    header('Location: ' . $path);
+    header('Location: ' . clockit_route($path));
     exit;
 }
 
@@ -124,9 +163,11 @@ function find_demo_user_by_employee_id(array $users, string $employeeId): ?array
 
 function dashboard_route_for(array $user): string
 {
-    return strtolower((string) ($user['role'] ?? 'staff')) === 'admin'
+    $path = strtolower((string) ($user['role'] ?? 'staff')) === 'admin'
         ? '/admin-dashboard'
         : '/staff-dashboard';
+
+    return clockit_route($path);
 }
 
 // Frontend-only API placeholders. They let the login screen behave like it is
