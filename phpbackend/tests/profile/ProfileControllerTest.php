@@ -27,38 +27,38 @@ class ProfileControllerTest extends TestCase
     }
 
     // ─── GET ALL ─────────────────────────────────────────────────
-    public function test_getProfiles_returns_200_with_all_profiles(): void
+    public function test_adminGettingAllUsers_returns_200_with_all_profiles(): void
     {
-        $this->modelMock->method('getProfiles')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('adminGettingAllUsers')->willReturn(ApiResponse::ok([
             ['id' => '1', 'first_name' => 'Joshua', 'employee_id' => 'S-005', 'role' => 'staff', 'is_active' => 1, 'email' => 'j@gmail.com', 'password' => 'hashed'],
             ['id' => '2', 'first_name' => 'Sarah',  'employee_id' => 'A-010', 'role' => 'admin', 'is_active' => 1, 'email' => 's@gmail.com', 'password' => 'hashed'],
         ]));
 
-        $body = $this->capture(fn () => $this->controller->getProfiles());
+        $body = $this->capture(fn () => $this->controller->adminGettingAllUsers());
 
         $this->assertTrue($body['success']);
         $this->assertCount(2, $body['data']);
     }
 
-    public function test_getProfiles_returns_400_on_model_failure(): void
+    public function test_adminGettingAllUsers_returns_400_on_model_failure(): void
     {
-        $this->modelMock->method('getProfiles')->willReturn(ApiResponse::fail('Database error'));
+        $this->modelMock->method('adminGettingAllUsers')->willReturn(ApiResponse::fail('Database error'));
 
-        $body = $this->capture(fn () => $this->controller->getProfiles());
+        $body = $this->capture(fn () => $this->controller->adminGettingAllUsers());
 
         $this->assertFalse($body['success']);
     }
 
     // ─── CREATE ──────────────────────────────────────────────────
-    public function test_createProfile_returns_201_with_plain_password(): void
+    public function test_adminCreatingUser_returns_201_with_plain_password(): void
     {
-        $this->modelMock->method('createProfile')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('adminCreatingUser')->willReturn(ApiResponse::ok([
             'id' => '1', 'first_name' => 'Joshua', 'last_name' => 'Jacobs',
             'employee_id' => 'S-005', 'role' => 'staff', 'is_active' => 1,
             'email' => 'j@gmail.com', 'password' => 'Xk9mP2qR'
         ]));
 
-        $body = $this->capture(fn () => $this->controller->createProfile([
+        $body = $this->capture(fn () => $this->controller->adminCreatingUser([
             'first_name' => 'Joshua', 'last_name' => 'Jacobs',
             'employee_id' => 'S-005', 'role' => 'staff', 'email' => 'j@gmail.com'
         ]));
@@ -69,20 +69,20 @@ class ProfileControllerTest extends TestCase
         $this->assertEquals('Joshua', $body['data']['first_name']);
     }
 
-    public function test_createProfile_returns_400_when_fields_missing(): void
+    public function test_adminCreatingUser_returns_400_when_fields_missing(): void
     {
-        $body = $this->capture(fn () => $this->controller->createProfile(['first_name' => 'Joshua']));
+        $body = $this->capture(fn () => $this->controller->adminCreatingUser(['first_name' => 'Joshua']));
 
         $this->assertFalse($body['success']);
         $this->assertEquals('All fields are required', $body['error']);
     }
 
-    public function test_createProfile_returns_400_on_model_error(): void
+    public function test_adminCreatingUser_returns_400_on_model_error(): void
     {
-        $this->modelMock->method('createProfile')
+        $this->modelMock->method('adminCreatingUser')
             ->willReturn(ApiResponse::fail('Staff employee_id must start with S-'));
 
-        $body = $this->capture(fn () => $this->controller->createProfile([
+        $body = $this->capture(fn () => $this->controller->adminCreatingUser([
             'first_name' => 'Joshua', 'last_name' => 'Jacobs',
             'employee_id' => 'A-005', 'role' => 'staff', 'email' => 'j@gmail.com'
         ]));
@@ -156,45 +156,45 @@ class ProfileControllerTest extends TestCase
     }
 
     // ─── UPDATE ──────────────────────────────────────────────────
-    public function test_updateProfile_returns_200_on_success(): void
+    public function test_adminUpdatingUser_returns_200_on_success(): void
     {
-        $this->modelMock->method('updateProfile')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('adminUpdatingUser')->willReturn(ApiResponse::ok([
             'id' => '1', 'first_name' => 'Siza', 'last_name' => 'Mpafa',
             'employee_id' => 'S-007', 'role' => 'staff', 'is_active' => 1, 'email' => 'siza@gmail.com'
         ]));
 
-        $body = $this->capture(fn () => $this->controller->updateProfile('S-007', ['first_name' => 'Siza']));
+        $body = $this->capture(fn () => $this->controller->adminUpdatingUser('S-007', ['first_name' => 'Siza']));
 
         $this->assertTrue($body['success']);
     }
 
-    public function test_updateProfile_returns_400_on_model_failure(): void
+    public function test_adminUpdatingUser_returns_400_on_model_failure(): void
     {
-        $this->modelMock->method('updateProfile')->willReturn(ApiResponse::fail('Update failed'));
+        $this->modelMock->method('adminUpdatingUser')->willReturn(ApiResponse::fail('Update failed'));
 
-        $body = $this->capture(fn () => $this->controller->updateProfile('S-007', ['first_name' => 'Ghost']));
+        $body = $this->capture(fn () => $this->controller->adminUpdatingUser('S-007', ['first_name' => 'Ghost']));
 
         $this->assertFalse($body['success']);
         $this->assertEquals('Update failed', $body['error']);
     }
 
     // ─── DELETE ──────────────────────────────────────────────────
-    public function test_deleteProfile_returns_200_on_soft_delete(): void
+    public function test_adminDeletingUser_returns_200_on_soft_delete(): void
     {
-        $this->modelMock->method('deleteProfile')
+        $this->modelMock->method('adminDeletingUser')
             ->willReturn(new ApiResponse(true, null, null, 'profile deleted successfully'));
 
-        $body = $this->capture(fn () => $this->controller->deleteProfile('S-007'));
+        $body = $this->capture(fn () => $this->controller->adminDeletingUser('S-007'));
 
         $this->assertTrue($body['success']);
         $this->assertEquals('profile deleted successfully', $body['message']);
     }
 
-    public function test_deleteProfile_returns_400_on_failure(): void
+    public function test_adminDeletingUser_returns_400_on_failure(): void
     {
-        $this->modelMock->method('deleteProfile')->willReturn(ApiResponse::fail('Delete failed'));
+        $this->modelMock->method('adminDeletingUser')->willReturn(ApiResponse::fail('Delete failed'));
 
-        $body = $this->capture(fn () => $this->controller->deleteProfile('S-007'));
+        $body = $this->capture(fn () => $this->controller->adminDeletingUser('S-007'));
 
         $this->assertFalse($body['success']);
         $this->assertEquals('Delete failed', $body['error']);

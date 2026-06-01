@@ -14,6 +14,12 @@ class ProfileController
         $this->profileModel = $profileModel;
     }
 
+    // ─── Helper: Check if user is admin ───────────────────────────────
+    private function isAdmin(?array $user): bool
+    {
+        return $user && isset($user['role']) && $user['role'] === 'admin';
+    }
+
     // ─── Helper: send JSON response ──────────────────────────────
     private function json(int $status, array $body): void
     {
@@ -30,10 +36,10 @@ class ProfileController
     }
 
     // ─── GET ALL ─────────────────────────────────────────────────
-    public function getProfiles(): void
+    public function adminGettingAllUsers(): void
     {
         try {
-            $result = $this->profileModel->getProfiles();
+            $result = $this->profileModel->adminGettingAllUsers();
 
             if (!$result->success) {
                 $this->json(400, $result->toArray());
@@ -68,7 +74,7 @@ class ProfileController
     }
 
     // ─── CREATE ──────────────────────────────────────────────────
-    public function createProfile(array $body): void
+    public function adminCreatingUser(array $body): void
     {
         try {
             $firstName  = $body['first_name']  ?? null;
@@ -82,7 +88,7 @@ class ProfileController
                 return;
             }
 
-            $result = $this->profileModel->createProfile($firstName, $lastName, $employeeId, $role, $email);
+            $result = $this->profileModel->adminCreatingUser($firstName, $lastName, $employeeId, $role, $email);
 
             if (!$result->success) {
                 $this->json(400, $result->toArray());
@@ -158,10 +164,10 @@ class ProfileController
     }
 
     // ─── UPDATE ──────────────────────────────────────────────────
-    public function updateProfile(string $employeeId, array $body): void
+    public function adminUpdatingUser(string $employeeId, array $body): void
     {
         try {
-            $result = $this->profileModel->updateProfile($employeeId, $body);
+            $result = $this->profileModel->adminUpdatingUser($employeeId, $body);
 
             if (!$result->success) {
                 $this->json(400, $result->toArray());
@@ -175,10 +181,10 @@ class ProfileController
     }
 
     // ─── DELETE (SOFT) ───────────────────────────────────────────
-    public function deleteProfile(string $employeeId): void
+    public function adminDeletingUser(string $employeeId): void
     {
         try {
-            $result = $this->profileModel->deleteProfile($employeeId);
+            $result = $this->profileModel->adminDeletingUser($employeeId);
 
             if (!$result->success) {
                 $this->json(400, $result->toArray());

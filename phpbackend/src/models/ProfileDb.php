@@ -114,11 +114,24 @@ class ProfileDb
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         return substr(str_shuffle($characters), 0, 8);
     }
+
+    public function isAdmin(int $userId): bool
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT role FROM profiles WHERE id = :id");
+            $stmt->execute(['id' => $userId]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            return $data && $data['role'] === 'admin';
+        } catch (PDOException $error) {
+            return false;
+        }
+    }
     
     
     // GET ALL PROFILES
     
-    public function getProfilesDb(): array
+    public function adminGettingAllUsersDb(): array
     {
         try {
             $stmt = $this->db->prepare("SELECT * FROM profiles");
@@ -156,7 +169,7 @@ class ProfileDb
     
     // CREATE PROFILE
     
-    public function createProfileDb(
+    public function adminCreatingUserDb(
         string $first_name,
         string $last_name,
         string $employee_id,
@@ -239,7 +252,7 @@ class ProfileDb
     
     // UPDATE PROFILE
     
-    public function updateProfileDb(string $employee_id, array $updates): array
+    public function adminUpdatingUserDb(string $employee_id, array $updates): array
     {
         if (empty($updates)) {
             return ['success' => false, 'error' => 'No fields provided for update'];
@@ -274,12 +287,12 @@ class ProfileDb
         } catch (PDOException $error) {
             return ['success' => false, 'error' => $error->getMessage()];
         }
-    }
+    }  
     
     
     // DELETE PROFILE (SOFT DELETE)
     
-    public function deleteProfileDb(string $employee_id): array
+    public function adminDeletingUserDb(string $employee_id): array
     {
         try {
             $stmt = $this->db->prepare("UPDATE profiles SET is_active = 0 WHERE employee_id = :employee_id");

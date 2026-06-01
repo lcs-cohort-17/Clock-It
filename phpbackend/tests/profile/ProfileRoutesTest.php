@@ -70,7 +70,7 @@ class ProfileRoutesTest extends TestCase
     /**
      * Test GET /profiles route exists (protected)
      */
-    public function testGetProfilesRouteExists(): void
+    public function testadminGettingAllUsersRouteExists(): void
     {
         $this->routes->register();
         $this->assertContains(['method' => 'get', 'pattern' => '/profiles'], $this->appMock->calls);
@@ -90,7 +90,7 @@ class ProfileRoutesTest extends TestCase
     /**
      * Test POST /profiles route exists (protected)
      */
-    public function testCreateProfileRouteExists(): void
+    public function testadminCreatingUserRouteExists(): void
     {
         $this->routes->register();
         $this->assertContains(['method' => 'post', 'pattern' => '/profiles'], $this->appMock->calls);
@@ -100,7 +100,7 @@ class ProfileRoutesTest extends TestCase
     /**
      * Test PATCH /profiles/{employee_id} route exists (protected)
      */
-    public function testUpdateProfileRouteExists(): void
+    public function testadminUpdatingUserRouteExists(): void
     {
         $this->routes->register();
         $this->assertContains(['method' => 'patch', 'pattern' => '/profiles/{employee_id}'], $this->appMock->calls);
@@ -110,7 +110,7 @@ class ProfileRoutesTest extends TestCase
     /**
      * Test DELETE /profiles/{employee_id} route exists (protected)
      */
-    public function testDeleteProfileRouteExists(): void
+    public function testadminDeletingUserRouteExists(): void
     {
         $this->routes->register();
         $this->assertContains(['method' => 'delete', 'pattern' => '/profiles/{employee_id}'], $this->appMock->calls);
