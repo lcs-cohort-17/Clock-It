@@ -1,4 +1,3 @@
-
 // Global attendance application component
 function attendanceApp() {
     return {
@@ -50,7 +49,7 @@ function attendanceApp() {
         async loadData() {
             try {
                 // Show loading state
-                this.$el.classList.add('opacity-50');
+                if (this.$el) this.$el.classList.add('opacity-50');
                 
                 const response = await fetch('api/attendance.php');
                 if (!response.ok) {
@@ -72,7 +71,7 @@ function attendanceApp() {
                 this.allData = [];
                 this.filteredData = [];
             } finally {
-                this.$el.classList.remove('opacity-50');
+                if (this.$el) this.$el.classList.remove('opacity-50');
             }
         },
         
@@ -176,7 +175,7 @@ function attendanceApp() {
         
         // Get sort icon
         getSortIcon(field) {
-            if (this.sortField !== field) return '';
+            if (this.sortField !== field) return '↕';
             return this.sortOrder === 'asc' ? '↑' : '↓';
         },
         
@@ -295,7 +294,7 @@ function attendanceApp() {
             return classes[status] || 'bg-gray-100 text-gray-800';
         },
         
-        // Export functionality
+        // Export to CSV
         exportToCSV() {
             if (this.filteredData.length === 0) {
                 this.showNotification('No data to export', 'warning');
@@ -332,6 +331,310 @@ function attendanceApp() {
             this.showNotification('Export completed successfully!', 'success');
         },
         
+        // Export only filtered history
+        exportHistoryOnly() {
+            console.log('Export button clicked'); // Debug log
+            
+            // Get filtered data based on current filters
+            let dataToExport = [...this.filteredData];
+            
+            // Make sure we only export attendance records
+            const validStatuses = ['Present', 'Absent', 'Late', 'Half Day', 'Holiday'];
+            dataToExport = dataToExport.filter(record => validStatuses.includes(record.status));
+            
+            if (dataToExport.length === 0) {
+                this.showNotification('No attendance history to export', 'warning');
+                return;
+            }
+            
+            // Create HTML content for export
+            const exportDate = new Date().toLocaleString();
+            const filterInfo = [];
+            if (this.statusFilter !== 'All') filterInfo.push(`Status: ${this.statusFilter}`);
+            if (this.timeFilter !== 'all') filterInfo.push(`Period: ${this.timeFilter === 'week' ? 'This Week' : 'This Month'}`);
+            if (this.searchTerm) filterInfo.push(`Search: "${this.searchTerm}"`);
+            
+            let htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Attendance History Report - ${exportDate}</title>
+                    <style>
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            margin: 40px;
+                            color: #333;
+                            background: white;
+                        }
+                        .report-container {
+                            max-width: 1200px;
+                            margin: 0 auto;
+                        }
+                        h1 {
+                            color: #1e3a8a;
+                            border-bottom: 3px solid #1e3a8a;
+                            padding-bottom: 10px;
+                            margin-bottom: 20px;
+                        }
+                        .header-info {
+                            margin: 20px 0;
+                            padding: 15px;
+                            background: #f3f4f6;
+                            border-radius: 8px;
+                            line-height: 1.6;
+                        }
+                        .stats-summary {
+                            margin: 20px 0;
+                            padding: 15px;
+                            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+                            border-radius: 10px;
+                            color: white;
+                        }
+                        .stats-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                            gap: 15px;
+                            margin-top: 15px;
+                        }
+                        .stat-item {
+                            text-align: center;
+                            padding: 10px;
+                            background: rgba(255,255,255,0.2);
+                            border-radius: 8px;
+                        }
+                        .stat-number {
+                            font-size: 28px;
+                            font-weight: bold;
+                        }
+                        .stat-label {
+                            font-size: 12px;
+                            margin-top: 5px;
+                            opacity: 0.9;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 20px 0;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 12px;
+                            text-align: left;
+                        }
+                        th {
+                            background-color: #1e3a8a;
+                            color: white;
+                            font-weight: bold;
+                            position: sticky;
+                            top: 0;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f9fafb;
+                        }
+                        tr:hover {
+                            background-color: #f3f4f6;
+                        }
+                        .status-badge {
+                            display: inline-block;
+                            padding: 4px 12px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: bold;
+                        }
+                        .status-Present {
+                            background: #10b981;
+                            color: white;
+                        }
+                        .status-Absent {
+                            background: #ef4444;
+                            color: white;
+                        }
+                        .status-Late {
+                            background: #f59e0b;
+                            color: white;
+                        }
+                        .status-Half\\ Day {
+                            background: #6366f1;
+                            color: white;
+                        }
+                        .status-Holiday {
+                            background: #8b5cf6;
+                            color: white;
+                        }
+                        .footer {
+                            margin-top: 40px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #6b7280;
+                            border-top: 1px solid #e5e7eb;
+                            padding-top: 20px;
+                        }
+                        .print-button {
+                            display: inline-block;
+                            margin: 10px;
+                            padding: 12px 24px;
+                            background: #1e3a8a;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: bold;
+                        }
+                        .print-button:hover {
+                            background: #1e40af;
+                        }
+                        @media print {
+                            body {
+                                margin: 0;
+                                padding: 20px;
+                            }
+                            .no-print {
+                                display: none;
+                            }
+                            th {
+                                background-color: #1e3a8a !important;
+                                color: white !important;
+                                print-color-adjust: exact;
+                            }
+                            .status-badge {
+                                print-color-adjust: exact;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="report-container">
+                        <h1>Attendance History Report</h1>
+                        
+                        <div class="header-info">
+                            <strong>Generated:</strong> ${exportDate}<br>
+                            <strong>Total Records:</strong> ${dataToExport.length}<br>
+                            <strong>Filters Applied:</strong> ${filterInfo.length > 0 ? filterInfo.join(' | ') : 'None (All Records)'}
+                        </div>
+            `;
+            
+            // Calculate statistics
+            const present = dataToExport.filter(r => r.status === 'Present').length;
+            const absent = dataToExport.filter(r => r.status === 'Absent').length;
+            const late = dataToExport.filter(r => r.status === 'Late').length;
+            const halfDay = dataToExport.filter(r => r.status === 'Half Day').length;
+            const holiday = dataToExport.filter(r => r.status === 'Holiday').length;
+            
+            htmlContent += `
+                        <div class="stats-summary">
+                            <h3 style="margin-bottom: 15px;">Summary Statistics</h3>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-number">${present}</div>
+                                    <div class="stat-label">Present</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${absent}</div>
+                                    <div class="stat-label">Absent</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${late}</div>
+                                    <div class="stat-label">Late</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${halfDay}</div>
+                                    <div class="stat-label">Half Day</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${holiday}</div>
+                                    <div class="stat-label">Holiday</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h2>Detailed Attendance Records</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee Name</th>
+                                    <th>Employee ID</th>
+                                    <th>Department</th>
+                                    <th>Date</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Working Hours</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            // Sort by date (most recent first)
+            const sortedData = [...dataToExport].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedData.forEach(record => {
+                const statusClass = `status-${record.status.replace(' ', '\\ ')}`;
+                htmlContent += `
+                    <tr>
+                        <td><strong>${this.escapeHtml(record.employeeName)}</strong></td>
+                        <td>${record.employeeId}</td>
+                        <td>${record.department}</td>
+                        <td>${record.date}</td>
+                        <td>${record.checkInTime || '—'}</td>
+                        <td>${record.checkOutTime || '—'}</td>
+                        <td>${record.workingHours ? record.workingHours.toFixed(1) + 'h' : '—'}</td>
+                        <td><span class="status-badge ${statusClass}">${record.status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            htmlContent += `
+                            </tbody>
+                        </table>
+                        
+                        <div class="footer">
+                            <p>Generated by Attendance Management System</p>
+                            <p>Report includes all attendance records (Present, Absent, Late, Half Day, Holiday)</p>
+                            <p>${exportDate}</p>
+                        </div>
+                        
+                        <div class="no-print" style="text-align: center; margin-top: 30px;">
+                            <button onclick="window.print()" class="print-button">
+                                Save as PDF / Print
+                            </button>
+                            <button onclick="copyToClipboard()" class="print-button" style="background: #6b7280;">
+                                Copy to Google Docs
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <script>
+                        function copyToClipboard() {
+                            const htmlContent = document.body.innerHTML;
+                            const blob = new Blob([htmlContent], {type: 'text/html'});
+                            const item = new ClipboardItem({'text/html': blob});
+                            navigator.clipboard.write([item]);
+                            alert('Report copied! You can now paste it into Google Docs.');
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `;
+            
+            // Open in new window
+            const exportWindow = window.open('', '_blank');
+            if (exportWindow) {
+                exportWindow.document.write(htmlContent);
+                exportWindow.document.close();
+                this.showNotification(`Exporting ${dataToExport.length} attendance records... Use Print to save as PDF`, 'success');
+            } else {
+                this.showNotification('Popup blocked. Please allow popups for this site.', 'error');
+            }
+        },
+        
         // Print current view
         printView() {
             const printContent = this.viewMode === 'list' 
@@ -339,28 +642,30 @@ function attendanceApp() {
                 : this.getPrintableCalendarHTML();
             
             const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>Attendance Report</title>
-                        <script src="https://cdn.tailwindcss.com"><\/script>
-                        <style>
-                            body { padding: 20px; }
-                            table { width: 100%; border-collapse: collapse; }
-                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                            th { background-color: #f2f2f2; }
-                            @media print {
-                                .no-print { display: none; }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        ${printContent}
-                        <script>window.print();<\/script>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
+            if (printWindow) {
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Attendance Report</title>
+                            <script src="https://cdn.tailwindcss.com"><\/script>
+                            <style>
+                                body { padding: 20px; }
+                                table { width: 100%; border-collapse: collapse; }
+                                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                                th { background-color: #f2f2f2; }
+                                @media print {
+                                    .no-print { display: none; }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            ${printContent}
+                            <script>window.print();<\/script>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            }
         },
         
         getPrintableTableHTML() {
@@ -415,6 +720,26 @@ function attendanceApp() {
             return html;
         },
         
+        // Helper function to escape HTML
+        escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+        
+        // Get status color
+        getStatusColor(status) {
+            const colors = {
+                'Present': '#10b981',
+                'Absent': '#ef4444', 
+                'Late': '#f59e0b',
+                'Half Day': '#6366f1',
+                'Holiday': '#8b5cf6'
+            };
+            return colors[status] || '#6b7280';
+        },
+        
         // Notification system
         showNotification(message, type = 'info') {
             const colors = {
@@ -439,7 +764,9 @@ function attendanceApp() {
             setTimeout(() => {
                 notification.classList.add('translate-x-full');
                 setTimeout(() => {
-                    document.body.removeChild(notification);
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
                 }, 300);
             }, 3000);
         }
