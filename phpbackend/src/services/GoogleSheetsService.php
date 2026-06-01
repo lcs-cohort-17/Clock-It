@@ -82,4 +82,34 @@ class GoogleSheetsService
 
         return "https://docs.google.com/spreadsheets/d/{$spreadsheetId}";
     }
+
+    public function isConnected(): bool
+    {
+        // TDD: This will fail the test - implement connection check
+        return false;
+    }
+
+    public function createSpreadsheet(string $title): string
+    {
+        // TDD: This will fail the test - implement spreadsheet creation
+        return '';
+    }
+
+    public function writeAttendanceData(array $data): bool
+    {
+        // TDD: This will fail the test - implement write logic
+        return false;
+    }
+
+    public function readAttendanceData(): array
+    {
+        // TDD: This will fail the test - implement read logic
+        return [];
+    }
+
+    public function generateSheetUrl(string $sheetId): string
+    {
+        // TDD: This will fail the test - implement URL generation
+        return '';
+    }
 }
