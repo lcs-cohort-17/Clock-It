@@ -4,6 +4,7 @@
 namespace Tests\profile;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PDO;                    
 use PDOException; 
 use PDOStatement;
@@ -40,7 +41,7 @@ class ProfileModelTest extends TestCase
                 'role' => 'admin',
                 'is_active' => 1,
                 'email' => 'jodam@gmail.com',
-                'password' => 'joh123'
+                'password' => 'fixture-password-value'
             ],
             [
                 'id' => '14361887-48ea-48c8-9890-6cb196afa0Gc',
@@ -50,7 +51,7 @@ class ProfileModelTest extends TestCase
                 'role' => 'staff',
                 'is_active' => 1,
                 'email' => 'charlton@gmail.com',
-                'password' => 'charlton123'
+                'password' => 'fixture-password-value'
             ]
         ];
 
@@ -85,7 +86,7 @@ class ProfileModelTest extends TestCase
                 'role' => 'admin',
                 'is_active' => 1,
                 'email' => 'jodam@gmail.com',
-                'password' => 'joh123'
+                'password' => 'fixture-password-value'
             ]
         ];
 
@@ -152,7 +153,7 @@ class ProfileModelTest extends TestCase
             'role' => 'staff',
             'is_active' => 1,
             'email' => 'jodam@gmail.com',
-            'password' => 'hashedpassword'
+            'password' => 'stored-hash-fixture'
         ];
 
         $mockStatement = $this->createMock(PDOStatement::class);
@@ -199,7 +200,7 @@ class ProfileModelTest extends TestCase
             'role' => 'admin',
             'is_active' => 1,
             'email' => 'sarah@company.com',
-            'password' => 'hashedpassword'
+            'password' => 'stored-hash-fixture'
         ];
 
         $mockStatement = $this->createMock(PDOStatement::class);
@@ -400,9 +401,7 @@ class ProfileModelTest extends TestCase
         $this->assertEquals('Profile not found', $result['error']);
     }
 
-    /**
-     * @dataProvider capitalizationDataProvider
-     */
+    #[DataProvider('capitalizationDataProvider')]
     public function testCapitalizeFirstNameFormats(string $input, string $expected): void
     {
         $mockData = [
@@ -613,7 +612,7 @@ class ProfileModelTest extends TestCase
         $mockData = [
             'id' => '18741667-48ea-48c8-9890-6cb196adc0Gc',
             'employee_id' => 'S-007',
-            'password' => 'Nq7rT2mX'
+            'password' => 'generated-fixture'
         ];
 
         $mockStatement = $this->createMock(PDOStatement::class);
@@ -677,7 +676,7 @@ class ProfileModelTest extends TestCase
         $mockData = [
             'id' => '14271887-48ea-48c8-9890-6cb196afa0Gc',
             'employee_id' => 'S-300',
-            'password' => '$2b$10$newhashhere',
+            'password' => '$2b$10$fixturehashvalue',
             'first_name' => 'Official',
             'last_name' => 'Staff',
             'role' => 'staff',
@@ -708,7 +707,7 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->updatePasswordDb('S-300', '$2b$10$newhashhere');
+        $result = $this->model->updatePasswordDb('S-300', '$2b$10$fixturehashvalue');
 
         $this->assertTrue($result['success']);
         $this->assertMatchesRegularExpression('/^\$2[ab]\$/', $result['data']['password']);
