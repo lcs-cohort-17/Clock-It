@@ -19,8 +19,8 @@
 
 // 'use strict';
 
-// const AttendanceUtils = require('../public/assets/js/attendance_log_utils');
-// const attendancePage  = require('../public/assets/js/attendance_log_page');
+// const AttendanceUtils = require('../../public/assets/js/attendance_log_utils');
+// const attendancePage  = require('../../public/assets/js/attendance_log_page');
 
 // // ─────────────────────────────────────────────────────────────────────────────
 // // Shared test data
@@ -859,7 +859,7 @@
 //   });
 // });
 const AttendanceUtils =
-    require('../public/assets/js/attendance_log_utils');
+    require('../../public/assets/js/attendance_log_utils');
 
 describe('Attendance Log Tests', () => {
 

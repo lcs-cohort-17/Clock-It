@@ -13,6 +13,7 @@
         return {
             loginApi: page && page.dataset.loginApi ? page.dataset.loginApi : '/api/login',
             forgotPasswordApi: page && page.dataset.forgotPasswordApi ? page.dataset.forgotPasswordApi : '/api/forgot-password',
+            socialLoginApi: page && page.dataset.socialLoginApi ? page.dataset.socialLoginApi : '/api/social-login',
             adminRoute: page && page.dataset.adminRoute ? page.dataset.adminRoute : '/admin-dashboard',
             staffRoute: page && page.dataset.staffRoute ? page.dataset.staffRoute : '/staff-dashboard'
         };
@@ -270,7 +271,7 @@
                 if (!picked) return;
 
                 try {
-                    var result = await postJson('/api/social-login', { provider: provider, email: normalizeEmail(picked) });
+                    var result = await postJson(pageConfig().socialLoginApi, { provider: provider, email: normalizeEmail(picked) });
                     this.redirectForUser({ role: result.role }, result.redirect);
                 } catch (err) {
                     this.errorMessage = err.message || 'Social login failed.';

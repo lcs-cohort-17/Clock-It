@@ -35,7 +35,7 @@
     <div x-cloak x-show="forgotMessage" class="alert alert-success" role="alert" x-text="forgotMessage"></div>
     <div x-cloak x-show="errorMessage" id="loginError" class="login-error alert alert-danger" role="alert" x-text="errorMessage"></div>
 
-    <form id="loginForm" class="login-form" method="post" action="<?= htmlspecialchars($loginRoute ?? clockit_route('/login'), ENT_QUOTES, 'UTF-8') ?>" novalidate @submit.prevent="submitLogin">
+    <form id="loginForm" class="login-form" method="post" action="<?= htmlspecialchars($loginRoute ?? app_url('/login'), ENT_QUOTES, 'UTF-8') ?>" novalidate @submit.prevent="submitLogin">
         <div id="emailFields" class="login-panel" role="tabpanel" aria-labelledby="emailTab" :hidden="loginMethod !== 'email'">
             <div class="form-field">
                 <label for="email">Email</label>

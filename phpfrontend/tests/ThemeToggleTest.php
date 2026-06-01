@@ -19,7 +19,7 @@ final class ThemeToggleTest extends TestCase
             __DIR__ . '/../src/views/layouts/app.php';
 
         $this->scriptPath =
-            __DIR__ . '/../public/assets/js/theme.js';
+            dirname(__DIR__, 2) . '/public/assets/js/theme.js';
     }
 
     private function getContent(): string
