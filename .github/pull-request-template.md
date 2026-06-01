@@ -1,23 +1,24 @@
-## 👤 Author Details
-* **Developer Name:** 
-* **Team:** [ ] Frontend | [ ] Backend
-* **Slack Ticket / Issue Link:** 
+# 🚀 PULL REQUEST DETAILS
+
+### 👤 WHO ARE YOU?
+* **Your Name:** [YOUR NAME HERE]
+* **Your Team:** [ ] Frontend  |  [ ] Backend *(Place an X in the correct box)*
+* **Slack Ticket:** [Ticket ID & Title Here] *(Example: [001-FE user-side]: Folder structure)*
 
 ---
 
-## 📝 What is this PR changing?
-<!-- Provide a short 1-2 sentence summary of the feature or fix -->
-
-
----
-
-## 🚦 Verification Checklist
-*Before tagging your Scrum Master, verify the following:*
-- [ ] My code builds successfully on my local machine.
-- [ ] I have tested these changes locally and they work as intended.
-- [ ] This code only touches files inside my designated team folder (`/frontend` or `/backend`).
+### 📝 WHAT DID YOU CHANGE?
+<!-- Replace the example text below with 1 or 2 quick sentences explaining what you did -->
+Example: Created and unified the frontend template folder structure for the entire team. Fixed the `vite.config.ts` setup to cleanly import `defineConfig` and Tailwind CSS so nobody hits local environment build crashes.
 
 ---
 
-## 👥 Handoff Routing
-* **Assigned Scrum Master Reviewer:** `@lcs-cohort-17/YOUR-TEAM-SM-HANDLE`
+### 🚦 CAN WE MERGE THIS? *(Change [ ] to [X] once done)*
+- [ ] Yes, my code builds with ZERO errors on my machine (`npm run dev` works).
+- [ ] Yes, I tested my feature locally and it works perfectly.
+- [ ] Yes, I only touched my own designated team folder (`/frontend` or `/backend`).
+
+---
+
+### 👥 REVIEWERS
+* **Scrum Master Tag:** @lcs-cohort-17/[YOUR-TEAM-SM-HANDLE] *(Example: @lcs-cohort-17/frontend-sm)*

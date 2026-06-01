@@ -1,0 +1,338 @@
+.search-input {
+    height: 52px;
+    border-radius: 16px;
+    border: 1px solid #D7E0EA;
+    background: #F8FBFD;
+    color: #223248;
+}
+
+.search-box {
+    max-width: 460px;
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    transform: translateY(-50%);
+    color: #8B9BB5;
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.search-input::placeholder {
+    color: #8B9BB5;
+}
+
+.table-wrapper {
+    background: transparent;
+    border-radius: 24px;
+    overflow-x: auto;
+    margin-top: 8px;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #ffffff;
+}
+
+table thead {
+    background: #F8FBFD;
+}
+
+table th {
+    padding: 22px 18px !important;
+    color: #4C6B86 !important;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: none !important;
+}
+
+table td {
+    padding: 18px !important;
+    color: #0F274C;
+    vertical-align: middle;
+    border-top: 1px solid #EEF1F5;
+    font-size: 15px;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #0B2A44;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.badge-admin {
+    background: #0B2A44;
+    color: #FFFFFF;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.badge-staff {
+    background: #F4F7FA;
+    color: #4C6B86;
+    border: 1px solid #D8E2EA;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.active {
+    background: #E6F8EE;
+    color: #1F8E4D;
+}
+
+.inactive {
+    background: #FEEFEF;
+    color: #C82333;
+}
+
+.btn-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: transform 0.12s ease;
+}
+
+.action-buttons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+/* Normalize icon vertical alignment across different glyphs */
+.btn-icon i {
+    display: inline-block;
+    vertical-align: middle;
+    transform: translateY(-0.5px);
+}
+
+/* Slight specific nudge for the pencil icon which renders visually lower */
+.btn-icon i.bi-pencil,
+.btn-icon i.bi-pencil-fill {
+    /* removed special nudge */
+}
+
+.btn-light {
+    background: transparent !important;
+    border: none !important;
+    color: #223248;
+}
+
+.btn-light:hover,
+.btn-light:focus {
+    background: rgba(11,42,68,0.04);
+    color: #0B2A44;
+}
+
+.pagination-info {
+    color: #758296;
+    font-size: 14px;
+}
+
+.btn-outline-secondary {
+    border-radius: 14px;
+    border-color: #D8E2EA;
+    color: #52637A;
+    background: #ffffff;
+}
+
+.btn-outline-danger {
+    background: transparent;
+    border-color: rgba(200,0,0,0.14);
+    color: #c82333;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    background: rgba(200,0,0,0.04);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    background: #F7FAFB;
+    border-color: #C7D2DC;
+}
+
+.btn-outline-secondary.disabled,
+.btn-outline-secondary:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.modal-overlay,
+.password-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 38, 67, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modal-box,
+.password-box {
+    background: #ffffff;
+    width: 100%;
+    max-width: 520px;
+    padding: 32px;
+    border-radius: 24px;
+}
+
+.password-display {
+    background: #F8FBFD;
+    border: 1px solid #D8E2EA;
+    padding: 18px;
+    border-radius: 16px;
+    font-family: Inter, monospace;
+    font-size: 20px;
+    color: #0F274C;
+}
+
+.btn-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: #7A8CA8;
+}
+
+.btn-close:hover,
+.btn-close:focus {
+    color: #0B2A44;
+}
+
+:root[data-theme="dark"] .search-input,
+:root[data-theme="dark"] .table,
+:root[data-theme="dark"] .modal-box,
+:root[data-theme="dark"] .password-box,
+:root[data-theme="dark"] .password-display,
+:root[data-theme="dark"] .btn-outline-secondary {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+:root[data-theme="dark"] table thead {
+    background: var(--surface-soft);
+}
+
+:root[data-theme="dark"] table th,
+:root[data-theme="dark"] table td {
+    color: var(--text) !important;
+    border-color: var(--border);
+}
+
+:root[data-theme="dark"] .badge-staff {
+    background: var(--surface-soft);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+:root[data-theme="dark"] .btn-light {
+    color: var(--text);
+}
+
+@media (max-width: 768px) {
+    .page-card {
+        padding: 24px 18px;
+        border-radius: 20px;
+    }
+
+    .main-title {
+        font-size: 32px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .search-box {
+        max-width: 100%;
+    }
+
+    .search-input {
+        height: 48px;
+        border-radius: 14px;
+    }
+
+    table th,
+    table td {
+        padding: 14px 12px !important;
+    }
+
+    table th {
+        font-size: 11px;
+    }
+
+    table td {
+        font-size: 14px;
+    }
+
+    .avatar {
+        width: 38px;
+        height: 38px;
+        font-size: 12px;
+    }
+
+    .badge-admin,
+    .badge-staff,
+    .status {
+        padding: 6px 14px;
+    }
+
+    .btn-main {
+        width: 100%;
+        padding: 12px 18px;
+    }
+
+    .modal-box,
+    .password-box {
+        max-width: 92%;
+        padding: 24px;
+    }
+
+    /* mobile: no special icon overrides */
+
+    .table-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(11, 42, 68, 0.15);
+        border-radius: 999px;
+    }
+}
