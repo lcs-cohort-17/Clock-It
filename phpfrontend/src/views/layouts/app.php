@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/calendar.css')) ?>">
 
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script defer src="<?= e(app_url('/assets/js/theme.js')) ?>"></script>
     <script defer src="<?= e(app_url('/assets/js/app.js')) ?>"></script>
     <script defer src="<?= e(app_url('/assets/js/calendar.js')) ?>"></script>

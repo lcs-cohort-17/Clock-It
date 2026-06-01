@@ -176,7 +176,7 @@ switch ($path) {
         $user = $staffUser;
         $isAdminDashboard = false;
 
-        view('staff/scanqr', compact(
+        view('staff/scanqrpage', compact(
             'title',
             'user',
             'isAdminDashboard'

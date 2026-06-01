@@ -5,6 +5,19 @@ declare(strict_types=1);
 $attendance = require __DIR__ . '/../../data/mock_attendance.php';
 $status = strtolower($_GET['status'] ?? 'all');
 $search = trim($_GET['search'] ?? '');
+$currentView = strtolower($_GET['view'] ?? 'history');
+
+if (!in_array($currentView, ['calendar', 'history'], true)) {
+    $currentView = 'history';
+}
+
+$viewUrl = static function (string $view) use ($status, $search): string {
+    return app_url('/history') . '?' . http_build_query([
+        'view' => $view,
+        'search' => $search,
+        'status' => $status,
+    ]);
+};
 
 $filteredRecords = array_values(array_filter(
     $attendance,
@@ -54,123 +67,141 @@ ob_start();
                     </button>
                 </div>
 
-                <form method="get"
-                      action="<?= e(app_url('/history')) ?>"
-                      class="page-card p-3 mb-4">
-                    <div class="row g-3">
-                        <div class="col-12 col-md-8">
-                            <label class="form-label" for="history-search">Search</label>
-                            <input id="history-search"
-                                   type="search"
-                                   name="search"
-                                   value="<?= e($search) ?>"
-                                   class="form-control"
-                                   placeholder="Search staff or location">
-                        </div>
+                <nav class="staff-history-toggle mb-4" aria-label="Attendance history view">
+                    <a href="<?= e($viewUrl('calendar')) ?>"
+                       class="staff-history-toggle-link <?= $currentView === 'calendar' ? 'active' : '' ?>"
+                       <?= $currentView === 'calendar' ? 'aria-current="page"' : '' ?>>
+                        <i class="bi bi-calendar3" aria-hidden="true"></i>
+                        Calendar View
+                    </a>
+                    <a href="<?= e($viewUrl('history')) ?>"
+                       class="staff-history-toggle-link <?= $currentView === 'history' ? 'active' : '' ?>"
+                       <?= $currentView === 'history' ? 'aria-current="page"' : '' ?>>
+                        <i class="bi bi-clock-history" aria-hidden="true"></i>
+                        History
+                    </a>
+                </nav>
 
-                        <div class="col-12 col-md-4">
-                            <label class="form-label" for="history-status">Status</label>
-                            <select id="history-status"
-                                    name="status"
-                                    class="form-select"
-                                    onchange="this.form.submit()">
-                                <?php foreach (['all' => 'All statuses', 'synced' => 'Synced', 'pending' => 'Pending', 'failed' => 'Failed'] as $value => $label): ?>
-                                    <option value="<?= e($value) ?>" <?= $status === $value ? 'selected' : '' ?>>
-                                        <?= e($label) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                </form>
+                <?php if ($currentView === 'calendar'): ?>
+                    <section
+                        class="page-card calendar-container p-4 mb-4"
+                        x-data="initCalendar(<?= e(json_encode($attendanceEvents, JSON_THROW_ON_ERROR)) ?>)"
+                        x-init="generateCalendar()"
+                    >
+                        <div class="d-flex align-items-center justify-content-between flex-wrap mb-3">
+                            <div>
+                                <h2 class="h5 fw-bold mb-1" x-text="monthNames[currentMonth] + ' ' + currentYear"></h2>
+                                <p class="text-muted mb-0">Dates with green dots include Clocked in and Clocked out records.</p>
+                            </div>
 
-                <section
-                    class="page-card calendar-container p-4 mb-4"
-                    x-data="initCalendar(<?= e(json_encode($attendanceEvents, JSON_THROW_ON_ERROR)) ?>)"
-                    x-init="generateCalendar()"
-                >
-                    <div class="d-flex align-items-center justify-content-between flex-wrap mb-3">
-                        <div>
-                            <h2 class="h5 fw-bold mb-1" x-text="monthNames[currentMonth] + ' ' + currentYear"></h2>
-                            <p class="text-muted mb-0">Dates with green dots include Clocked in and Clocked out records.</p>
-                        </div>
-
-                        <div class="btn-group" aria-label="Calendar month navigation">
-                            <button type="button" class="btn btn-outline-secondary" @click="prevMonth()">
-                                <i class="bi bi-chevron-left" aria-hidden="true"></i>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" @click="nextMonth()">
-                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
-                                <span class="visually-hidden">Next</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="calendar-grid">
-                        <div class="calendar-weekdays">
-                            <?php foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $weekday): ?>
-                                <div><?= e($weekday) ?></div>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <div class="calendar-days">
-                            <template x-for="day in days" :key="day.id">
-                                <button
-                                    type="button"
-                                    class="calendar-day"
-                                    :class="{ 'calendar-day-today': day.isToday }"
-                                    :disabled="!day.dateNumber"
-                                    :data-bs-toggle="day.hasEvent ? 'popover' : null"
-                                    :data-bs-content="day.eventInfo"
-                                    data-bs-trigger="focus"
-                                    data-bs-placement="top"
-                                    title="Attendance Info"
-                                >
-                                    <span x-text="day.dateNumber"></span>
-                                    <span class="green-dot bg-success" x-show="day.hasEvent" aria-hidden="true"></span>
+                            <div class="btn-group" aria-label="Calendar month navigation">
+                                <button type="button" class="btn btn-outline-secondary" @click="prevMonth()">
+                                    <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                                    <span class="visually-hidden">Previous</span>
                                 </button>
-                            </template>
+                                <button type="button" class="btn btn-outline-secondary" @click="nextMonth()">
+                                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="calendar-grid">
+                            <div class="calendar-weekdays">
+                                <?php foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $weekday): ?>
+                                    <div><?= e($weekday) ?></div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <div class="calendar-days">
+                                <template x-for="day in days" :key="day.id">
+                                    <button
+                                        type="button"
+                                        class="calendar-day"
+                                        :class="{ 'calendar-day-today': day.isToday }"
+                                        :disabled="!day.dateNumber"
+                                        :data-bs-toggle="day.hasEvent ? 'popover' : null"
+                                        :data-bs-content="day.eventInfo"
+                                        data-bs-trigger="focus"
+                                        data-bs-placement="top"
+                                        title="Attendance Info"
+                                    >
+                                        <span x-text="day.dateNumber"></span>
+                                        <span class="green-dot bg-success" x-show="day.hasEvent" aria-hidden="true"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </section>
+                <?php else: ?>
+                    <form method="get"
+                          action="<?= e(app_url('/history')) ?>"
+                          class="page-card p-3 mb-4">
+                        <input type="hidden" name="view" value="history">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label" for="history-search">Search</label>
+                                <input id="history-search"
+                                       type="search"
+                                       name="search"
+                                       value="<?= e($search) ?>"
+                                       class="form-control"
+                                       placeholder="Search staff or location">
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" for="history-status">Status</label>
+                                <select id="history-status"
+                                        name="status"
+                                        class="form-select"
+                                        onchange="this.form.submit()">
+                                    <?php foreach (['all' => 'All statuses', 'synced' => 'Synced', 'pending' => 'Pending', 'failed' => 'Failed'] as $value => $label): ?>
+                                        <option value="<?= e($value) ?>" <?= $status === $value ? 'selected' : '' ?>>
+                                            <?= e($label) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="page-card staff-history-table">
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Event</th>
+                                        <th>Time</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if ($filteredRecords === []): ?>
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-5">No attendance records found.</td>
+                                        </tr>
+                                    <?php endif; ?>
+
+                                    <?php foreach ($filteredRecords as $record): ?>
+                                        <tr>
+                                            <td><?= e($record['date']) ?></td>
+                                            <td><?= e($record['type']) ?></td>
+                                            <td><?= e($record['timestamp']) ?></td>
+                                            <td><?= e($record['location']) ?></td>
+                                            <td>
+                                                <span class="history-status history-status-<?= e(strtolower($record['syncStatus'])) ?>">
+                                                    <?= e($record['syncStatus']) ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </section>
-
-                <div class="page-card staff-history-table">
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Event</th>
-                                    <th>Time</th>
-                                    <th>Location</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($filteredRecords === []): ?>
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted py-5">No attendance records found.</td>
-                                    </tr>
-                                <?php endif; ?>
-
-                                <?php foreach ($filteredRecords as $record): ?>
-                                    <tr>
-                                        <td><?= e($record['date']) ?></td>
-                                        <td><?= e($record['type']) ?></td>
-                                        <td><?= e($record['timestamp']) ?></td>
-                                        <td><?= e($record['location']) ?></td>
-                                        <td>
-                                            <span class="history-status history-status-<?= e(strtolower($record['syncStatus'])) ?>">
-                                                <?= e($record['syncStatus']) ?>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <?php endif; ?>
             </section>
         </main>
     </div>

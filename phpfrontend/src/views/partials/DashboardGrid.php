@@ -25,7 +25,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
         </div>
 
         <a href="<?= e(app_url('/scan-qr')) ?>"
-           class="btn btn-main w-100 mt-4">
+           class="btn btn-main staff-scan-btn w-100 mt-4">
             <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
             Scan QR
         </a>

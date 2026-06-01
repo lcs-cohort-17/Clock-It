@@ -27,6 +27,7 @@ function navLinkClass(string $route, string $currentPath): string
         <li class="nav-item">
             <a href="<?= e(app_url('/admin-dashboard')) ?>"
                class="<?= navLinkClass('/admin-dashboard', $currentPath) ?>">
+                <i class="bi bi-grid me-2" aria-hidden="true"></i>
                 Dashboard
             </a>
         </li>
@@ -34,6 +35,7 @@ function navLinkClass(string $route, string $currentPath): string
         <li class="nav-item">
             <a href="<?= e(app_url('/admin-dashboard/users')) ?>"
                class="<?= navLinkClass('/admin-dashboard/users', $currentPath) ?>">
+                <i class="bi bi-people me-2" aria-hidden="true"></i>
                 User Management
             </a>
         </li>
@@ -41,6 +43,7 @@ function navLinkClass(string $route, string $currentPath): string
         <li class="nav-item">
             <a href="<?= e(app_url('/admin-dashboard/attendance')) ?>"
                class="<?= navLinkClass('/admin-dashboard/attendance', $currentPath) ?>">
+                <i class="bi bi-clock-history me-2" aria-hidden="true"></i>
                 Attendance Logs
             </a>
         </li>

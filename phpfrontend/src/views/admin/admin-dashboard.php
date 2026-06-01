@@ -9,15 +9,15 @@ ob_start();
 
 ?>
 
-<div class="d-flex">
+<div class="app-shell">
 
     <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
 
-    <div class="flex-grow-1">
+    <div class="main-panel">
 
         <?php require __DIR__ . '/../partials/header.php'; ?>
 
-        <main class="container-fluid p-4">
+        <main class="content container-fluid p-4">
 
             <h1 class="display-6 fw-bold">
                 Admin Dashboard
