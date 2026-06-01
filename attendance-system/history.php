@@ -69,32 +69,47 @@ $pageTitle = 'Attendance History - Attendance Management System';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             
             <!-- Header -->
-            <div class="mb-8">
-                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                    Attendance
-                </p>
-                <h1 class="mt-2 text-3xl font-bold text-slate-800 md:text-4xl">
-                    Attendance History
-                </h1>
-                <p class="mt-2 text-sm text-slate-500">
-                    View and manage employee attendance records
-                </p>
-            </div>
+            <!-- Header -->
+<div class="mb-8">
+    <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+        Attendance
+    </p>
+    <h1 class="mt-2 text-3xl font-bold text-slate-800 md:text-4xl">
+        Attendance History
+    </h1>
+    <p class="mt-2 text-sm text-slate-500">
+        View and manage employee attendance records
+    </p>
+</div>
 
-            <!-- View Toggle Buttons -->
-            <div class="mb-6 flex gap-3">
-                <button @click="viewMode = 'list'" 
-                        :class="{'bg-blue-600 text-white shadow-md': viewMode === 'list', 'bg-white text-gray-700 hover:bg-gray-50': viewMode !== 'list'}"
-                        class="px-5 py-2.5 rounded-xl font-medium transition-all duration-200 border border-gray-200">
-                    List View
-                </button>
-                <button @click="viewMode = 'calendar'" 
-                        :class="{'bg-blue-600 text-white shadow-md': viewMode === 'calendar', 'bg-white text-gray-700 hover:bg-gray-50': viewMode !== 'calendar'}"
-                        class="px-5 py-2.5 rounded-xl font-medium transition-all duration-200 border border-gray-200">
-                     Calendar View
-                </button>
-            </div>
-
+           <!-- Header with Right-aligned Toggle -->
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+            Attendance
+        </p>
+        <h1 class="mt-2 text-3xl font-bold text-slate-800 md:text-4xl">
+            Attendance History
+        </h1>
+        <p class="mt-2 text-sm text-slate-500">
+            View and manage employee attendance records
+        </p>
+    </div>
+    
+    <!-- View Toggle Buttons - Moved to Right Side -->
+    <div class="flex gap-3">
+        <button @click="viewMode = 'list'" 
+                :class="{'bg-blue-600 text-white shadow-md': viewMode === 'list', 'bg-white text-gray-700 hover:bg-gray-50': viewMode !== 'list'}"
+                class="px-5 py-2.5 rounded-xl font-medium transition-all duration-200 border border-gray-200">
+            List View
+        </button>
+        <button @click="viewMode = 'calendar'" 
+                :class="{'bg-blue-600 text-white shadow-md': viewMode === 'calendar', 'bg-white text-gray-700 hover:bg-gray-50': viewMode !== 'calendar'}"
+                class="px-5 py-2.5 rounded-xl font-medium transition-all duration-200 border border-gray-200">
+            Calendar View
+        </button>
+    </div>
+</div>
             <!-- Filters Bar -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 p-5">
                 <div class="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
