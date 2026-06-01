@@ -7,6 +7,22 @@ window.scanQrConfig = {
     clockIn: 'CLOCK_IN',
     clockOut: 'CLOCK_OUT',
   },
+  // Mock attendance responses replace the real backend for Sprint 1.
+  mockAttendance: {
+    delayMs: 500,
+    responses: {
+      CLOCK_IN: {
+        title: 'Clocked In',
+        message: 'Clocked In',
+        variant: 'success',
+      },
+      CLOCK_OUT: {
+        title: 'Clocked Out',
+        message: 'Clocked Out',
+        variant: 'success',
+      },
+    },
+  },
   scanner: {
     primaryCamera: { facingMode: 'environment' },
     fallbackCamera: { facingMode: 'user' },
@@ -17,6 +33,7 @@ window.scanQrConfig = {
     scannerLoadFailed: 'The QR scanner is still loading. If your internet is slow, wait a moment and try again.',
     cameraApiUnavailable: 'Your browser does not support camera access on this page.',
     noCameraFound: 'No camera was found on this device.',
+    permissionDenied: 'Camera permission was denied. Please allow access to scan the QR code.',
     invalidQrCode: 'Invalid QR code. Use CLOCK_IN or CLOCK_OUT.',
     scanResultPrefix: 'Scanned result: ',
   },
@@ -34,6 +51,12 @@ window.scanQrConfig = {
 };
 
 window.normalizeScanValue = (value) => String(value ?? '').trim().toUpperCase();
+
+// Literal status labels keep the mock data easy to spot during QA review.
+const attendanceStatus = {
+  CLOCK_IN: 'Clocked In',
+  CLOCK_OUT: 'Clocked Out',
+};
 
 const dateKey = (date) => date.toISOString().slice(0, 10);
 const scanTime = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -61,20 +84,57 @@ window.getScanType = function getScanType(code) {
   return null;
 };
 
+// Mock backend request used until the real attendance API is connected.
+window.mockAttendanceApi = async function mockAttendanceApi(code) {
+  const normalizedCode = window.normalizeScanValue(code);
+  const response = window.scanQrConfig.mockAttendance.responses[normalizedCode];
+
+  await new Promise((resolve) => {
+    window.setTimeout(resolve, window.scanQrConfig.mockAttendance.delayMs);
+  });
+
+  if (!response) {
+    const error = new Error(window.scanQrConfig.messages.invalidQrCode);
+    error.variant = 'danger';
+    error.title = 'Invalid QR Code';
+    throw error;
+  }
+
+  return {
+    code: normalizedCode,
+    status: attendanceStatus[normalizedCode],
+    title: response.title,
+    message: response.message,
+    variant: response.variant,
+  };
+};
+
 document.addEventListener('alpine:init', () => {
   Alpine.data('scanQrCard', () => ({
     config: window.scanQrConfig,
     scanner: null,
+    modalInstance: null,
     isScanning: false,
+    isStarting: false,
+    isProcessing: false,
     error: '',
     result: '',
+    modalTitle: '',
+    modalMessage: '',
+    modalVariant: 'success',
 
     async startScanner() {
+      if (this.isStarting || this.isScanning) {
+        return;
+      }
+
+      this.isStarting = true;
       this.error = '';
       this.result = '';
 
       if (!navigator.mediaDevices?.getUserMedia) {
-        this.error = this.config.messages.cameraApiUnavailable;
+        await this.showFeedbackModal('Camera Not Available', this.config.messages.cameraApiUnavailable, 'danger');
+        this.isStarting = false;
         return;
       }
 
@@ -83,12 +143,15 @@ document.addEventListener('alpine:init', () => {
         permissionStream.getTracks().forEach((track) => track.stop());
 
         if (typeof Html5Qrcode === 'undefined') {
+          await this.showFeedbackModal('Scanner Loading', this.config.messages.scannerLoadFailed, 'danger');
+          this.isStarting = false;
           return;
         }
 
         const cameras = await Html5Qrcode.getCameras();
         if (!cameras.length) {
-          this.error = this.config.messages.noCameraFound;
+          await this.showFeedbackModal('No Camera Found', this.config.messages.noCameraFound, 'danger');
+          this.isStarting = false;
           return;
         }
 
@@ -98,7 +161,12 @@ document.addEventListener('alpine:init', () => {
         const preferredCamera = this.pickCamera(cameras);
         await this.startWithCamera(preferredCamera?.id ?? cameras[0].id);
       } catch (error) {
+        const permissionDenied = error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError';
+        const message = permissionDenied ? this.config.messages.permissionDenied : (error?.message ?? this.config.messages.cameraApiUnavailable);
+        await this.showFeedbackModal(permissionDenied ? 'Permission Denied' : 'Camera Error', message, 'danger');
         await this.stopScanner();
+      } finally {
+        this.isStarting = false;
       }
     },
 
@@ -135,29 +203,56 @@ document.addEventListener('alpine:init', () => {
     },
 
     async handleScanSuccess(decodedText) {
+      if (this.isProcessing) {
+        return;
+      }
+
+      this.isProcessing = true;
+
       const scanType = window.getScanType(decodedText);
       if (!scanType) {
         this.error = this.config.messages.invalidQrCode;
         this.result = '';
         await this.stopScanner();
+        await this.showFeedbackModal('Invalid QR Code', this.config.messages.invalidQrCode, 'danger');
+        this.isProcessing = false;
         return;
       }
 
-      this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(decodedText)}`;
-      window.recordAttendanceScan(scanType);
-      await this.stopScanner();
+      try {
+        const response = await window.mockAttendanceApi(decodedText);
+        this.error = '';
+        this.result = response.status;
+        window.recordAttendanceScan(scanType);
+        await this.stopScanner();
+        await this.showFeedbackModal(response.title, response.message, response.variant);
+      } catch (error) {
+        this.error = error?.message ?? this.config.messages.invalidQrCode;
+        this.result = '';
+        await this.stopScanner();
+        await this.showFeedbackModal(error?.title ?? 'Scan Error', this.error, error?.variant ?? 'danger');
+      } finally {
+        this.isProcessing = false;
+      }
     },
 
     handleDemoScan(code) {
-      const scanType = window.getScanType(code);
-      if (!scanType) {
+      void this.handleScanSuccess(code);
+    },
+
+    async showFeedbackModal(title, message, variant = 'success') {
+      this.modalTitle = title;
+      this.modalMessage = message;
+      this.modalVariant = variant;
+
+      await this.$nextTick();
+
+      if (typeof bootstrap === 'undefined' || !this.$refs.feedbackModal) {
         return;
       }
 
-      this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(code)}`;
-      window.recordAttendanceScan(scanType);
+      this.modalInstance ??= bootstrap.Modal.getOrCreateInstance(this.$refs.feedbackModal);
+      this.modalInstance.show();
     },
 
     init() {
@@ -165,6 +260,11 @@ document.addEventListener('alpine:init', () => {
         if (this.scanner) {
           this.scanner.stop().catch(() => {});
         }
+      });
+
+      // Start the camera as soon as the page is ready so Sprint 1 matches the QA flow.
+      this.$nextTick(() => {
+        void this.startScanner();
       });
     },
   }));
