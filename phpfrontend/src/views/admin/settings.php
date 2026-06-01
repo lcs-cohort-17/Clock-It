@@ -5,79 +5,76 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../partials/settings_features.php';
 
-$_SESSION['gs_connected'] ??= false;
-$_SESSION['gs_connected_sheet'] ??= '';
-$_SESSION['gs_connected_since'] ??= '';
-$_SESSION['security_timeout'] ??= 30;
-$_SESSION['retention_days'] ??= 365;
-$_SESSION['retention_records'] ??= [
-    ['id' => 1, 'name' => 'Old attendance record', 'date' => date('Y-m-d', strtotime('-420 days'))],
-    ['id' => 2, 'name' => 'Recent attendance record', 'date' => date('Y-m-d', strtotime('-10 days'))],
-];
-unset($_SESSION['security_error'], $_SESSION['security_success'], $_SESSION['retention_error'], $_SESSION['retention_success']);
+// ── POST action handling ──────────────────────────────────────────────────────
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'connect_google_sheets') {
-    $_SESSION['gs_connected'] = true;
-    $_SESSION['gs_connected_sheet'] = 'attendance_export_2026';
-    $_SESSION['gs_connected_since'] = date('j M Y');
-    $_GET = [];
-}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = (string) ($_POST['action'] ?? '');
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'disconnect_google_sheets') {
-    $_SESSION['gs_connected'] = false;
-    $_SESSION['gs_connected_sheet'] = '';
-    $_SESSION['gs_connected_since'] = '';
-    $_GET = [];
-}
+    // -- Google Sheets: connect ------------------------------------------------
+    if ($action === 'connect_google_sheets') {
+        $_SESSION['gs_connected']       = true;
+        $_SESSION['gs_connected_sheet'] = $_SESSION['gs_connected_sheet'] ?: 'attendance_export_' . date('Y');
+        $_SESSION['gs_connected_since'] = $_SESSION['gs_connected_since'] ?: date('j M Y');
+    }
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'save_security') {
-    $timeout = trim((string) ($_POST['security_timeout'] ?? ''));
+    // -- Google Sheets: disconnect ---------------------------------------------
+    if ($action === 'disconnect_google_sheets') {
+        $_SESSION['gs_connected']       = false;
+        $_SESSION['gs_connected_sheet'] = '';
+        $_SESSION['gs_connected_since'] = '';
+    }
 
-    if ($timeout === '' || !ctype_digit($timeout) || (int) $timeout <= 0) {
-        $_SESSION['security_error'] = 'Please enter a positive whole number for the session timeout.';
-    } else {
-        $_SESSION['security_timeout'] = (int) $timeout;
-        $_SESSION['security_success'] = 'Security settings saved successfully.';
+    // -- Security settings: save -----------------------------------------------
+    if ($action === 'save_security') {
+        $raw = (string) ($_POST['security_timeout'] ?? '');
+
+        // Valid only if: non-empty, all digits (no sign, no dot), and value > 0
+        $isValid = $raw !== ''
+            && ctype_digit($raw)
+            && (int) $raw > 0;
+
+        if (!$isValid) {
+            $_SESSION['security_error'] = 'Please enter a positive whole number for the session timeout.';
+            unset($_SESSION['security_success']);
+        } else {
+            $_SESSION['security_timeout'] = (int) $raw;
+            $_SESSION['security_success'] = 'Security settings saved successfully.';
+            unset($_SESSION['security_error']);
+        }
     }
 }
-
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'purge_retention') {
-    $days = trim((string) ($_POST['retention_days'] ?? ''));
-
-    if ($days === '' || !ctype_digit($days) || (int) $days <= 0) {
-        $_SESSION['retention_error'] = 'Please enter a positive whole number of days.';
-    } else {
-        $_SESSION['retention_days'] = (int) $days;
-        $cutoff = strtotime('-' . (int) $days . ' days');
-        $beforeCount = count($_SESSION['retention_records']);
-        $_SESSION['retention_records'] = array_values(array_filter(
-            $_SESSION['retention_records'],
-            static fn (array $record): bool => strtotime($record['date']) >= $cutoff
-        ));
-        $purgedCount = $beforeCount - count($_SESSION['retention_records']);
-        $_SESSION['retention_success'] = $purgedCount . ' old record' . ($purgedCount === 1 ? '' : 's') . ' purged. Recent records were kept.';
-    }
-}
-
-$pageTitle = 'Settings';
-$user = $user ?? ['name' => 'Demo Admin'];
-
-ob_start();
 ?>
-<div class="app-shell">
-    <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
-    <div class="main-panel">
-        <?php require __DIR__ . '/../partials/header.php'; ?>
-        <main class="content">
-            <h1>Settings</h1>
-            <section class="grid two-col">
-                <?php render_google_sheets_settings_card(); ?>
-                <?php render_security_settings_card(); ?>
-                <?php render_data_retention_settings_card(); ?>
-            </section>
-        </main>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings – Clock-It Admin</title>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<nav class="sidebar admin-sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-name">Clock-It</span>
+        <span class="brand-role">Admin portal</span>
     </div>
-</div>
-<?php
-$content = ob_get_clean();
-require __DIR__ . '/../layouts/app.php';
+    <ul class="sidebar-nav">
+        <li><a href="/admin-dashboard">Dashboard</a></li>
+        <li><a href="/admin/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<!-- ── Main content ─────────────────────────────────────────────────────────── -->
+<main class="admin-main">
+    <h1>Settings</h1>
+
+    <div class="settings-cards">
+        <?php render_google_sheets_settings_card(); ?>
+        <?php render_security_settings_card(); ?>
+        <?php render_data_retention_settings_card(); ?>
+    </div>
+</main>
+
+</body>
+</html>

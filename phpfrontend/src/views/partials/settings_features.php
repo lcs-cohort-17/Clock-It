@@ -3,11 +3,11 @@ require_once __DIR__ . '/google_sheets_integration.php';
 
 if (!function_exists('render_google_sheets_settings_card')) {
     function render_google_sheets_settings_card(): void {
-        $isConnected = (bool) ($_SESSION['gs_connected'] ?? false);
+        $isConnected    = (bool)   ($_SESSION['gs_connected']       ?? false);
         $connectedSheet = (string) ($_SESSION['gs_connected_sheet'] ?? '');
         $connectedSince = (string) ($_SESSION['gs_connected_since'] ?? '');
-        $modal = (string) ($_GET['modal'] ?? '');
-        $badgeClass = $isConnected ? 'integration-badge connected' : 'integration-badge disconnected';
+        $modal          = (string) ($_GET['modal']                  ?? '');
+        $badgeClass     = $isConnected ? 'integration-badge connected' : 'integration-badge disconnected';
         ?>
         <div class="card settings-card google-sheets-settings-card">
             <div class="settings-card-header">
@@ -79,9 +79,9 @@ if (!function_exists('render_google_sheets_settings_card')) {
 
 if (!function_exists('render_security_settings_card')) {
     function render_security_settings_card(): void {
-        $timeout = (int) ($_SESSION['security_timeout'] ?? 30);
-        $error = $_SESSION['security_error'] ?? '';
-        $success = $_SESSION['security_success'] ?? '';
+        $timeout = (int)    ($_SESSION['security_timeout'] ?? 30);
+        $error   = (string) ($_SESSION['security_error']   ?? '');
+        $success = (string) ($_SESSION['security_success'] ?? '');
         ?>
         <div class="card settings-card security-settings-card">
             <h2>Security Settings</h2>
@@ -118,10 +118,10 @@ if (!function_exists('render_security_settings_card')) {
 
 if (!function_exists('render_data_retention_settings_card')) {
     function render_data_retention_settings_card(): void {
-        $days = (int) ($_SESSION['retention_days'] ?? 365);
-        $records = $_SESSION['retention_records'] ?? [];
-        $error = $_SESSION['retention_error'] ?? '';
-        $success = $_SESSION['retention_success'] ?? '';
+        $days    = (int)   ($_SESSION['retention_days']    ?? 365);
+        $records = (array) ($_SESSION['retention_records'] ?? []);
+        $error   = (string)($_SESSION['retention_error']   ?? '');
+        $success = (string)($_SESSION['retention_success'] ?? '');
         ?>
         <div class="card settings-card data-retention-settings-card">
             <h2>Data Retention</h2>
