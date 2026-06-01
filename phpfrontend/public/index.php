@@ -151,3 +151,4 @@ switch ($path) {
         view('404', compact('title'));
         break;
 }
+/**router file */  
