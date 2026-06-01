@@ -18,7 +18,7 @@ class LeaveValidatorTest extends TestCase {
     // checks if valid submissions pass through
     public function test_validate_submit_passes(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => $this->futureDate(30),
             'end_date'     => $this->futureDate(35),
             'reason'       => 'Family holiday',
@@ -26,10 +26,10 @@ class LeaveValidatorTest extends TestCase {
         $this->assertEmpty($errors);
     }
  
-    // sick leave is a valid request_type — previously only annual was tested
+    // sick leave is a valid type
     public function test_validate_submit_passes_for_sick_leave(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'sick',
+            'type' => 'sick',
             'start_date'   => $this->futureDate(5),
             'end_date'     => $this->futureDate(7),
             'reason'       => 'Doctor appointment',
@@ -40,29 +40,30 @@ class LeaveValidatorTest extends TestCase {
     // checks invalid submissions
     public function test_invalid_submit_fails(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'holiday',
+            'type' => 'holiday',
             'start_date'   => $this->futureDate(30),
             'end_date'     => $this->futureDate(35),
             'reason'       => 'Vacation',
         ]);
-        $this->assertArrayHasKey('request_type', $errors);
-        $this->assertContains('request_type must be leave, sick, annual, unpaid or other', $errors['request_type']);
+        $this->assertArrayHasKey('type', $errors);
+        $this->assertContains('type must be 
+         sick, annual, unpaid or other', $errors['type']);
     }
  
-    // missing request_type must be caught on its own
-    public function test_missing_request_type_fails(): void {
+    // missing type must be caught on its own
+    public function test_missing_type_fails(): void {
         $errors = LeaveValidator::validateSubmit([
             'start_date' => $this->futureDate(30),
             'end_date'   => $this->futureDate(35),
             'reason'     => 'Vacation',
         ]);
-        $this->assertArrayHasKey('request_type', $errors);
+        $this->assertArrayHasKey('type', $errors);
     }
  
     // missing start_date must be caught on its own
     public function test_missing_start_date_fails(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'annual',
+            'type' => 'annual',
             'end_date'     => $this->futureDate(35),
             'reason'       => 'Vacation',
         ]);
@@ -72,7 +73,7 @@ class LeaveValidatorTest extends TestCase {
     // missing end_date must be caught on its own
     public function test_missing_end_date_fails(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => $this->futureDate(30),
             'reason'       => 'Vacation',
         ]);
@@ -82,7 +83,7 @@ class LeaveValidatorTest extends TestCase {
     // missing reason must be caught on its own
     public function test_missing_reason_fails(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => $this->futureDate(30),
             'end_date'     => $this->futureDate(35),
         ]);
@@ -92,7 +93,7 @@ class LeaveValidatorTest extends TestCase {
     // reject empty reason
     public function test_empty_reason_fails(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => $this->futureDate(30),
             'end_date'     => $this->futureDate(35),
             'reason'       => '',
@@ -104,19 +105,19 @@ class LeaveValidatorTest extends TestCase {
     // incorrect date structure
     public function test_date_format(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'sick',
+            'type' => 'sick',
             'start_date'   => $this->futureDate(35),
             'end_date'     => $this->futureDate(30),
             'reason'       => 'flu',
         ]);
         $this->assertArrayHasKey('end_date', $errors);
-        $this->assertContains('End date must be on or after start_date', $errors['end_date']);
+        $this->assertContains('End date must be after start_date', $errors['end_date']);
     }
  
     // staff cannot back-date a new leave request
     public function test_past_start_date_fails(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => '2020-01-01',
             'end_date'     => '2020-01-05',
             'reason'       => 'Old vacation',
@@ -159,7 +160,7 @@ class LeaveValidatorTest extends TestCase {
     // datetime payloads should also validate when the ticket uses date/time fields
     public function test_validate_submit_passes_for_datetime_fields(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'sick',
+            'type' => 'sick',
             'start_date'   => $this->futureDateTime(1, '09:00'),
             'end_date'     => $this->futureDateTime(1, '17:00'),
             'reason'       => 'Doctor appointment',
@@ -170,7 +171,7 @@ class LeaveValidatorTest extends TestCase {
     // future end date/time must be rejected if it is not in the future
     public function test_past_end_date_fails(): void {
         $errors = LeaveValidator::validateSubmit([
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => $this->futureDate(30),
             'end_date'     => '2020-01-01',
             'reason'       => 'Old vacation',

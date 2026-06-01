@@ -49,7 +49,7 @@ try {
         $GLOBALS['auth'] = $request['user'] ?? [];
 
         ob_start();
-        handleLeaveRoutes($controller);
+        handleLeaveRoutes($controller, $request);
         $body = ob_get_clean();
 
         return [

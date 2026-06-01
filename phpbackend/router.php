@@ -10,4 +10,4 @@ if ($path !== '/' && file_exists($candidate) && !is_dir($candidate)) {
     return false;
 }
 
-require_once $publicDir . '/index.php';
+require_once $publicDir . '/LeaveIndex.php';

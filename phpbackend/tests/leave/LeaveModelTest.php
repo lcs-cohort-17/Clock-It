@@ -23,8 +23,8 @@ class LeaveModelTest extends TestCase {
     public function test_insert_returns_array(): void {
         $mockRow = [
             'id'           => 'leave-uuid-1',
-            'profile_id'   => 'user-uuid-1',
-            'request_type' => 'annual',
+            'user_id'      => 'user-uuid-1',
+            'type' => 'annual',
             'status'       => 'pending',
         ];
  
@@ -35,7 +35,7 @@ class LeaveModelTest extends TestCase {
         $this->mockConn->method('prepare')->willReturn($mockStmt);
  
         $result = $this->model->insert('user-uuid-1', [
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => '2026-06-01',
             'end_date'     => '2026-06-05',
             'reason'       => 'Vacation',
@@ -49,8 +49,8 @@ class LeaveModelTest extends TestCase {
     public function test_insert_with_datetime_fields(): void {
         $mockRow = [
             'id'              => 'leave-uuid-2',
-            'profile_id'      => 'user-uuid-1',
-            'request_type'    => 'sick',
+            'user_id'         => 'user-uuid-1',
+            'type'            => 'sick',
             'status'          => 'pending',
             'start_date'      => $this->futureDateTime(1, '09:00'),
             'end_date'        => $this->futureDateTime(1, '17:00'),
@@ -74,7 +74,7 @@ class LeaveModelTest extends TestCase {
         $this->mockConn->method('prepare')->willReturn($mockStmt);
 
         $result = $this->model->insert('user-uuid-1', [
-            'request_type' => 'sick',
+            'type' => 'sick',
             'start_date'    => $this->futureDateTime(1, '09:00'),
             'end_date'      => $this->futureDateTime(1, '17:00'),
             'reason'        => 'Doctor appointment',
@@ -129,21 +129,21 @@ class LeaveModelTest extends TestCase {
         $this->assertEquals($mockData, $result);
     }
  
-    // findActiveProfile — active user returns their profile row
+    // findActiveUser returns an active user row
     // controller calls this before every insert; null here aborts the submission
     public function test_find_active_profile_returns_profile(): void {
         $mockStmt = $this->createMock(PDOStatement::class);
         $mockStmt->method('execute')->willReturn(true);
-        $mockStmt->method('fetch')->willReturn(['id' => 'user-uuid-1', 'is_active' => 1]);
+        $mockStmt->method('fetch')->willReturn(['user_id' => 'user-uuid-1', 'is_active' => 1]);
  
         $this->mockConn->method('prepare')->willReturn($mockStmt);
  
-        $result = $this->model->findActiveProfile('user-uuid-1');
+        $result = $this->model->findActiveUser('user-uuid-1');
         $this->assertIsArray($result);
         $this->assertEquals(1, $result['is_active']);
     }
  
-    // findActiveProfile — user does not exist, model returns null
+    // findActiveUser returns null when the user does not exist
     public function test_find_active_profile_returns_null_when_not_found(): void {
         $mockStmt = $this->createMock(PDOStatement::class);
         $mockStmt->method('execute')->willReturn(true);
@@ -151,14 +151,14 @@ class LeaveModelTest extends TestCase {
  
         $this->mockConn->method('prepare')->willReturn($mockStmt);
  
-        $result = $this->model->findActiveProfile('ghost-user');
+        $result = $this->model->findActiveUser('ghost-user');
         $this->assertNull($result);
     }
  
-    // findActiveProfile — is_active === 0 row is returned as-is by the model
+    // findActiveUser returns inactive rows as-is
     // the controller is responsible for checking is_active before calling insert()
     public function test_find_active_profile_returns_row_for_inactive_user(): void {
-        $inactiveRow = ['id' => 'user-uuid-2', 'is_active' => 0];
+        $inactiveRow = ['user_id' => 'user-uuid-2', 'is_active' => 0];
  
         $mockStmt = $this->createMock(PDOStatement::class);
         $mockStmt->method('execute')->willReturn(true);
@@ -166,7 +166,7 @@ class LeaveModelTest extends TestCase {
  
         $this->mockConn->method('prepare')->willReturn($mockStmt);
  
-        $result = $this->model->findActiveProfile('user-uuid-2');
+        $result = $this->model->findActiveUser('user-uuid-2');
         $this->assertIsArray($result);
         $this->assertEquals(0, $result['is_active']);
     }
@@ -174,8 +174,8 @@ class LeaveModelTest extends TestCase {
     // getLeave — staff user receives their own leave rows
     public function test_get_leave_returns_array_for_staff(): void {
         $rows = [
-            ['id' => 'leave-1', 'profile_id' => 'user-uuid-1', 'status' => 'pending'],
-            ['id' => 'leave-2', 'profile_id' => 'user-uuid-1', 'status' => 'approved'],
+            ['id' => 'leave-1', 'user_id' => 'user-uuid-1', 'status' => 'pending'],
+            ['id' => 'leave-2', 'user_id' => 'user-uuid-1', 'status' => 'approved'],
         ];
  
         $mockStmt = $this->createMock(PDOStatement::class);
@@ -187,7 +187,7 @@ class LeaveModelTest extends TestCase {
         $result = $this->model->getLeave('user-uuid-1', 'staff');
         $this->assertIsArray($result);
         $this->assertCount(2, $result);
-        $this->assertEquals('user-uuid-1', $result[0]['profile_id']);
+        $this->assertEquals('user-uuid-1', $result[0]['user_id']);
     }
  
     // getLeave — no records found, model must return [] not null/false

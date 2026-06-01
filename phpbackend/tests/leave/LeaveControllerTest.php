@@ -29,15 +29,15 @@ class LeaveControllerTest extends TestCase {
  
     // Mirrors: it('returns 201 when request succeeds') in leave.controller.test.ts
     public function test_submit_leave_returns_201(): void {
-        $this->mockModel->method('findActiveProfile')
-            ->willReturn(['id' => 'user-1', 'is_active' => 1]);
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'is_active' => 1]);
  
         $this->mockModel->method('insert')
             ->willReturn(['id' => 'leave-1', 'status' => 'pending']);
  
         $auth = ['userId' => 'user-1', 'role' => 'staff'];
         $body = [
-            'request_type' => 'annual',
+            'type' => 'annual',
             'start_date'   => $this->futureDate(30),
             'end_date'     => $this->futureDate(35),
             'reason'       => 'Vacation',
@@ -62,8 +62,8 @@ class LeaveControllerTest extends TestCase {
  
     // sick leave follows the same happy path as annual
     public function test_submit_leave_returns_201_for_sick_leave(): void {
-        $this->mockModel->method('findActiveProfile')
-            ->willReturn(['id' => 'user-1', 'is_active' => 1]);
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'is_active' => 1]);
  
         $this->mockModel->method('insert')
             ->willReturn(['id' => 'leave-2', 'status' => 'pending']);
@@ -72,7 +72,7 @@ class LeaveControllerTest extends TestCase {
         $this->controller->submitLeave(
             ['userId' => 'user-1', 'role' => 'staff'],
             [
-                'request_type' => 'sick',
+                'type' => 'sick',
                 'start_date'   => $this->futureDate(5),
                 'end_date'     => $this->futureDate(7),
                 'reason'       => 'Flu',
@@ -86,8 +86,8 @@ class LeaveControllerTest extends TestCase {
 
     // ticket asks for date/time support, so we keep one test that sends datetime payloads
     public function test_submit_leave_returns_201_for_datetime_payload(): void {
-        $this->mockModel->method('findActiveProfile')
-            ->willReturn(['id' => 'user-1', 'is_active' => 1]);
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'is_active' => 1]);
 
         $this->mockModel->method('insert')
             ->willReturn([
@@ -101,7 +101,7 @@ class LeaveControllerTest extends TestCase {
         $this->controller->submitLeave(
             ['userId' => 'user-1', 'role' => 'staff'],
             [
-                'request_type'   => 'sick',
+                'type'   => 'sick',
                 'start_date' => $this->futureDateTime(1, '09:00'),
                 'end_date'   => $this->futureDateTime(1, '17:00'),
                 'reason'         => 'Doctor appointment',
@@ -113,16 +113,16 @@ class LeaveControllerTest extends TestCase {
         $this->assertEquals($this->futureDateTime(1, '09:00'), $response['data']['start_date']);
     }
  
-    // findActiveProfile returns null — insert() must never be called
+    // findActiveUser returns null, so insert() must never be called
     public function test_submit_leave_fails_when_profile_not_found(): void {
-        $this->mockModel->method('findActiveProfile')->willReturn(null);
+        $this->mockModel->method('findActiveUser')->willReturn(null);
         $this->mockModel->expects($this->never())->method('insert');
  
         ob_start();
         $this->controller->submitLeave(
             ['userId' => 'ghost-user', 'role' => 'staff'],
             [
-                'request_type' => 'annual',
+                'type' => 'annual',
                 'start_date'   => $this->futureDate(30),
                 'end_date'     => $this->futureDate(35),
                 'reason'       => 'Vacation',
@@ -137,15 +137,15 @@ class LeaveControllerTest extends TestCase {
     // profile exists but is_active === 0 — controller blocks before insert()
     // the is_active check lives in the controller, not the model
     public function test_submit_leave_fails_when_user_is_inactive(): void {
-        $this->mockModel->method('findActiveProfile')
-            ->willReturn(['id' => 'user-inactive', 'is_active' => 0]);
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-inactive', 'is_active' => 0]);
         $this->mockModel->expects($this->never())->method('insert');
  
         ob_start();
         $this->controller->submitLeave(
             ['userId' => 'user-inactive', 'role' => 'staff'],
             [
-                'request_type' => 'annual',
+                'type' => 'annual',
                 'start_date'   => $this->futureDate(30),
                 'end_date'     => $this->futureDate(35),
                 'reason'       => 'Holiday',
@@ -160,6 +160,9 @@ class LeaveControllerTest extends TestCase {
     // Mirrors: it('allows admin approval') in leave.controller.test.ts
     // Admin role + valid leave id + valid status = 200 response
     public function test_update_status_allows_admin_approval(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('findById')
             ->willReturn(['id' => 'leave-1']);
  
@@ -192,7 +195,24 @@ class LeaveControllerTest extends TestCase {
  
         $this->assertEquals('Forbidden', $response['message']);
     }
- 
+
+    public function test_update_status_forbidden_when_admin_token_does_not_match_database_role(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'role' => 'staff', 'is_active' => 1]);
+
+        $this->mockModel->expects($this->never())->method('updateStatus');
+
+        ob_start();
+        $this->controller->updateLeaveStatus(
+            ['userId' => 'user-1', 'role' => 'admin'],
+            'leave-1',
+            ['status' => 'approved']
+        );
+        $response = json_decode(ob_get_clean(), true);
+
+        $this->assertEquals('Forbidden', $response['message']);
+    }
+  
     // no auth on updateLeaveStatus must return 401 not 403
     public function test_update_status_returns_401_when_no_auth(): void {
         ob_start();
@@ -205,6 +225,9 @@ class LeaveControllerTest extends TestCase {
     // Mirrors the 404 scenario — admin sends a valid request but the leave id does not exist
     // findById returns null → controller responds with 404
     public function test_update_status_returns_404_when_not_found(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('findById')->willReturn(null);
  
         ob_start();
@@ -221,6 +244,9 @@ class LeaveControllerTest extends TestCase {
     // Tests the 400 validation path — invalid status value sent by admin
     // Validator catches 'accepted' before findById is ever called
     public function test_update_status_returns_400_for_invalid_status(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'role' => 'admin', 'is_active' => 1]);
+
         ob_start();
         $this->controller->updateLeaveStatus(
             ['userId' => 'user-1', 'role' => 'admin'],
@@ -235,14 +261,14 @@ class LeaveControllerTest extends TestCase {
 
     // database errors should return 500 instead of crashing the request
     public function test_submit_leave_returns_500_when_model_throws(): void {
-        $this->mockModel->method('findActiveProfile')
+        $this->mockModel->method('findActiveUser')
             ->willThrowException(new RuntimeException('DB failed'));
 
         ob_start();
         $this->controller->submitLeave(
             ['userId' => 'user-1', 'role' => 'staff'],
             [
-                'request_type' => 'annual',
+                'type' => 'annual',
                 'start_date'   => $this->futureDate(30),
                 'end_date'     => $this->futureDate(35),
                 'reason'       => 'Vacation',
@@ -256,6 +282,9 @@ class LeaveControllerTest extends TestCase {
 
     // same 500 handling for admin status updates
     public function test_update_status_returns_500_when_model_throws(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('findById')
             ->willThrowException(new RuntimeException('DB failed'));
 
@@ -273,6 +302,9 @@ class LeaveControllerTest extends TestCase {
  
     // Tests the calendar returns 200 with grouped data by date
     public function test_get_calendar_returns_200(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('fetchCalendar')
             ->willReturn([
                 ['id' => '1', 'start_date' => '2026-06-01', 'status' => 'approved'],
@@ -292,6 +324,9 @@ class LeaveControllerTest extends TestCase {
 
     // explicit grouping check so we know the controller returns date buckets
     public function test_get_calendar_groups_records_by_date(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('fetchCalendar')
             ->willReturn([
                 ['id' => '1', 'start_date' => '2026-06-01', 'status' => 'approved'],
@@ -320,13 +355,13 @@ class LeaveControllerTest extends TestCase {
  
     // authenticated staff user requests their own leave list
     public function test_get_leave_returns_200_with_data(): void {
-        $this->mockModel->method('findActiveProfile')
-            ->willReturn(['id' => 'profile-1', 'is_active' => 1]);
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'user-1', 'is_active' => 1]);
 
         $this->mockModel->method('getLeave')
             ->willReturn([
-                ['id' => 'leave-1', 'profile_id' => 'profile-1', 'status' => 'approved'],
-                ['id' => 'leave-2', 'profile_id' => 'profile-1', 'status' => 'pending'],
+                ['id' => 'leave-1', 'user_id' => 'user-1', 'status' => 'approved'],
+                ['id' => 'leave-2', 'user_id' => 'user-1', 'status' => 'pending'],
             ]);
  
         ob_start();
@@ -347,6 +382,9 @@ class LeaveControllerTest extends TestCase {
  
     // admin updates dates on an existing leave, updated row returned
     public function test_update_leave_returns_200_on_success(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'admin-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('findById')
             ->willReturn(['id' => 'leave-1', 'status' => 'approved']);
  
@@ -385,6 +423,9 @@ class LeaveControllerTest extends TestCase {
  
     // leave ID not found on updateLeave → 404
     public function test_update_leave_returns_404_when_not_found(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'admin-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('findById')->willReturn(null);
  
         ob_start();
@@ -400,6 +441,9 @@ class LeaveControllerTest extends TestCase {
  
     // invalid payload on updateLeave (end before start) → 400 from validator
     public function test_update_leave_returns_400_on_validation_failure(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'admin-1', 'role' => 'admin', 'is_active' => 1]);
+
         ob_start();
         $this->controller->updateLeave(
             ['userId' => 'admin-1', 'role' => 'admin'],
@@ -414,6 +458,9 @@ class LeaveControllerTest extends TestCase {
 
     // database errors in updateLeave should also return 500
     public function test_update_leave_returns_500_when_model_throws(): void {
+        $this->mockModel->method('findActiveUser')
+            ->willReturn(['user_id' => 'admin-1', 'role' => 'admin', 'is_active' => 1]);
+
         $this->mockModel->method('findById')
             ->willThrowException(new RuntimeException('DB failed'));
 

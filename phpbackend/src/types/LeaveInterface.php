@@ -1,8 +1,7 @@
 <?php
 
-class RequestTypes
+class Types
 {
-    public const LEAVE = 'leave';
     public const SICK = 'sick';
     public const ANNUAL = 'annual';
     public const UNPAID = 'unpaid';
@@ -11,7 +10,6 @@ class RequestTypes
     // Mirrors: z.enum(['leave', 'sick', 'annual', 'unpaid', 'other'])
     // Keeping the allowed values in one place makes validation easier to maintain.
     public const ALL = [
-        self::LEAVE,
         self::SICK,
         self::ANNUAL,
         self::UNPAID,
@@ -39,8 +37,8 @@ class RequestStatus
 class LeaveRequestType
 {
     public string $id;
-    public string $profile_id;
-    public string $request_type;
+    public string $user_id;
+    public string $type;
     public string $start_date;
     public string $end_date;
     public string $reason;
@@ -69,9 +67,9 @@ class CalendarType
 // Model contract used by the controller tests and the database layer.
 interface LeaveRequestModel
 {
-    public function findActiveProfile(string $userId): ?array;
+    public function findActiveUser(string $userId): ?array;
 
-    public function insert(string $profileId, array $payload): array;
+    public function insert(string $userId, array $payload): array;
 
     public function findById(string $leaveId): ?array;
 

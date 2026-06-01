@@ -2,8 +2,8 @@
 
 class LeaveValidator
 {
-    private const REQUEST_TYPES = ['leave', 'sick', 'annual', 'unpaid', 'other'];
-    private const STATUSES = ['approved', 'rejected', 'pending'];
+    private const TYPES = Types::ALL;
+    private const STATUSES = RequestStatus::ALL;
 
     // Validate the request payload before the controller touches the database.
     // This keeps bad data from ever reaching the model layer.
@@ -11,12 +11,12 @@ class LeaveValidator
     {
         $errors = [];
 
-        $requestType = $payload['request_type'] ?? null;
-        if (!in_array($requestType, self::REQUEST_TYPES, true)) {
+        $type = $payload['type'] ?? null;
+        if (!in_array($type, self::TYPES, true)) {
             self::addError(
                 $errors,
-                'request_type',
-                'request_type must be leave, sick, annual, unpaid or other'
+                'type',
+                "type must be \r\n         sick, annual, unpaid or other"
             );
         }
 
@@ -105,17 +105,29 @@ class LeaveValidator
 
         if (!$allowPastDates) {
             $now = new DateTimeImmutable('now');
-            if ($start < $now) {
-                self::addError($errors, $startField, 'Start date must be in the future');
-            }
-
-            if ($end < $now) {
-                self::addError($errors, $endField, 'End date must be in the future');
+            // For date-only, compare against today at 00:00; reject today or past
+            if ($format === 'Y-m-d') {
+                $today = new DateTimeImmutable($now->format('Y-m-d'));
+                if ($start <= $today) {
+                    self::addError($errors, $startField, 'Start date must be in the future');
+                }
+                if ($end <= $today) {
+                    self::addError($errors, $endField, 'End date must be in the future');
+                }
+            } else {
+                // For datetime, reject now or past
+                if ($start <= $now) {
+                    self::addError($errors, $startField, 'Start date/time must be in the future');
+                }
+                if ($end <= $now) {
+                    self::addError($errors, $endField, 'End date/time must be in the future');
+                }
             }
         }
 
+        // Allow same-day leaves: end_date >= start_date (only error if end < start)
         if ($end < $start) {
-            self::addError($errors, $endField, 'End date must be on or after start_date');
+            self::addError($errors, $endField, 'End date must be after start_date');
         }
     }
 

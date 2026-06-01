@@ -27,14 +27,14 @@ class LeaveController
                 return;
             }
 
-            $profile = $this->model->findActiveProfile((string) $userId);
-            if ($profile === null || empty($profile['is_active'])) {
+            $user = $this->model->findActiveUser((string) $userId);
+            if ($user === null || empty($user['is_active'])) {
                 // 403 because the user cannot submit if the account is missing or inactive
                 $this->respond(403, ['message' => 'User not found or inactive']);
                 return;
             }
 
-            $leave = $this->model->insert((string) $profile['id'], $body);
+            $leave = $this->model->insert((string) $user['user_id'], $body);
             if ($leave === [] || $leave === null) {
                 // 500 means the request was valid but persistence failed
                 $this->respond(500, ['message' => 'Insert failed, no data returned']);
@@ -69,7 +69,9 @@ class LeaveController
                 return;
             }
 
-            if (($auth['role'] ?? null) !== 'admin') {
+            // Ensure the token role matches the database user role and that the user is active
+            $user = $this->model->findActiveUser((string) $userId);
+            if ($user === null || empty($user['is_active']) || ($user['role'] ?? null) !== 'admin') {
                 $this->respond(403, ['message' => 'Forbidden']);
                 return;
             }
@@ -128,14 +130,14 @@ class LeaveController
                 return;
             }
 
-            $profileId = $this->resolveProfileIdForAuth($auth);
-            if ($profileId === null) {
+            $resolvedUserId = $this->resolveUserIdForAuth($auth);
+            if ($resolvedUserId === null) {
                 $this->respond(403, ['message' => 'User not found or inactive']);
                 return;
             }
 
             $calendar = $this->model->fetchCalendar(
-                $profileId,
+                $resolvedUserId,
                 (string) ($auth['role'] ?? 'staff'),
                 array_key_exists('month', $query) ? (int) $query['month'] : null,
                 array_key_exists('year', $query) ? (int) $query['year'] : null
@@ -167,14 +169,14 @@ class LeaveController
                 return;
             }
 
-            $profileId = $this->resolveProfileIdForAuth($auth);
-            if ($profileId === null) {
+            $resolvedUserId = $this->resolveUserIdForAuth($auth);
+            if ($resolvedUserId === null) {
                 $this->respond(403, ['message' => 'User not found or inactive']);
                 return;
             }
 
             $leave = $this->model->getLeave(
-                $profileId,
+                $resolvedUserId,
                 (string) ($auth['role'] ?? 'staff')
             );
 
@@ -204,8 +206,9 @@ class LeaveController
                 return;
             }
 
-            if (($auth['role'] ?? null) !== 'admin') {
-                // Keep this endpoint aligned with the admin-only edit workflow.
+            // Ensure token role matches database role and that the user is active
+            $user = $this->model->findActiveUser((string) $userId);
+            if ($user === null || empty($user['is_active']) || ($user['role'] ?? null) !== 'admin') {
                 $this->respond(403, ['message' => 'Forbidden']);
                 return;
             }
@@ -277,7 +280,7 @@ class LeaveController
         return substr($value, 0, 10);
     }
 
-    private function resolveProfileIdForAuth(array $auth): ?string
+    private function resolveUserIdForAuth(array $auth): ?string
     {
         $userId = $auth['userId'] ?? null;
         if ($userId === null || $userId === '') {
@@ -288,11 +291,11 @@ class LeaveController
             return (string) $userId;
         }
 
-        $profile = $this->model->findActiveProfile((string) $userId);
-        if ($profile === null || empty($profile['is_active'])) {
+        $user = $this->model->findActiveUser((string) $userId);
+        if ($user === null || empty($user['is_active'])) {
             return null;
         }
 
-        return (string) $profile['id'];
+        return (string) $user['user_id'];
     }
 }

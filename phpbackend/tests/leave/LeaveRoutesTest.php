@@ -33,31 +33,31 @@ class LeaveRoutesTest extends TestCase {
     // POST submit leave
     public function test_post_leaves_calls_submit_leave(): void {
         $this->mockController->expects($this->once())->method('submitLeave');
-        $this->simulateRequest('POST', '/api/leaves');
+        $this->simulateRequest('POST', '/api/leave-request');
     }
  
     // GET calendar
     public function test_get_calendar_calls_get_calendar(): void {
         $this->mockController->expects($this->once())->method('getCalendar');
-        $this->simulateRequest('GET', '/api/leaves/getCalendar');
+        $this->simulateRequest('GET', '/api/leave-requests');
     }
  
     // GET leave list
     public function test_get_leave_calls_get_leave(): void {
         $this->mockController->expects($this->once())->method('getLeave');
-        $this->simulateRequest('GET', '/api/leaves/getLeave');
+        $this->simulateRequest('GET', '/api/admin/leave-requests');
     }
  
     // PATCH leave status
     public function test_patch_status_calls_update_leave_status(): void {
         $this->mockController->expects($this->once())->method('updateLeaveStatus');
-        $this->simulateRequest('PATCH', '/api/leaves/leave-uuid-5678/status');
+        $this->simulateRequest('PUT', '/api/admin/leave-requests/leave-uuid-5678');
     }
  
     // PATCH update request
     public function test_patch_update_request_calls_update_leave(): void {
         $this->mockController->expects($this->once())->method('updateLeave');
-        $this->simulateRequest('PATCH', '/api/leaves/leave-uuid-5678/updateRequest');
+        $this->simulateRequest('PUT', '/api/admin/leave-requests/leave-uuid-5678/updateRequest');
     }
  
     // unknown routes
@@ -80,7 +80,7 @@ class LeaveRoutesTest extends TestCase {
             ->method('updateLeaveStatus')
             ->with($this->anything(), 'leave-uuid-5678', $this->anything());
  
-        $this->simulateRequest('PATCH', '/api/leaves/leave-uuid-5678/status');
+        $this->simulateRequest('PUT', '/api/admin/leave-requests/leave-uuid-5678');
     }
  
     // same check for updateLeave route
@@ -90,7 +90,7 @@ class LeaveRoutesTest extends TestCase {
             ->method('updateLeave')
             ->with($this->anything(), 'leave-uuid-5678', $this->anything());
  
-        $this->simulateRequest('PATCH', '/api/leaves/leave-uuid-5678/updateRequest');
+        $this->simulateRequest('PUT', '/api/admin/leave-requests/leave-uuid-5678/updateRequest');
     }
  
     // route must forward month and year from $_GET into getCalendar()
@@ -103,6 +103,6 @@ class LeaveRoutesTest extends TestCase {
                 $this->callback(fn($q) => ($q['month'] ?? null) === '6' && ($q['year'] ?? null) === '2026')
             );
  
-        $this->simulateRequest('GET', '/api/leaves/getCalendar', [], ['month' => '6', 'year' => '2026']);
+        $this->simulateRequest('GET', '/api/leave-requests', [], ['month' => '6', 'year' => '2026']);
     }
 }

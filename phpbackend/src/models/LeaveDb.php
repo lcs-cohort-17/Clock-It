@@ -31,34 +31,34 @@ class LeaveDbModel implements LeaveRequestModel
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
-    public function findActiveProfile(string $userId): ?array
+    public function findActiveUser(string $userId): ?array
     {
         $statement = $this->connection->prepare(
-            'SELECT id, is_active FROM profiles WHERE id = :id AND is_active = 1 LIMIT 1'
+            'SELECT user_id, role, is_active FROM users WHERE user_id = :user_id AND is_active = 1 LIMIT 1'
         );
-        $statement->execute(['id' => $userId]);
+        $statement->execute(['user_id' => $userId]);
 
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
         return $row === false ? null : $row;
     }
 
-    public function insert(string $profileId, array $payload): array
+    public function insert(string $userId, array $payload): array
     {
         $leaveId = $this->generateUuid();
         $statement = $this->connection->prepare(
             'INSERT INTO leave_requests (
                 id,
-                profile_id,
-                request_type,
+                user_id,
+                type,
                 start_date,
                 end_date,
                 reason,
                 status
             ) VALUES (
                 :id,
-                :profile_id,
-                :request_type,
+                :user_id,
+                :type,
                 :start_date,
                 :end_date,
                 :reason,
@@ -67,8 +67,8 @@ class LeaveDbModel implements LeaveRequestModel
         );
         $statement->execute([
             'id' => $leaveId,
-            'profile_id' => $profileId,
-            'request_type' => $payload['request_type'] ?? null,
+            'user_id' => $userId,
+            'type' => $payload['type'] ?? null,
             'start_date' => $payload['start_date'] ?? null,
             'end_date' => $payload['end_date'] ?? null,
             'reason' => $payload['reason'] ?? null,
@@ -109,19 +109,22 @@ class LeaveDbModel implements LeaveRequestModel
         ?int $month = null,
         ?int $year = null
     ): array {
+        $params = [];
         if ($role === 'admin') {
-            $statement = $this->connection->prepare(
-                'SELECT * FROM leave_requests'
-            );
-            $statement->execute();
+            $query = 'SELECT * FROM leave_requests';
         } else {
-            $statement = $this->connection->prepare(
-                'SELECT * FROM leave_requests WHERE profile_id = :profile_id'
-            );
-            $statement->execute([
-                'profile_id' => $userId,
-            ]);
+            $query = 'SELECT * FROM leave_requests WHERE user_id = :user_id';
+            $params['user_id'] = $userId;
         }
+
+        if ($month !== null && $year !== null) {
+            $query .= ($role === 'admin' ? ' WHERE' : ' AND') . ' MONTH(start_date) = :month AND YEAR(start_date) = :year';
+            $params['month'] = $month;
+            $params['year'] = $year;
+        }
+
+        $statement = $this->connection->prepare($query);
+        $statement->execute($params);
 
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -131,11 +134,11 @@ class LeaveDbModel implements LeaveRequestModel
         $baseQuery = '
             SELECT
                 lr.id,
-                lr.profile_id,
-                p.first_name,
-                p.last_name,
-                p.email,
-                lr.request_type,
+                lr.user_id,
+                u.first_name,
+                u.last_name,
+                u.email,
+                lr.type,
                 lr.start_date,
                 lr.end_date,
                 lr.reason,
@@ -143,16 +146,16 @@ class LeaveDbModel implements LeaveRequestModel
                 lr.created_at,
                 lr.updated_at
             FROM leave_requests lr
-            INNER JOIN profiles p ON p.id = lr.profile_id
+            INNER JOIN users u ON u.user_id = lr.user_id
         ';
 
         if ($role === 'admin') {
             $statement = $this->connection->prepare($baseQuery . ' ORDER BY lr.created_at DESC');
             $statement->execute();
         } else {
-            $statement = $this->connection->prepare($baseQuery . ' WHERE lr.profile_id = :profile_id ORDER BY lr.created_at DESC');
+            $statement = $this->connection->prepare($baseQuery . ' WHERE lr.user_id = :user_id ORDER BY lr.created_at DESC');
             $statement->execute([
-                'profile_id' => $userId,
+                'user_id' => $userId,
             ]);
         }
 
