@@ -1,10 +1,7 @@
 <?php
-/**
- * Attendance Log Page
- * Admin page for viewing and managing attendance records
- */
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
+// If not an admin, kick them completely out of the admin routing context
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ' . route_url('/login'));
     exit;
@@ -16,133 +13,519 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Log - Clock-It</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
+    
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
+
+    <style>
+        /* Clock-It Custom Corporate Design System Tokens */
+        :root {
+            --deep-navy: #093C5D;
+            --mid-blue: #3B7597;
+            --olive-green: #9CB07A;
+            --light-gray: #F5F5F5;
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--deep-navy);
+            overflow-x: hidden;
+        }
+
+        /* Responsive Animated Sidebar Core Layout Frame */
+        .app-sidebar {
+            background-color: var(--deep-navy);
+            color: #FFFFFF;
+            min-height: 100vh;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1030;
+            display: flex;
+            flex-direction: column;
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 4px 0 25px rgba(9, 60, 93, 0.15);
+            overflow: hidden;
+        }
+
+        /* Sidebar Item Links styling */
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            padding: 0.85rem 1.5rem;
+            margin: 0.2rem 1rem;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-nav-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-nav-link.active {
+            color: #FFFFFF;
+            background-color: var(--mid-blue);
+            box-shadow: 0 4px 12px rgba(59, 117, 151, 0.3);
+        }
+
+        .sidebar-logout {
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #FFA3A3;
+            padding: 1rem 1.5rem;
+            margin: auto 1rem 1.5rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-logout:hover {
+            background-color: rgba(255, 163, 163, 0.1);
+            color: #FF6B6B;
+        }
+
+        /* Dynamic Main Workspace Engine Wrapper */
+        .main-workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .app-header {
+            background-color: #FFFFFF;
+            border-bottom: 1px solid rgba(9, 60, 93, 0.06);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(9, 60, 93, 0.02);
+        }
+
+        /* Custom Structure Component Blocks */
+        .custom-card {
+            background-color: #FFFFFF;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(9, 60, 93, 0.03);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .custom-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(9, 60, 93, 0.06);
+        }
+
+        .custom-card .card-header {
+            background-color: rgba(9, 60, 93, 0.01) !important;
+            border-bottom: 1px solid rgba(9, 60, 93, 0.06);
+            padding: 1.2rem 1.5rem;
+            color: var(--deep-navy);
+            font-weight: 700;
+        }
+
+        /* Interactive Filter Tab Controls */
+        .nav-tabs-custom {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(9, 60, 93, 0.08);
+            padding: 0 1.5rem;
+            background-color: rgba(9, 60, 93, 0.01);
+        }
+
+        .tab-link-custom {
+            background: transparent;
+            border: none;
+            color: text-muted;
+            padding: 1rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            position: relative;
+            transition: color 0.2s ease;
+        }
+
+        .tab-link-custom:hover {
+            color: var(--mid-blue);
+        }
+
+        .tab-link-custom.active {
+            color: var(--deep-navy);
+        }
+
+        .tab-link-custom.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--mid-blue);
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* Sortable Table Header UI */
+        th.sortable-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        th.sortable-header:hover {
+            background-color: rgba(9, 60, 93, 0.04) !important;
+            color: var(--deep-navy) !important;
+        }
+
+        /* Custom Action System Buttons */
+        .btn-brand-outline {
+            border: 1px solid var(--mid-blue);
+            color: var(--mid-blue);
+            background: transparent;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-brand-outline:hover {
+            background-color: rgba(59, 117, 151, 0.08);
+            color: var(--deep-navy);
+            border-color: var(--deep-navy);
+        }
+
+        /* Native App Dark Mode Matrix Overrides */
+        [data-bs-theme="dark"] {
+            --light-gray: #0B131A;
+            --deep-navy: #E6F0F7;
+            --mid-blue: #6FAAD0;
+            
+            .app-header {
+                background-color: #121F2B;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .custom-card {
+                background-color: #121F2B !important;
+                box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2);
+            }
+
+            .custom-card .card-header {
+                background-color: rgba(255, 255, 255, 0.02) !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .nav-tabs-custom {
+                border-bottom-color: rgba(255, 255, 255, 0.08);
+                background-color: rgba(255, 255, 255, 0.01);
+            }
+            .tab-link-custom.active {
+                color: #FFFFFF;
+            }
+
+            .table {
+                --bs-table-bg: transparent;
+                color: var(--deep-navy);
+            }
+
+            .form-control {
+                background-color: #0B131A;
+                border-color: rgba(255, 255, 255, 0.1);
+                color: #FFFFFF;
+            }
+
+            .text-muted {
+                color: #A3B8CC !important;
+            }
+        }
+
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body x-data="{ 
     sidebarOpen: true,
-    selectedTab: 'all',
     searchQuery: '',
-    sortField: 'date',
+    selectedTab: 'all',
+    sortField: 'time',
     sortOrder: 'desc',
-    attendanceRecords: [
-        { id: 1, employee: 'John Doe', type: 'clock-in', time: '2026-05-29 09:00:00', date: '2026-05-29' },
-        { id: 2, employee: 'Jane Smith', type: 'clock-in', time: '2026-05-29 09:15:00', date: '2026-05-29' },
-        { id: 3, employee: 'Bob Johnson', type: 'clock-out', time: '2026-05-29 17:30:00', date: '2026-05-29' }
-    ],
-    get filteredRecords() {
-        return this.attendanceRecords.filter(record => 
-            record.employee.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-            record.type.toLowerCase().includes(this.searchQuery.toLowerCase())
-        );
-    }
-}" @init="window.themeManager.initTheme()">
+    currentPage: 1,
+    perPage: 5,
     
-    <div style="display: flex;">
-        <!-- Sidebar -->
-        <aside class="app-sidebar" :style="{ width: sidebarOpen ? '16rem' : '0' }">
-            <div>
-                <h1>Clock-It</h1>
-                <p>Admin Panel</p>
+    attendanceRecords: [
+        { id: 1, employeeId: 'EMP-001', employee: 'John Doe', type: 'clock-in', time: '2026-05-29 09:00:00', location: 'Headquarters Office' },
+        { id: 2, employeeId: 'EMP-002', employee: 'Jane Smith', type: 'clock-in', time: '2026-05-29 09:15:00', location: 'North Logistics Hub' },
+        { id: 3, employeeId: 'EMP-003', employee: 'Bob Johnson', type: 'clock-out', time: '2026-05-29 17:30:00', location: 'West Terminal Facility' },
+        { id: 4, employeeId: 'EMP-001', employee: 'John Doe', type: 'clock-out', time: '2026-05-29 17:05:00', location: 'Headquarters Office' },
+        { id: 5, employeeId: 'EMP-004', employee: 'Alice Vance', type: 'clock-in', time: '2026-05-30 08:45:00', location: 'Headquarters Office' },
+        { id: 6, employeeId: 'EMP-002', employee: 'Jane Smith', type: 'clock-out', time: '2026-05-30 16:30:00', location: 'North Logistics Hub' }
+    ],
+
+    get filteredRecords() {
+        // Step 1: Base Search query and tab segmentation
+        let data = this.attendanceRecords.filter(record => {
+            const matchesSearch = record.employee.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                  record.employeeId.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                  record.location.toLowerCase().includes(this.searchQuery.toLowerCase());
+            
+            const matchesTab = this.selectedTab === 'all' || record.type === this.selectedTab;
+            
+            return matchesSearch && matchesTab;
+        });
+
+        // Step 2: Sorting operations
+        data.sort((a, b) => {
+            let valA = a[this.sortField];
+            let valB = b[this.sortField];
+            
+            if (this.sortField === 'time') {
+                return this.sortOrder === 'desc' ? new Date(valB) - new Date(valA) : new Date(valA) - new Date(valB);
+            }
+            
+            if (valA < valB) return this.sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return this.sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return data;
+    },
+
+    get pagedRecords() {
+        const start = (this.currentPage - 1) * this.perPage;
+        return this.filteredRecords.slice(start, start + this.perPage);
+    },
+
+    get totalPages() {
+        return Math.ceil(this.filteredRecords.length / this.perPage) || 1;
+    },
+
+    sortBy(field) {
+        if (this.sortField === field) {
+            this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc';
+        } else {
+            this.sortField = field;
+            this.sortOrder = 'desc';
+        }
+        this.currentPage = 1; // Reset window index boundaries
+    },
+
+    changeTab(tab) {
+        this.selectedTab = tab;
+        this.currentPage = 1;
+    },
+
+    exportCSV() {
+        alert('Compiling operational log metrics registry... Downloading CSV telemetry packet.');
+        // Hook link execution redirect route parameter here: window.location.href = route_url('/admin-dashboard/attendance/export');
+    }
+}" x-init="window.themeManager.initTheme()">
+    
+    <div style="display: flex; min-height: 100vh;">
+        
+        <aside class="app-sidebar" :style="{ width: sidebarOpen ? '280px' : '0px' }">
+            <div class="p-4 border-bottom border-secondary border-opacity-25" style="min-width: 280px;">
+                <h4 class="fw-bold mb-1" style="color: #FFFFFF;"><i class="bi bi-clock-history me-2"></i>Clock-It</h4>
+                <p class="small text-white text-opacity-50 mb-0 uppercase tracking-wider font-monospace">Administrative Panel</p>
             </div>
 
-            <nav class="sidebar-nav">
+            <nav class="sidebar-nav mt-4" style="min-width: 280px;">
                 <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                    <span>Dashboard</span>
+                    <i class="bi bi-grid-1x2-fill fs-5"></i>
+                    <span>Dashboard Overview</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/users') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5h-12v-2c0-1.5 3.5-2.5 6-2.5s6 1 6 2.5v2z"/></svg>
+                    <i class="bi bi-people-fill fs-5"></i>
                     <span>User Management</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/attendance') ?>" class="sidebar-nav-link active">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.46.37.84-1.39-.46-.37L12 13V8h-2z"/></svg>
+                    <i class="bi bi-journal-check fs-5"></i>
                     <span>Attendance Log</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/qr-generator') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h1v4h-1v-4zm-4 4h4v1h-4v-1zm1-3h1v2h-1v-2z"/></svg>
-                    <span>QR Generator</span>
+                    <i class="bi bi-qr-code fs-5"></i>
+                    <span>QR Code Generator</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/settings') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l1.72-1.35c.19-.15.24-.42.12-.64l-1.63-2.83c-.12-.22-.39-.3-.61-.22l-2.03.81c-.42-.32-.86-.58-1.35-.78L15 2.5c-.04-.25-.25-.43-.5-.43h-3.26c-.25 0-.46.18-.49.43L10.88 5.5c-.48.2-.93.47-1.35.78l-2.03-.81c-.22-.09-.49 0-.61.22L5.25 8.54c-.13.22-.07.49.12.64l1.72 1.35c-.05.3-.07.62-.07.94s.02.64.07.94l-1.72 1.35c-.19.15-.24.42-.12.64l1.63 2.83c.12.22.39.3.61.22l2.03-.81c.42.32.86.58 1.35.78l.32 2.15c.03.25.25.43.5.43h3.26c.25 0 .46-.18.49-.43l.32-2.15c.48-.2.93-.47 1.35-.78l2.03.81c.22.09.49 0 .61-.22l1.63-2.83c.13-.22.07-.49-.12-.64l-1.72-1.35zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                    <span>Settings</span>
+                    <i class="bi bi-sliders fs-5"></i>
+                    <span>System Settings</span>
                 </a>
             </nav>
 
-            <button class="sidebar-logout" @click="logoutUser()" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-                <span>Sign Out</span>
+            <button class="sidebar-logout" @click="logoutUser()" type="button" style="min-width: 280px;">
+                <i class="bi bi-box-arrow-left fs-5"></i>
+                <span>Terminate Session</span>
             </button>
         </aside>
 
-        <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <header class="app-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-outline-secondary" type="button">
-                        <span>☰</span>
+        <div class="main-workspace" :style="{ marginLeft: sidebarOpen ? '280px' : '0px' }">
+            
+            <header class="app-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-light border d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 8px;" type="button">
+                        <i class="bi bi-list fs-5 text-dark"></i>
                     </button>
-                    <h2 style="margin: 0;">Attendance Log</h2>
+                    <h5 class="mb-0 fw-bold" style="color: var(--deep-navy);">Transaction Auditing</h5>
                 </div>
-                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                
+                <div class="d-flex align-items-center gap-3">
                     <?php include __DIR__ . '/../partials/theme-toggle.php'; ?>
+                    
+                    <div class="vr mx-1 opacity-25"></div>
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-secondary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold text-uppercase" style="width: 36px; height: 36px; border-radius: 50%; font-size: 0.85rem; border: 1px solid rgba(9, 60, 93, 0.1);">
+                            <?= substr(htmlspecialchars($_SESSION['user_name'] ?? 'A'), 0, 2); ?>
+                        </div>
+                        <div class="small fw-semibold d-none d-sm-block text-muted">
+                            <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin System'); ?>
+                        </div>
+                    </div>
                 </div>
             </header>
 
-            <!-- Page Content -->
-            <main class="dashboard-section" style="padding: 2rem;">
-                <div class="container-fluid">
-                    <!-- Filters -->
-                    <div class="row mb-4">
-                        <div class="col-md-8">
-                            <input 
-                                type="text" 
-                                class="form-control" 
-                                placeholder="Search by employee or type..."
-                                x-model="searchQuery"
-                            >
-                        </div>
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary w-100">
-                                📥 Export CSV
-                            </button>
+            <main class="p-4 p-md-5 flex-grow-1">
+                <div class="container-fluid p-0">
+                    
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-1" style="color: var(--deep-navy);">Attendance Logs</h2>
+                        <p class="text-muted small">Monitor chronological ingress, egress, and localized terminal data packets.</p>
+                    </div>
+
+                    <div class="card custom-card p-3 mb-4">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-8 col-lg-9">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent border-end-0 text-muted">
+                                        <i class="bi bi-search"></i>
+                                    </span>
+                                    <input 
+                                        type="text" 
+                                        class="form-control border-start-0 ps-0" 
+                                        placeholder="Query entries via employee identity, index ID, or device terminal location..."
+                                        x-model="searchQuery"
+                                        @input="currentPage = 1"
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-3 text-md-end">
+                                <button class="btn btn-brand-outline w-100 py-2 d-flex align-items-center justify-content-center gap-2" @click="exportCSV()" type="button">
+                                    <i class="bi bi-download"></i>
+                                    <span>Export CSV Packet</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Records Table -->
-                    <div class="table-responsive">
-                        <table class="table table-hover border">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Employee</th>
-                                    <th>Type</th>
-                                    <th>Date & Time</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="record in filteredRecords" :key="record.id">
-                                    <tr>
-                                        <td x-text="record.employee"></td>
-                                        <td>
-                                            <span class="badge" :class="record.type === 'clock-in' ? 'bg-success' : 'bg-warning'" x-text="record.type.replace('-', ' ').toUpperCase()"></span>
-                                        </td>
-                                        <td x-text="new Date(record.time).toLocaleString()"></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-secondary">View</button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                    <div class="card custom-card">
+                        
+                        <div class="nav-tabs-custom">
+                            <button class="tab-link-custom" :class="selectedTab === 'all' && 'active'" @click="changeTab('all')" type="button">
+                                <i class="bi bi-collection me-1"></i> All Transactions
+                            </button>
+                            <button class="tab-link-custom" :class="selectedTab === 'clock-in' && 'active'" @click="changeTab('clock-in')" type="button">
+                                <i class="bi bi-box-arrow-in-right text-success me-1"></i> Ingress Logs (In)
+                            </button>
+                            <button class="tab-link-custom" :class="selectedTab === 'clock-out' && 'active'" @click="changeTab('clock-out')" type="button">
+                                <i class="bi bi-box-arrow-left text-warning me-1"></i> Egress Logs (Out)
+                            </button>
+                        </div>
+
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" style="min-width: 900px;">
+                                    <thead class="bg-light table-light">
+                                        <tr>
+                                            <th class="ps-4 py-3 sortable-header text-uppercase font-monospace small tracking-wider text-muted" @click="sortBy('employeeId')">
+                                                Employee ID <i class="bi small" :class="sortField === 'employeeId' ? (sortOrder === 'desc' ? 'bi-sort-down-alt' : 'bi-sort-up') : 'bi-hash'"></i>
+                                            </th>
+                                            <th class="py-3 sortable-header text-uppercase font-monospace small tracking-wider text-muted" @click="sortBy('employee')">
+                                                Staff Resource <i class="bi small" :class="sortField === 'employee' ? (sortOrder === 'desc' ? 'bi-sort-down-alt' : 'bi-sort-up') : 'bi-arrows-expand'"></i>
+                                            </th>
+                                            <th class="py-3 text-uppercase font-monospace small tracking-wider text-muted">Handshake Metric</th>
+                                            <th class="py-3 sortable-header text-uppercase font-monospace small tracking-wider text-muted" @click="sortBy('location')">
+                                                Terminal Terminal Node <i class="bi small" :class="sortField === 'location' ? (sortOrder === 'desc' ? 'bi-sort-down-alt' : 'bi-sort-up') : 'bi-geo-alt'"></i>
+                                            </th>
+                                            <th class="py-3 sortable-header text-uppercase font-monospace small tracking-wider text-muted" @click="sortBy('time')">
+                                                Timestamp <i class="bi small" :class="sortField === 'time' ? (sortOrder === 'desc' ? 'bi-sort-down-alt' : 'bi-sort-up') : 'bi-clock'"></i>
+                                            </th>
+                                            <th class="pe-4 py-3 text-end text-uppercase font-monospace small tracking-wider text-muted">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="record in pagedRecords" :key="record.id">
+                                            <tr>
+                                                <td class="ps-4 font-monospace fw-semibold text-muted" x-text="record.employeeId"></td>
+                                                <td class="fw-bold" style="color: var(--deep-navy);" x-text="record.employee"></td>
+                                                <td>
+                                                    <span class="badge px-2.5 py-1.5 rounded-2 font-monospace fw-bold"
+                                                          :class="record.type === 'clock-in' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-dark'"
+                                                          x-text="record.type.toUpperCase().replace('-', ' ')">
+                                                    </span>
+                                                </td>
+                                                <td class="text-secondary small">
+                                                    <i class="bi bi-geo-alt me-1 text-muted"></i><span x-text="record.location"></span>
+                                                </td>
+                                                <td class="font-monospace text-muted small" x-text="new Date(record.time.replace(/-/g, '/')).toLocaleString()"></td>
+                                                <td class="pe-4 text-end">
+                                                    <button class="btn btn-sm btn-light border px-2.5 py-1.5 small fw-semibold" type="button">
+                                                        <i class="bi bi-eye"></i> Audit
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        <tr x-show="filteredRecords.length === 0" x-cloak>
+                                            <td colspan="6" class="text-center text-muted py-5 font-monospace">
+                                                <i class="bi bi-folder-x text-muted display-6 mb-2 d-block"></i>
+                                                Zero logistical tracking events reconcile with provided metric queries.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between p-4 border-top gap-3" x-show="filteredRecords.length > 0" x-cloak>
+                                <div class="small text-muted font-monospace">
+                                    Showing object array slice <span class="fw-bold text-dark" x-text="Math.min((currentPage - 1) * perPage + 1, filteredRecords.length)"></span> to 
+                                    <span class="fw-bold text-dark" x-text="Math.min(currentPage * perPage, filteredRecords.length)"></span> of 
+                                    <span class="fw-bold text-dark" x-text="filteredRecords.length"></span> transaction indices.
+                                </div>
+                                <nav aria-label="Log Registry Pagination Configuration Selector">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        <li class="page-item" :class="currentPage === 1 && 'disabled'">
+                                            <button class="page-link font-monospace py-2 px-3 fw-bold" @click="currentPage--" :disabled="currentPage === 1" type="button">
+                                                <i class="bi bi-chevron-left"></i> Previous
+                                            </button>
+                                        </li>
+                                        <template x-for="page in totalPages" :key="page">
+                                            <li class="page-item" :class="currentPage === page && 'active'">
+                                                <button class="page-link font-monospace py-2 px-3 fw-bold" @click="currentPage = page" x-text="page" type="button"></button>
+                                            </li>
+                                        </template>
+                                        <li class="page-item" :class="currentPage === totalPages && 'disabled'">
+                                            <button class="page-link font-monospace py-2 px-3 fw-bold" @click="currentPage++" :disabled="currentPage === totalPages" type="button">
+                                                Next <i class="bi bi-chevron-right"></i>
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+
+                        </div>
                     </div>
+                    
                 </div>
             </main>
         </div>
@@ -150,11 +533,12 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
 
     <script>
         function logoutUser() {
-            if (confirm('Are you sure you want to sign out?')) {
+            if (confirm('Are you absolutely certain you want to terminate the active session context?')) {
                 window.location.href = '<?= route_url('/logout') ?>';
             }
         }
     </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

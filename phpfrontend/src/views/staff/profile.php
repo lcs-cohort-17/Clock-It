@@ -1,14 +1,13 @@
 <?php
-/**
- * Staff Profile Page
- * User profile information and settings
- */
-if (session_status() !== PHP_SESSION_ACTIVE) { 
-    session_start(); 
-}
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-// Security Check: If the login handshake keys don't exist, boot them back out
-if (!isset($_SESSION['user_id'])) {
+// If not a staff member, redirect them to login or their admin panel
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+    // Elegant fallback: If an admin accidentally accesses a staff link, send them back to admin base
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
+        header('Location: ' . route_url('/admin-dashboard'));
+        exit;
+    }
     header('Location: ' . route_url('/login'));
     exit;
 }
@@ -145,6 +144,12 @@ if (!isset($_SESSION['user_id'])) {
             background-color: rgba(59, 117, 151, 0.08);
             color: var(--deep-navy);
             border-color: var(--deep-navy);
+        }
+
+        .btn-brand-outline:active {
+            background-color: rgb(255, 0, 0);
+            color: #fff;
+            border-color: #fff;
         }
 
         /* Identity Elements */

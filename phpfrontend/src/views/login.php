@@ -36,6 +36,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . route_url('/dashboard.php'));
         exit;
 
+    } elseif ($identifier === 'ceo@clockit.app' && $password === 'ceo123') {
+        
+        $_SESSION['user_id'] = 1; 
+        $_SESSION['user_name'] = 'Will Mxabanisi'; 
+        $_SESSION['user_email'] = 'ceo@clockit.app';
+        $_SESSION['employee_id'] = 'CEO-2026-01'; 
+        $_SESSION['attendance_status'] = 'Clocked In';    
+        $_SESSION['attendance_location'] = 'OFFSITE';      
+
+        header('Location: ' . route_url('/dashboard.php'));
+        exit;
+
     } else {
         // Fallback flag if credentials fail processing rules
         $error = "Authentication failed. Invalid email, ID, or password.";

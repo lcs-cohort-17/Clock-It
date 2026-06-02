@@ -1,12 +1,14 @@
 <?php
-/**
- * Attendance History Page
- * Staff view of their attendance records
- */
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ' . route_url('/login.php'));
+// If not a staff member, redirect them to login or their admin panel
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+    // Elegant fallback: If an admin accidentally accesses a staff link, send them back to admin base
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
+        header('Location: ' . route_url('/admin-dashboard'));
+        exit;
+    }
+    header('Location: ' . route_url('/login'));
     exit;
 }
 ?>
@@ -180,12 +182,67 @@ if (!isset($_SESSION['user_id'])) {
     searchQuery: '',
     filterType: 'all',
     records: [
-        { id: 1, date: '2026-05-29', time: '09:00:00', type: 'clock-in', location: 'Office' },
-        { id: 2, date: '2026-05-29', time: '17:30:00', type: 'clock-out', location: 'Office' },
-        { id: 3, date: '2026-05-28', time: '09:15:00', type: 'clock-in', location: 'Office' },
-        { id: 4, date: '2026-05-28', time: '17:45:00', type: 'clock-out', location: 'Office' },
-        { id: 5, date: '2026-05-27', time: '08:50:00', type: 'clock-in', location: 'Office' },
-    ],
+  { id: 1, date: '2026-06-02', time: '08:54:22', type: 'clock-in', location: 'Office' },
+  { id: 2, date: '2026-06-02', time: '17:02:11', type: 'clock-out', location: 'Office' },
+  { id: 3, date: '2026-06-01', time: '09:12:05', type: 'clock-in', location: 'Remote' },
+  { id: 4, date: '2026-06-01', time: '18:15:44', type: 'clock-out', location: 'Remote' },
+  { id: 5, date: '2026-05-29', time: '08:45:19', type: 'clock-in', location: 'Office' },
+  { id: 6, date: '2026-05-29', time: '17:30:00', type: 'clock-out', location: 'Office' },
+  { id: 7, date: '2026-05-28', time: '09:15:00', type: 'clock-in', location: 'Office' },
+  { id: 8, date: '2026-05-28', time: '17:45:00', type: 'clock-out', location: 'Office' },
+  { id: 9, date: '2026-05-27', time: '08:50:00', type: 'clock-in', location: 'Office' },
+  { id: 10, date: '2026-05-27', time: '17:10:32', type: 'clock-out', location: 'Office' },
+  { id: 11, date: '2026-05-26', time: '09:05:14', type: 'clock-in', location: 'Field' },
+  { id: 12, date: '2026-05-26', time: '16:48:29', type: 'clock-out', location: 'Field' },
+  { id: 13, date: '2026-05-25', time: '08:32:55', type: 'clock-in', location: 'Remote' },
+  { id: 14, date: '2026-05-25', time: '17:05:12', type: 'clock-out', location: 'Remote' },
+  { id: 15, date: '2026-05-22', time: '08:59:01', type: 'clock-in', location: 'Office' },
+  { id: 16, date: '2026-05-22', time: '17:35:40', type: 'clock-out', location: 'Office' },
+  { id: 17, date: '2026-05-21', time: '09:22:11', type: 'clock-in', location: 'Remote' },
+  { id: 18, date: '2026-05-21', time: '18:01:19', type: 'clock-out', location: 'Remote' },
+  { id: 19, date: '2026-05-20', time: '08:41:50', type: 'clock-in', location: 'Office' },
+  { id: 20, date: '2026-05-20', time: '17:25:03', type: 'clock-out', location: 'Office' },
+  { id: 21, date: '2026-05-19', time: '09:03:18', type: 'clock-in', location: 'Office' },
+  { id: 22, date: '2026-05-19', time: '17:55:47', type: 'clock-out', location: 'Office' },
+  { id: 23, date: '2026-05-18', time: '08:50:22', type: 'clock-in', location: 'Field' },
+  { id: 24, date: '2026-05-18', time: '17:12:36', type: 'clock-out', location: 'Field' },
+  { id: 25, date: '2026-05-15', time: '09:10:00', type: 'clock-in', location: 'Remote' },
+  { id: 26, date: '2026-05-15', time: '17:40:11', type: 'clock-out', location: 'Remote' },
+  { id: 27, date: '2026-05-14', time: '08:35:49', type: 'clock-in', location: 'Office' },
+  { id: 28, date: '2026-05-14', time: '17:20:55', type: 'clock-out', location: 'Office' },
+  { id: 29, date: '2026-05-13', time: '08:58:14', type: 'clock-in', location: 'Office' },
+  { id: 30, date: '2026-05-13', time: '17:48:02', type: 'clock-out', location: 'Office' },
+  { id: 31, date: '2026-05-12', time: '09:01:27', type: 'clock-in', location: 'Remote' },
+  { id: 32, date: '2026-05-12', time: '18:05:39', type: 'clock-out', location: 'Remote' },
+  { id: 33, date: '2026-05-11', time: '08:44:12', type: 'clock-in', location: 'Office' },
+  { id: 34, date: '2026-05-11', time: '17:15:23', type: 'clock-out', location: 'Office' },
+  { id: 35, date: '2026-05-08', time: '09:18:31', type: 'clock-in', location: 'Field' },
+  { id: 36, date: '2026-05-08', time: '16:55:04', type: 'clock-out', location: 'Field' },
+  { id: 37, date: '2026-05-07', time: '08:52:09', type: 'clock-in', location: 'Office' },
+  { id: 38, date: '2026-05-07', time: '17:33:41', type: 'clock-out', location: 'Office' },
+  { id: 39, date: '2026-05-06', time: '09:07:55', type: 'clock-in', location: 'Office' },
+  { id: 40, date: '2026-05-06', time: '17:42:19', type: 'clock-out', location: 'Office' },
+  { id: 41, date: '2026-05-05', time: '08:39:12', type: 'clock-in', location: 'Remote' },
+  { id: 42, date: '2026-05-05', time: '17:28:50', type: 'clock-out', location: 'Remote' },
+  { id: 43, date: '2026-05-04', time: '08:55:00', type: 'clock-in', location: 'Office' },
+  { id: 44, date: '2026-05-04', time: '17:31:08', type: 'clock-out', location: 'Office' },
+  { id: 45, date: '2026-05-01', time: '09:11:43', type: 'clock-in', location: 'Remote' },
+  { id: 46, date: '2026-05-01', time: '18:02:57', type: 'clock-out', location: 'Remote' },
+  { id: 47, date: '2026-04-30', time: '08:47:26', type: 'clock-in', location: 'Office' },
+  { id: 48, date: '2026-04-30', time: '17:21:14', type: 'clock-out', location: 'Office' },
+  { id: 49, date: '2026-04-29', time: '09:02:11', type: 'clock-in', location: 'Office' },
+  { id: 50, date: '2026-04-29', time: '17:50:33', type: 'clock-out', location: 'Office' },
+  { id: 51, date: '2026-04-28', time: '08:36:05', type: 'clock-in', location: 'Field' },
+  { id: 52, date: '2026-04-28', time: '16:44:18', type: 'clock-out', location: 'Field' },
+  { id: 53, date: '2026-04-27', time: '08:51:59', type: 'clock-in', location: 'Remote' },
+  { id: 54, date: '2026-04-27', time: '17:36:42', type: 'clock-out', location: 'Remote' },
+  { id: 55, date: '2026-04-24', time: '09:05:00', type: 'clock-in', location: 'Office' },
+  { id: 56, date: '2026-04-24', time: '17:40:25', type: 'clock-out', location: 'Office' },
+  { id: 57, date: '2026-04-23', time: '08:43:17', type: 'clock-in', location: 'Office' },
+  { id: 58, date: '2026-04-23', time: '17:11:02', type: 'clock-out', location: 'Office' },
+  { id: 59, date: '2026-04-22', time: '09:14:38', type: 'clock-in', location: 'Remote' },
+  { id: 60, date: '2026-04-22', time: '18:10:51', type: 'clock-out', location: 'Remote' }
+],
     
     get filteredRecords() {
         let filtered = this.records.filter(r => {

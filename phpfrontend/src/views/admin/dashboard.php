@@ -1,11 +1,7 @@
 <?php
-/**
- * Admin Dashboard Page
- * Main dashboard with overview and stats
- */
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-// Verify admin access
+// If not an admin, kick them completely out of the admin routing context
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ' . route_url('/login'));
     exit;
@@ -17,10 +13,166 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Clock-It</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
+    
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
+
+    <style>
+        /* Clock-It Custom Corporate Design System Tokens */
+        :root {
+            --deep-navy: #093C5D;
+            --mid-blue: #3B7597;
+            --olive-green: #9CB07A;
+            --light-gray: #F5F5F5;
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--deep-navy);
+            overflow-x: hidden;
+        }
+
+        /* Responsive Animated Sidebar Core Layout Frame */
+        .app-sidebar {
+            background-color: var(--deep-navy);
+            color: #FFFFFF;
+            min-height: 100vh;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1030;
+            display: flex;
+            flex-direction: column;
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 4px 0 25px rgba(9, 60, 93, 0.15);
+            overflow: hidden;
+        }
+
+        /* Sidebar Item Links styling */
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            padding: 0.85rem 1.5rem;
+            margin: 0.2rem 1rem;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-nav-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-nav-link.active {
+            color: #FFFFFF;
+            background-color: var(--mid-blue);
+            box-shadow: 0 4px 12px rgba(59, 117, 151, 0.3);
+        }
+
+        .sidebar-logout {
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #FFA3A3;
+            padding: 1rem 1.5rem;
+            margin: auto 1rem 1.5rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-logout:hover {
+            background-color: rgba(255, 163, 163, 0.1);
+            color: #FF6B6B;
+        }
+
+        /* Dynamic Main Workspace Engine Wrapper */
+        .main-workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .app-header {
+            background-color: #FFFFFF;
+            border-bottom: 1px solid rgba(9, 60, 93, 0.06);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(9, 60, 93, 0.02);
+        }
+
+        /* Custom Structure Component Blocks */
+        .custom-card {
+            background-color: #FFFFFF;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(9, 60, 93, 0.03);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .custom-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(9, 60, 93, 0.06);
+        }
+
+        .custom-card .card-header {
+            background-color: rgba(9, 60, 93, 0.01) !important;
+            border-bottom: 1px solid rgba(9, 60, 93, 0.06);
+            padding: 1.2rem 1.5rem;
+            color: var(--deep-navy);
+            font-weight: 700;
+        }
+
+        /* Native App Dark Mode Matrix Overrides */
+        [data-bs-theme="dark"] {
+            --light-gray: #0B131A;
+            --deep-navy: #E6F0F7;
+            --mid-blue: #6FAAD0;
+            
+            .app-header {
+                background-color: #121F2B;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .custom-card {
+                background-color: #121F2B !important;
+                box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2);
+            }
+
+            .custom-card .card-header {
+                background-color: rgba(255, 255, 255, 0.02) !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .table {
+                --bs-table-bg: transparent;
+                color: var(--deep-navy);
+            }
+
+            .text-muted {
+                color: #A3B8CC !important;
+            }
+        }
+
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body x-data="{ 
     sidebarOpen: true, 
@@ -30,119 +182,183 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
         absentToday: 7,
         totalScans: 342
     },
-    recentEvents: []
-}" @init="window.themeManager.initTheme()">
+    recentEvents: [
+        { id: 1, name: 'Marcus Vance', action: 'CLOCK_IN', platform: 'QR Gateway Alpha', time: '08:42 AM' },
+        { id: 2, name: 'Sarah Jenkins', action: 'CLOCK_IN', platform: 'Manual Panel Override', time: '08:31 AM' },
+        { id: 3, name: 'David Miller', action: 'CLOCK_OUT', platform: 'QR Gateway Beta', time: '04:15 PM' }
+    ]
+}" x-init="window.themeManager.initTheme()">
     
-    <div style="display: flex;">
-        <!-- Admin Sidebar -->
-        <aside class="app-sidebar" :style="{ width: sidebarOpen ? '16rem' : '0' }">
-            <div>
-                <h1>Clock-It</h1>
-                <p>Admin Panel</p>
+    <div style="display: flex; min-height: 100vh;">
+        
+        <aside class="app-sidebar" :style="{ width: sidebarOpen ? '280px' : '0px' }">
+            <div class="p-4 border-bottom border-secondary border-opacity-25" style="min-width: 280px;">
+                <h4 class="fw-bold mb-1" style="color: #FFFFFF;"><i class="bi bi-clock-history me-2"></i>Clock-It</h4>
+                <p class="small text-white text-opacity-50 mb-0 uppercase tracking-wider font-monospace">Administrative Panel</p>
             </div>
 
-            <nav class="sidebar-nav">
+            <nav class="sidebar-nav mt-4" style="min-width: 280px;">
                 <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link active">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                    <span>Dashboard</span>
+                    <i class="bi bi-grid-1x2-fill fs-5"></i>
+                    <span>Dashboard Overview</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/users') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5h-12v-2c0-1.5 3.5-2.5 6-2.5s6 1 6 2.5v2z"/></svg>
+                    <i class="bi bi-people-fill fs-5"></i>
                     <span>User Management</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/attendance') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.46.37.84-1.39-.46-.37L12 13V8h-2z"/></svg>
+                    <i class="bi bi-journal-check fs-5"></i>
                     <span>Attendance Log</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/qr-generator') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h1v4h-1v-4zm-4 4h4v1h-4v-1zm1-3h1v2h-1v-2z"/></svg>
-                    <span>QR Generator</span>
+                    <i class="bi bi-qr-code fs-5"></i>
+                    <span>QR Code Generator</span>
                 </a>
 
                 <a href="<?= route_url('/admin-dashboard/settings') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l1.72-1.35c.19-.15.24-.42.12-.64l-1.63-2.83c-.12-.22-.39-.3-.61-.22l-2.03.81c-.42-.32-.86-.58-1.35-.78L15 2.5c-.04-.25-.25-.43-.5-.43h-3.26c-.25 0-.46.18-.49.43L10.88 5.5c-.48.2-.93.47-1.35.78l-2.03-.81c-.22-.09-.49 0-.61.22L5.25 8.54c-.13.22-.07.49.12.64l1.72 1.35c-.05.3-.07.62-.07.94s.02.64.07.94l-1.72 1.35c-.19.15-.24.42-.12.64l1.63 2.83c.12.22.39.3.61.22l2.03-.81c.42.32.86.58 1.35.78l.32 2.15c.03.25.25.43.5.43h3.26c.25 0 .46-.18.49-.43l.32-2.15c.48-.2.93-.47 1.35-.78l2.03.81c.22.09.49 0 .61-.22l1.63-2.83c.13-.22.07-.49-.12-.64l-1.72-1.35zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                    <span>Settings</span>
+                    <i class="bi bi-sliders fs-5"></i>
+                    <span>System Settings</span>
                 </a>
             </nav>
 
-            <button class="sidebar-logout" @click="logoutUser()" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-                <span>Sign Out</span>
+            <button class="sidebar-logout" @click="logoutUser()" type="button" style="min-width: 280px;">
+                <i class="bi bi-box-arrow-left fs-5"></i>
+                <span>Terminate Session</span>
             </button>
         </aside>
 
-        <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <header class="app-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-outline-secondary" type="button">
-                        <span>☰</span>
+        <div class="main-workspace" :style="{ marginLeft: sidebarOpen ? '280px' : '0px' }">
+            
+            <header class="app-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-light border d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 8px;" type="button">
+                        <i class="bi bi-list fs-5 text-dark"></i>
                     </button>
-                    <h2 style="margin: 0;">Admin Dashboard</h2>
+                    <h5 class="mb-0 fw-bold" style="color: var(--deep-navy);">Admin Dashboard</h5>
                 </div>
-                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                
+                <div class="d-flex align-items-center gap-3">
                     <?php include __DIR__ . '/../partials/theme-toggle.php'; ?>
-                    <div style="font-size: 0.875rem; color: var(--slate-600);">
-                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?>
+                    
+                    <div class="vr mx-1 opacity-25"></div>
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-secondary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold text-uppercase" style="width: 36px; height: 36px; border-radius: 50%; font-size: 0.85rem; border: 1px solid rgba(9, 60, 93, 0.1);">
+                            <?= substr(htmlspecialchars($_SESSION['user_name'] ?? 'A'), 0, 2); ?>
+                        </div>
+                        <div class="small fw-semibold d-none d-sm-block text-muted">
+                            <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin System'); ?>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <!-- Dashboard Content -->
-            <main class="dashboard-section" style="padding: 2rem;">
-                <div class="container-fluid">
-                    <!-- Stats Cards -->
-                    <div class="row mb-4">
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Employees</p>
-                                    <h3 class="card-title" x-text="stats.totalEmployees" style="color: var(--primary-navy);"></h3>
+            <main class="p-4 p-md-5 flex-grow-1">
+                <div class="container-fluid p-0">
+                    
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-1" style="color: var(--deep-navy);">Overview Statistics</h2>
+                        <p class="text-muted small">Real-time attendance operational framework telemetry logs.</p>
+                    </div>
+
+                    <div class="row g-4 mb-5">
+                        
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card custom-card">
+                                <div class="card-body d-flex align-items-center p-4">
+                                    <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-4 me-3">
+                                        <i class="bi bi-building fs-3" style="color: var(--mid-blue) !important;"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted small mb-1 fw-semibold text-uppercase tracking-wider">Total Employees</p>
+                                        <h3 class="fw-bold mb-0" x-text="stats.totalEmployees" style="color: var(--deep-navy);"></h3>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Present Today</p>
-                                    <h3 class="card-title" x-text="stats.presentToday" style="color: var(--accent-success);"></h3>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card custom-card">
+                                <div class="card-body d-flex align-items-center p-4">
+                                    <div class="p-3 bg-success bg-opacity-10 text-success rounded-4 me-3">
+                                        <i class="bi bi-person-check-fill fs-3" style="color: var(--olive-green) !important;"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted small mb-1 fw-semibold text-uppercase tracking-wider">Present Today</p>
+                                        <h3 class="fw-bold mb-0" x-text="stats.presentToday" style="color: var(--olive-green);"></h3>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Absent Today</p>
-                                    <h3 class="card-title" x-text="stats.absentToday" style="color: #dc3545;"></h3>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card custom-card">
+                                <div class="card-body d-flex align-items-center p-4">
+                                    <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-4 me-3">
+                                        <i class="bi bi-person-dash-fill fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted small mb-1 fw-semibold text-uppercase tracking-wider">Absent Today</p>
+                                        <h3 class="fw-bold mb-0 text-danger" x-text="stats.absentToday"></h3>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Scans</p>
-                                    <h3 class="card-title" x-text="stats.totalScans" style="color: var(--secondary-blue);"></h3>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card custom-card">
+                                <div class="card-body d-flex align-items-center p-4">
+                                    <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-4 me-3">
+                                        <i class="bi bi-qr-code-scan fs-3" style="color: var(--mid-blue) !important;"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted small mb-1 fw-semibold text-uppercase tracking-wider">Total Scans</p>
+                                        <h3 class="fw-bold mb-0" x-text="stats.totalScans" style="color: var(--deep-navy);"></h3>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Recent Activity -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="mb-0">Recent Activity</h5>
+                    <div class="card custom-card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0 fw-bold fs-6"><i class="bi bi-activity me-2"></i>Recent Activity Log</h5>
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 small fw-semibold">Live System Active</span>
                         </div>
-                        <div class="card-body">
-                            <p class="text-muted">Loading recent events...</p>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" style="min-width: 600px;">
+                                    <thead class="bg-light table-light">
+                                        <tr>
+                                            <th class="ps-4 py-3 text-uppercase font-monospace small tracking-wider text-muted">Employee</th>
+                                            <th class="py-3 text-uppercase font-monospace small tracking-wider text-muted">Action</th>
+                                            <th class="py-3 text-uppercase font-monospace small tracking-wider text-muted">Gateway Platform</th>
+                                            <th class="pe-4 py-3 text-end text-uppercase font-monospace small tracking-wider text-muted">Timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="event in recentEvents" :key="event.id">
+                                            <tr>
+                                                <td class="ps-4 fw-bold" style="color: var(--deep-navy);" x-text="event.name"></td>
+                                                <td>
+                                                    <span class="badge px-2.5 py-1.5 rounded-2 font-monospace fw-bold"
+                                                          :class="event.action === 'CLOCK_IN' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-dark'"
+                                                          x-text="event.action">
+                                                    </span>
+                                                </td>
+                                                <td class="text-muted small" x-text="event.platform"></td>
+                                                <td class="pe-4 text-end font-monospace text-muted small" x-text="event.time"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
+                    
                 </div>
             </main>
         </div>
@@ -155,6 +371,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             }
         }
     </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

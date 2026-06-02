@@ -1,12 +1,14 @@
 <?php
-/**
- * Calendar Page
- * Monthly attendance calendar view
- */
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ' . route_url('/login.php'));
+// If not a staff member, redirect them to login or their admin panel
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+    // Elegant fallback: If an admin accidentally accesses a staff link, send them back to admin base
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
+        header('Location: ' . route_url('/admin-dashboard'));
+        exit;
+    }
+    header('Location: ' . route_url('/login'));
     exit;
 }
 ?>
@@ -145,6 +147,7 @@ if (!isset($_SESSION['user_id'])) {
             color: #FFFFFF;
         }
         .cell-leave {
+            font-size: 0.9rem;
             background-color: var(--soft-leave);
             color: #FFFFFF;
         }
