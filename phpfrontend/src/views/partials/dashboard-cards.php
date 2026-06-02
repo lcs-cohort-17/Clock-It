@@ -48,8 +48,8 @@ if (isset($_GET['api'])) {
 
     <div class="row g-4">
 
-        <!-- CARD 1 -->
-        <div class="col-6 col-lg-3">
+        <!-- CARD 1 -->  
+    <div class="col-6 col-lg-3">
             <div class="card shadow-sm card-box p-3">
 
                 <div class="d-flex justify-content-between">
