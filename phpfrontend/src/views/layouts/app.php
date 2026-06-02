@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/usermanagement.css')) ?>">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/attendance_log.css')) ?>">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/calendar.css')) ?>">
+    <link rel="stylesheet" href="<?= e(app_url('/assets/css/dashboard.css')) ?>">
 
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -26,6 +27,7 @@
     <script defer src="<?= e(app_url('/assets/js/app.js')) ?>"></script>
     <script defer src="<?= e(app_url('/assets/js/calendar.js')) ?>"></script>
     <script defer src="<?= e(app_url('/assets/js/usermanagement.js')) ?>"></script>
+    <script defer src="<?= e(app_url('/assets/js/dashboard.js')) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body>

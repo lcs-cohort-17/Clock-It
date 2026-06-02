@@ -68,5 +68,86 @@ document.addEventListener('alpine:init', () => {
   };
 });
 
+function dashboard() {
+  return {
+    showCalendar: false,
+    showLeave: false,
+    currentMonth: new Date().getMonth(),
+    currentYear: new Date().getFullYear(),
+    selectedDate: null,
+    calendarDays: [],
+
+    init() {
+      this.generateCalendar();
+    },
+
+    generateCalendar() {
+      const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+      const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startingDayOfWeek = firstDay.getDay();
+
+      this.calendarDays = [];
+
+      for (let i = 0; i < startingDayOfWeek; i += 1) {
+        this.calendarDays.push(null);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        this.calendarDays.push(day);
+      }
+    },
+
+    previousMonth() {
+      if (this.currentMonth === 0) {
+        this.currentMonth = 11;
+        this.currentYear -= 1;
+      } else {
+        this.currentMonth -= 1;
+      }
+      this.generateCalendar();
+    },
+
+    nextMonth() {
+      if (this.currentMonth === 11) {
+        this.currentMonth = 0;
+        this.currentYear += 1;
+      } else {
+        this.currentMonth += 1;
+      }
+      this.generateCalendar();
+    },
+
+    selectDate(day) {
+      if (day) {
+        this.selectedDate = new Date(this.currentYear, this.currentMonth, day);
+      }
+    },
+
+    isToday(day) {
+      const today = new Date();
+      return day
+        && day === today.getDate()
+        && this.currentMonth === today.getMonth()
+        && this.currentYear === today.getFullYear();
+    },
+
+    isSelected(day) {
+      return this.selectedDate
+        && day === this.selectedDate.getDate()
+        && this.currentMonth === this.selectedDate.getMonth()
+        && this.currentYear === this.selectedDate.getFullYear();
+    },
+
+    getMonthYear() {
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+      ];
+      return `${months[this.currentMonth]} ${this.currentYear}`;
+    },
+  };
+}
+
 
 

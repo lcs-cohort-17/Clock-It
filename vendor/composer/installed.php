@@ -1,20 +1,20 @@
 <?php return array(
     'root' => array(
-        'name' => '__root__',
+        'name' => 'clockit/clockit',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '86987888b8231659da4be8502f0f945ced5c5e61',
-        'type' => 'library',
+        'reference' => '09c35084c1f858a1f1bbf6b04a12606e86df0d8e',
+        'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
-        '__root__' => array(
+        'clockit/clockit' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '86987888b8231659da4be8502f0f945ced5c5e61',
-            'type' => 'library',
+            'reference' => '09c35084c1f858a1f1bbf6b04a12606e86df0d8e',
+            'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
             'dev_requirement' => false,

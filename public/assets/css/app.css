@@ -296,6 +296,62 @@ body {
   color: var(--app-muted);
 }
 
+.staff-sidebar-avatar {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.staff-dashboard-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.52);
+}
+
+.staff-dashboard-modal-card {
+  width: min(640px, 100%);
+  max-height: calc(100dvh - 32px);
+  padding: 24px;
+  overflow-y: auto;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+}
+
+.staff-leave-modal {
+  width: min(720px, 100%);
+}
+
+.staff-dashboard-modal .calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.staff-dashboard-modal .calendar-header-day {
+  padding: 4px 0;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .staff-history {
   max-width: 1240px;
 }
@@ -665,5 +721,9 @@ body.scan-page-body {
 
   .scan-demo-btn {
     width: 100%;
+  }
+
+  .staff-dashboard-modal-card {
+    padding: 18px;
   }
 }
