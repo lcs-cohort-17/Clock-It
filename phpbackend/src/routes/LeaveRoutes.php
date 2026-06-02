@@ -1,5 +1,6 @@
 <?php
 
+
 function handleLeaveRoutes(LeaveController $controller, array $request = []): void
 {
     $method = $request['method'] ?? ($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -38,7 +39,7 @@ function handleLeaveRoutes(LeaveController $controller, array $request = []): vo
         $controller->updateLeave($auth, $matches[1], $body);
         return;
     }
-    
+
     //error path
     http_response_code(404);
     echo json_encode(['message' => 'Not Found'], JSON_UNESCAPED_SLASHES);

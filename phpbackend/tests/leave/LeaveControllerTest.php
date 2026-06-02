@@ -422,7 +422,7 @@ class LeaveControllerTest extends TestCase {
         );
         $response = json_decode(ob_get_clean(), true);
 
-        $this->assertEquals('Forbidden', $response['message']);
+        $this->assertEquals('Admin privileges required', $response['error']);
     }
  
     // leave ID not found on updateLeave → 404

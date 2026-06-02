@@ -46,8 +46,7 @@ class LeaveValidatorTest extends TestCase {
             'reason'       => 'Vacation',
         ]);
         $this->assertArrayHasKey('type', $errors);
-        $this->assertContains('type must be 
-         sick, annual, unpaid or other', $errors['type']);
+        $this->assertContains('type must be : sick, annual, unpaid or other', $errors['type']);
     }
  
     // missing type must be caught on its own
