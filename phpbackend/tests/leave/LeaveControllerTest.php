@@ -61,7 +61,7 @@ class LeaveControllerTest extends TestCase {
         $this->controller->submitLeave([], []);
         $response = json_decode(ob_get_clean(), true);
  
-        $this->assertEquals('Unauthorized', $response['message']);
+        $this->assertEquals('Access token required', $response['error']);
     }
  
     // sick leave follows the same happy path as annual
@@ -197,7 +197,7 @@ class LeaveControllerTest extends TestCase {
         );
         $response = json_decode(ob_get_clean(), true);
  
-        $this->assertEquals('Forbidden', $response['message']);
+        $this->assertEquals('Admin privileges required', $response['error']);
     }
 
     public function test_update_status_forbidden_when_admin_token_does_not_match_database_role(): void {
@@ -223,7 +223,7 @@ class LeaveControllerTest extends TestCase {
         $this->controller->updateLeaveStatus([], 'leave-1', ['status' => 'approved']);
         $response = json_decode(ob_get_clean(), true);
  
-        $this->assertEquals('Unauthorized', $response['message']);
+        $this->assertEquals('Access token required', $response['error']);
     }
  
     // Mirrors the 404 scenario — admin sends a valid request but the leave id does not exist
@@ -354,7 +354,7 @@ class LeaveControllerTest extends TestCase {
         $this->controller->getCalendar([], []);
         $response = json_decode(ob_get_clean(), true);
  
-        $this->assertEquals('Unauthorized', $response['message']);
+        $this->assertEquals('Access token required', $response['error']);
     }
  
     // authenticated staff user requests their own leave list
@@ -381,7 +381,7 @@ class LeaveControllerTest extends TestCase {
         $this->controller->getLeave([], []);
         $response = json_decode(ob_get_clean(), true);
  
-        $this->assertEquals('Unauthorized', $response['message']);
+        $this->assertEquals('Access token required', $response['error']);
     }
  
     // admin updates dates on an existing leave, updated row returned

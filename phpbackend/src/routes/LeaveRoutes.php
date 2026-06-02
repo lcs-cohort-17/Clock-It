@@ -8,6 +8,9 @@ function handleLeaveRoutes(LeaveController $controller, array $request = []): vo
     $body = $request['body'] ?? leaveReadJsonBody();
     $query = $request['query'] ?? ($_GET ?? []);
 
+    // DEBUG
+    error_log("Method: $method, URI: $uri");
+
     //submitLeave -for users 
     if ($method === 'POST' && $uri === '/api/leave-request') {
         $controller->submitLeave($auth, $body);
