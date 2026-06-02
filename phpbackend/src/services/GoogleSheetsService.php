@@ -99,6 +99,133 @@ class GoogleSheetsService
         }
     }
 
+    public function exportAttendance(array $attendanceData): string
+    {
+        if (!$this->connected) {
+            throw new RuntimeException('Google Sheets is not connected. Check credentials.json.');
+        }
+
+        if (empty($attendanceData)) {
+            throw new InvalidArgumentException('No attendance data supplied for export.');
+        }
+
+        $sheetId = $this->getConfiguredSpreadsheetId();
+
+        if (empty($sheetId)) {
+            $sheetId = $this->createSpreadsheet('Attendance Export ' . date('Y-m-d H:i:s'));
+        }
+
+        if (empty($sheetId)) {
+            throw new RuntimeException('Unable to access or create a Google Sheet.');
+        }
+
+        $rows = [[
+            'Staff Name',
+            'Date',
+            'Clock In',
+            'Clock Out',
+            'Total Hours',
+        ]];
+
+        foreach ($attendanceData as $record) {
+            $rows[] = [
+                $record['staff_name'] ?? '',
+                $record['date'] ?? '',
+                $record['clock_in'] ?? '',
+                $record['clock_out'] ?? '',
+                $record['total_hours'] ?? '',
+            ];
+        }
+
+        if (!$this->writeRows($sheetId, $rows)) {
+            throw new RuntimeException('Unable to write attendance data to Google Sheet.');
+        }
+
+        $this->makeReadableByLink($sheetId);
+
+        return $this->generateSheetUrl($sheetId);
+    }
+
+    private function getConfiguredSpreadsheetId(): string
+    {
+        if (class_exists('GoogleSheetsModel')) {
+            $modelSheetId = (new GoogleSheetsModel())->getSheetId();
+
+            if (!empty($modelSheetId)) {
+                return $modelSheetId;
+            }
+        }
+
+        return trim(
+            $_ENV['GOOGLE_SHEETS_SPREADSHEET_ID']
+            ?? getenv('GOOGLE_SHEETS_SPREADSHEET_ID')
+            ?: ''
+        );
+    }
+
+    private function writeRows(string $sheetId, array $rows): bool
+    {
+        try {
+            $body = new Google_Service_Sheets_ValueRange(['values' => $rows]);
+
+            $this->sheetsService->spreadsheets_values->update(
+                $sheetId,
+                'A1',
+                $body,
+                ['valueInputOption' => 'RAW']
+            );
+
+            return true;
+        } catch (Exception $e) {
+            error_log('Failed to write rows to spreadsheet: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function appendAttendanceRows(string $sheetId, array $rows): bool
+    {
+        if (!$this->connected || empty($sheetId) || empty($rows)) {
+            return false;
+        }
+
+        try {
+            $body = new Google_Service_Sheets_ValueRange(['values' => $rows]);
+
+            $this->sheetsService->spreadsheets_values->append(
+                $sheetId,
+                'A1',
+                $body,
+                [
+                    'valueInputOption'  => 'RAW',
+                    'insertDataOption'  => 'INSERT_ROWS',
+                ]
+            );
+
+            return true;
+        } catch (Exception $e) {
+            error_log('Failed to append rows to spreadsheet: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function makeReadableByLink(string $sheetId): void
+    {
+        if (!$this->driveService) {
+            return;
+        }
+
+        try {
+            $permission = new Google_Service_Drive_Permission([
+                'type' => 'anyone',
+                'role' => 'reader',
+            ]);
+
+            $this->driveService->permissions->create($sheetId, $permission);
+        } catch (Exception $e) {
+            error_log('Failed to update spreadsheet sharing: ' . $e->getMessage());
+        }
+    }
+
     public function readAttendanceData(): array
     {
         if (!$this->connected) {

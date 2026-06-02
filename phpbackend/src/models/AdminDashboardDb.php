@@ -74,15 +74,15 @@ class AdminDashboardModel
 
         return $this->fetchRows(
             "SELECT
-                al.profile_id,
+                al.user_id,
                 al.event_time,
                 al.event_type,
                 al.sync_status,
                 al.device_info,
-                p.first_name,
-                p.last_name
+                u.first_name,
+                u.last_name
              FROM attendance_logs al
-             LEFT JOIN profiles p ON p.id = al.profile_id
+             LEFT JOIN users u ON u.user_id = al.user_id
              ORDER BY al.event_time DESC
              LIMIT {$limit} OFFSET {$offset}"
         );
@@ -92,14 +92,14 @@ class AdminDashboardModel
     {
         return $this->fetchRows(
             "SELECT
-                al.profile_id,
+                al.user_id,
                 al.event_time,
                 al.location,
                 al.event_type,
-                p.first_name,
-                p.last_name
+                u.first_name,
+                u.last_name
              FROM attendance_logs al
-             LEFT JOIN profiles p ON p.id = al.profile_id
+             LEFT JOIN users u ON u.user_id = al.user_id
              ORDER BY al.event_time DESC"
         );
     }
@@ -140,7 +140,7 @@ class AdminDashboardModel
             $lastName = $row['last_name'] ?? null;
             unset($row['first_name'], $row['last_name']);
 
-            $row['profiles'] = [
+            $row['users'] = [
                 'first_name' => $firstName,
                 'last_name' => $lastName,
             ];

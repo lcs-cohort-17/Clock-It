@@ -67,4 +67,49 @@ class GoogleSheetsModelTest extends TestCase
 
         $this->assertNotNull($sheetId);
     }
+
+    public function testCanSyncAttendanceFromSheetReturnsZeroForEmptyRows(): void
+    {
+        $result = $this->model->syncAttendanceFromSheet([]);
+
+        $this->assertEquals(0, $result);
+    }
+
+    public function testCanSyncAttendanceFromSheetSkipsHeaderRow(): void
+    {
+        $rows = [
+            ['Staff Name', 'Date', 'Clock In', 'Clock Out', 'Total Hours'],
+        ];
+
+        $result = $this->model->syncAttendanceFromSheet($rows);
+
+        $this->assertEquals(0, $result);
+    }
+
+    public function testCanSyncAttendanceFromSheetParsesValidRecords(): void
+    {
+        $rows = [
+            ['Staff Name', 'Date', 'Clock In', 'Clock Out', 'Total Hours'],
+            ['John Doe', '2026-01-15', '09:00', '17:00', '8'],
+            ['Jane Smith', '2026-01-15', '08:30', '16:30', '8'],
+        ];
+
+        $result = $this->model->syncAttendanceFromSheet($rows);
+
+        $this->assertEquals(2, $result);
+    }
+
+    public function testCanSyncAttendanceFromSheetSkipsInvalidRows(): void
+    {
+        $rows = [
+            ['Staff Name', 'Date', 'Clock In', 'Clock Out', 'Total Hours'],
+            ['John Doe', '2026-01-15', '09:00', '17:00', '8'],
+            ['', '2026-01-15', '08:30', '16:30', '8'],  // Missing staff name
+            ['Jane Smith', '', '08:30', '16:30', '8'],  // Missing date
+        ];
+
+        $result = $this->model->syncAttendanceFromSheet($rows);
+
+        $this->assertEquals(1, $result);  // Only first record is valid
+    }
 }

@@ -44,14 +44,14 @@ class AttendanceController
 
             $query = "
             SELECT
-                p.first_name,
-                p.last_name,
+                u.first_name,
+                u.last_name,
                 DATE(s.clock_in_time)  AS work_date,
                 s.clock_in_time,
                 s.clock_out_time,
                 s.duration_minutes
             FROM   sessions s
-            INNER  JOIN profiles p ON s.profile_id = p.id
+            INNER  JOIN users u ON s.user_id = u.user_id
             WHERE  {$where}
             ORDER  BY s.clock_in_time DESC
         ";

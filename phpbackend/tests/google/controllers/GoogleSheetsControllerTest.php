@@ -6,15 +6,18 @@ class GoogleSheetsControllerTest extends TestCase
 {
     private function makeController(
         bool $connected = false,
-        array $pendingRecords = []
+        array $pendingRecords = [],
+        array $sheetRows = []
     ): GoogleSheetsController {
         $mockService = $this->createMock(GoogleSheetsService::class);
         $mockService->method('isConnected')->willReturn($connected);
         $mockService->method('createSpreadsheet')->willReturn('mock-sheet-id');
         $mockService->method('writeAttendanceData')->willReturn(true);
+        $mockService->method('readAttendanceData')->willReturn($sheetRows);
         $mockService->method('generateSheetUrl')->willReturn(
             'https://docs.google.com/spreadsheets/d/mock-sheet-id'
         );
+        $mockService->method('appendAttendanceRows')->willReturn(true);
 
         $mockModel = $this->createMock(GoogleSheetsModel::class);
         $mockModel->method('getPendingAttendance')->willReturn($pendingRecords);
@@ -22,6 +25,8 @@ class GoogleSheetsControllerTest extends TestCase
         $mockModel->method('saveSyncFrequency')->willReturn(true);
         $mockModel->method('saveSheetId')->willReturn(true);
         $mockModel->method('getSheetId')->willReturn('mock-sheet-id');
+        $mockModel->method('syncAttendanceFromSheet')->willReturn(count($sheetRows) > 1 ? count($sheetRows) - 1 : 0);
+        $mockModel->method('markAttendanceAsSynced')->willReturn(count($pendingRecords));
 
         return new GoogleSheetsController($mockService, $mockModel);
     }
@@ -62,15 +67,53 @@ class GoogleSheetsControllerTest extends TestCase
 
     public function testSyncReturnsSuccessResponse(): void
     {
+        $sheetRows = [
+            ['Staff Name', 'Date', 'Clock In', 'Clock Out', 'Total Hours'],  // Header
+            ['John Doe', '2026-01-15', '09:00', '17:00', '8'],
+            ['Jane Smith', '2026-01-15', '08:30', '16:30', '8'],
+        ];
+
         $controller = $this->makeController(
             connected: true,
-            pendingRecords: [
-                ['employee_id' => 'EMP001', 'event_type' => 'in']
-            ]
+            sheetRows: $sheetRows
         );
         $response = $controller->sync();
 
         $this->assertTrue($response['success']);
+        $this->assertArrayHasKey('records_synced', $response);
+        $this->assertIsInt($response['records_synced']);
+    }
+
+    public function testPushPendingAttendanceUsesGoogleSheet(): void
+    {
+        $pendingRecords = [
+            [
+                'id' => 'pending-1',
+                'event_type' => 'in',
+                'event_time' => '2026-01-15 09:00:00',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+            ],
+        ];
+
+        $controller = $this->makeController(
+            connected: true,
+            pendingRecords: $pendingRecords
+        );
+
+        $response = $controller->pushPendingAttendance();
+
+        $this->assertTrue($response['success']);
+        $this->assertEquals(1, $response['records_pushed']);
+    }
+
+    public function testConnectReturnsServiceAccountMessage(): void
+    {
+        $controller = $this->makeController();
+        $response = $controller->connect();
+
+        $this->assertTrue($response['success']);
+        $this->assertStringContainsString('managed server-side', $response['message']);
     }
 
     public function testDisconnectRemovesConfiguration(): void

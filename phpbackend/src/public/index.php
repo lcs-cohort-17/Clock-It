@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../models/GoogleSheetsModel.php';
 require_once __DIR__ . '/../services/GoogleSheetsService.php';
 require_once __DIR__ . '/../controllers/GoogleSheetsController.php';
+require_once __DIR__ . '/../controllers/AttendanceController.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
@@ -19,29 +20,65 @@ if ($method === 'GET' && $path === '/api/admin/sheets/status') {
 }
 
 if ($method === 'POST' && $path === '/api/admin/sheets/export') {
+    $controller = new AttendanceController();
+    $response = $controller->exportToSheets();
+
+    http_response_code($response['status']);
+
+    foreach ($response['headers'] as $name => $value) {
+        header("{$name}: {$value}");
+    }
+
+    echo json_encode($response['body']);
+    return;
+}
+
+if ($method === 'POST' && $path === '/api/admin/sheets/sync') {
     $controller = new GoogleSheetsController();
-    $rawBody = file_get_contents('php://input');
-    $params = $_POST;
+    $response = $controller->sync();
 
-    if ($rawBody !== false && trim($rawBody) !== '') {
-        $jsonParams = json_decode($rawBody, true);
+    echo json_encode($response);
+    return;
+}
 
-        if (json_last_error() === JSON_ERROR_NONE && is_array($jsonParams)) {
-            $params = $jsonParams;
-        }
-    }
+if ($method === 'POST' && $path === '/api/admin/sheets/push') {
+    $controller = new GoogleSheetsController();
+    $response = $controller->pushPendingAttendance();
 
-    try {
-        echo json_encode($controller->export($params));
-    } catch (InvalidArgumentException $e) {
-        http_response_code(400);
-        echo json_encode(['error' => $e->getMessage()]);
-    } catch (Throwable $e) {
-        http_response_code(500);
-        error_log('Google Sheets export failed: ' . $e->getMessage());
-        echo json_encode(['error' => 'Export failed']);
-    }
+    echo json_encode($response);
+    return;
+}
 
+if ($method === 'GET' && $path === '/api/admin/sheets/settings') {
+    $controller = new GoogleSheetsController();
+    $response = $controller->getSettings();
+
+    echo json_encode($response);
+    return;
+}
+
+if ($method === 'POST' && $path === '/api/admin/sheets/settings') {
+    $controller = new GoogleSheetsController();
+    $body = json_decode(file_get_contents('php://input'), true) ?? [];
+    $response = $controller->updateSettings($body);
+
+    echo json_encode($response);
+    return;
+}
+
+if ($method === 'POST' && $path === '/api/admin/sheets/connect') {
+    $controller = new GoogleSheetsController();
+    $response = $controller->connect();
+
+    echo json_encode($response);
+    return;
+}
+
+if ($method === 'POST' && $path === '/api/admin/sheets/disconnect') {
+    $controller = new GoogleSheetsController();
+    $response = $controller->disconnect();
+
+    echo json_encode($response);
     return;
 }
 

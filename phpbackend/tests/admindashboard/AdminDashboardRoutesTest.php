@@ -101,22 +101,22 @@ class FakeAdminDashboardModelForRoutes extends \AdminDashboardModel
     public function fetchRecentActivity(int $page, int $limit): array
     {
         return [[
-            'profile_id' => 10,
+            'user_id' => 10,
             'event_time' => '2025-05-19 10:00:00',
             'event_type' => 'in',
             'sync_status' => 'pending',
             'device_info' => 'front desk',
-            'profiles' => ['first_name' => 'John', 'last_name' => 'Doe'],
+            'users' => ['first_name' => 'John', 'last_name' => 'Doe'],
         ]];
     }
 
     public function fetchCurrentlyOnsite(): array
     {
         return [[
-            'profile_id' => 11,
+            'user_id' => 11,
             'event_time' => '2025-05-19 09:00:00',
             'location' => 'HQ',
-            'profiles' => ['first_name' => 'Jane', 'last_name' => 'Smith'],
+            'users' => ['first_name' => 'Jane', 'last_name' => 'Smith'],
         ]];
     }
 }

@@ -3,10 +3,11 @@
 require_once __DIR__ . '/../controllers/AttendanceController.php';
 
 $attendanceController = new AttendanceController();
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
 if (
-    $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    $_SERVER['REQUEST_URI'] === '/api/admin/export/sheets'
+    ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' &&
+    in_array($path, ['/api/admin/export/sheets', '/api/admin/sheets/export'], true)
 ) {
     $response = $attendanceController->exportToSheets();
 

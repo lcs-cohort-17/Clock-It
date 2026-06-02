@@ -1,15 +1,15 @@
 <?php
-// tests/profile/ProfileModelTest.php
+// tests/user/UserModelTest.php
 
-namespace Tests\profile;
+namespace Tests\user;
 
 use PHPUnit\Framework\TestCase;
 use PDO;                    
 use PDOException; 
 use PDOStatement;
-use App\Models\ProfileDb;
+use App\Models\UserDb;
 
-class ProfileModelTest extends TestCase
+class UserModelTest extends TestCase
 {
     private $mockDb;
     private $model;
@@ -22,14 +22,14 @@ class ProfileModelTest extends TestCase
         $this->mockDb = $this->createMock(PDO::class);
         
         // Create the model with the mock database
-        $this->model = new ProfileDb($this->mockDb);
+        $this->model = new UserDb($this->mockDb);
     }
 
     
-    // GET ALL PROFILES TESTS
+    // GET ALL USERS TESTS
     
     
-    public function testGetAllProfilesReturnsAllProfilesSuccessfully(): void
+    public function testGetAllUsersReturnsAllUsersSuccessfully(): void
     {
         $mockData = [
             [
@@ -61,20 +61,20 @@ class ProfileModelTest extends TestCase
 
         $this->mockDb->expects($this->once())
             ->method('prepare')
-            ->with("SELECT * FROM profiles")
+            ->with("SELECT * FROM users")
             ->willReturn($mockStatement);
 
         $mockStatement->expects($this->once())
             ->method('execute')
             ->willReturn(true);
 
-        $result = $this->model->getProfilesDb();
+        $result = $this->model->getUsersDb();
 
         $this->assertTrue($result['success']);
         $this->assertCount(2, $result['data']);
     }
 
-    public function testGetAllProfilesReturnsProfilesWithAllRequiredFields(): void
+    public function testGetAllUsersReturnsUsersWithAllRequiredFields(): void
     {
         $mockData = [
             [
@@ -102,25 +102,25 @@ class ProfileModelTest extends TestCase
             ->method('execute')
             ->willReturn(true);
 
-        $result = $this->model->getProfilesDb();
-        $profile = $result['data'][0];
+        $result = $this->model->getUsersDb();
+        $user = $result['data'][0];
 
-        $this->assertArrayHasKey('first_name', $profile);
-        $this->assertArrayHasKey('last_name', $profile);
-        $this->assertArrayHasKey('email', $profile);
-        $this->assertArrayHasKey('employee_id', $profile);
-        $this->assertArrayHasKey('role', $profile);
-        $this->assertArrayHasKey('is_active', $profile);
+        $this->assertArrayHasKey('first_name', $user);
+        $this->assertArrayHasKey('last_name', $user);
+        $this->assertArrayHasKey('email', $user);
+        $this->assertArrayHasKey('employee_id', $user);
+        $this->assertArrayHasKey('role', $user);
+        $this->assertArrayHasKey('is_active', $user);
         
-        $this->assertEquals('Joshua', $profile['first_name']);
-        $this->assertEquals('Jacobs', $profile['last_name']);
-        $this->assertEquals('jodam@gmail.com', $profile['email']);
-        $this->assertEquals('A-005', $profile['employee_id']);
-        $this->assertEquals('admin', $profile['role']);
-        $this->assertEquals(1, $profile['is_active']);
+        $this->assertEquals('Joshua', $user['first_name']);
+        $this->assertEquals('Jacobs', $user['last_name']);
+        $this->assertEquals('jodam@gmail.com', $user['email']);
+        $this->assertEquals('A-005', $user['employee_id']);
+        $this->assertEquals('admin', $user['role']);
+        $this->assertEquals(1, $user['is_active']);
     }
 
-    public function testGetAllProfilesReturnsErrorIfDatabaseFails(): void
+    public function testGetAllUsersReturnsErrorIfDatabaseFails(): void
     {
         $mockStatement = $this->createMock(PDOStatement::class);
         
@@ -132,17 +132,17 @@ class ProfileModelTest extends TestCase
             ->method('execute')
             ->willThrowException(new PDOException('Database error'));
 
-        $result = $this->model->getProfilesDb();
+        $result = $this->model->getUsersDb();
 
         $this->assertFalse($result['success']);
         $this->assertEquals('Database error', $result['error']);
     }
 
     
-    // CREATE PROFILE TESTS
+    // CREATE USER TESTS
     
 
-    public function testCreateStaffProfileStoresHashedPasswordReturnsPlainTextToAdmin(): void
+    public function testCreateStaffUserStoresHashedPasswordReturnsPlainTextToAdmin(): void
     {
         $mockData = [
             'id' => '14271887-48ea-48c8-9890-6cb196afa0Gc',
@@ -174,7 +174,7 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com');
+        $result = $this->model->createUserDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com');
 
         $this->assertTrue($result['success']);
         $this->assertEquals('Joshua', $result['data']['first_name']);
@@ -189,7 +189,7 @@ class ProfileModelTest extends TestCase
         $this->assertEquals(8, strlen($result['data']['password']));
     }
 
-    public function testCreateAdminProfileSuccessfully(): void
+    public function testCreateAdminUserSuccessfully(): void
     {
         $mockData = [
             'id' => '24271887-48ea-48c8-9890-6cb196afa0Gc',
@@ -221,42 +221,42 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->createProfileDb('Sarah', 'Johnson', 'A-010', 'admin', 'sarah@company.com');
+        $result = $this->model->createUserDb('Sarah', 'Johnson', 'A-010', 'admin', 'sarah@company.com');
 
         $this->assertTrue($result['success']);
         $this->assertEquals('admin', $result['data']['role']);
         $this->assertEquals(8, strlen($result['data']['password']));
     }
 
-    public function testCreateProfileRejectsInvalidRole(): void
+    public function testCreateUserRejectsInvalidRole(): void
     {
-        $result = $this->model->createProfileDb('Joshua', 'Jacobs', 'S-005', 'invalid', 'jodam@gmail.com');
+        $result = $this->model->createUserDb('Joshua', 'Jacobs', 'S-005', 'invalid', 'jodam@gmail.com');
 
         $this->assertFalse($result['success']);
-        $this->assertEquals('Role must be either staff or admin', $result['error']);
+        $this->assertEquals('Role must be staff, manager, or admin', $result['error']);
     }
 
-    public function testCreateProfileRejectsStaffEmployeeIdNotStartingWithS(): void
+    public function testCreateUserRejectsStaffEmployeeIdNotStartingWithS(): void
     {
-        $result = $this->model->createProfileDb('Joshua', 'Jacobs', 'A-005', 'staff', 'jodam@gmail.com');
+        $result = $this->model->createUserDb('Joshua', 'Jacobs', 'A-005', 'staff', 'jodam@gmail.com');
 
         $this->assertFalse($result['success']);
         $this->assertEquals('Staff employee_id must start with S-', $result['error']);
     }
 
-    public function testCreateProfileRejectsAdminEmployeeIdNotStartingWithA(): void
+    public function testCreateUserRejectsAdminEmployeeIdNotStartingWithA(): void
     {
-        $result = $this->model->createProfileDb('Sarah', 'Johnson', 'S-010', 'admin', 'sarah@company.com');
+        $result = $this->model->createUserDb('Sarah', 'Johnson', 'S-010', 'admin', 'sarah@company.com');
 
         $this->assertFalse($result['success']);
         $this->assertEquals('Admin employee_id must start with A-', $result['error']);
     }
 
     
-    // UPDATE PROFILE TESTS
+    // UPDATE USER TESTS
     
 
-    public function testUpdateStaffProfileSuccessfullyByEmployeeId(): void
+    public function testUpdateStaffUserSuccessfullyByEmployeeId(): void
     {
         $mockData = [
             'id' => '18741887-48ea-48c8-9890-6cb196afa0Gc',
@@ -295,7 +295,7 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->updateProfileDb('S-007', [
+        $result = $this->model->updateUserDb('S-007', [
             'first_name' => 'Siza',
             'last_name' => 'Mpafa',
             'role' => 'staff',
@@ -312,15 +312,15 @@ class ProfileModelTest extends TestCase
         $this->assertEquals('siza@gmail.com', $result['data']['email']);
     }
 
-    public function testUpdateProfileReturnsErrorIfNoFieldsProvided(): void
+    public function testUpdateUserReturnsErrorIfNoFieldsProvided(): void
     {
-        $result = $this->model->updateProfileDb('S-007', []);
+        $result = $this->model->updateUserDb('S-007', []);
 
         $this->assertFalse($result['success']);
         $this->assertEquals('No fields provided for update', $result['error']);
     }
 
-    public function testUpdateProfileReturnsErrorIfEmployeeIdDoesNotExist(): void
+    public function testUpdateUserReturnsErrorIfEmployeeIdDoesNotExist(): void
     {
         $mockStatement = $this->createMock(PDOStatement::class);
 
@@ -337,14 +337,14 @@ class ProfileModelTest extends TestCase
             ->method('rowCount')
             ->willReturn(0);
 
-        $result = $this->model->updateProfileDb('X-999', ['first_name' => 'Ghost']);
+        $result = $this->model->updateUserDb('X-999', ['first_name' => 'Ghost']);
 
         $this->assertFalse($result['success']);
-        $this->assertEquals('Profile not found', $result['error']);
+        $this->assertEquals('User not found', $result['error']);
     }
 
 
-    public function testGetProfileByIdReturnsProfileWithCapitalizedFirstName(): void
+    public function testGetUserByIdReturnsUserWithCapitalizedFirstName(): void
     {
         $mockData = [
             'id' => '14271887-48ea-48c8-9890-6cb196afa0Gc',
@@ -360,7 +360,7 @@ class ProfileModelTest extends TestCase
         
         $this->mockDb->expects($this->once())
             ->method('prepare')
-            ->with("SELECT * FROM profiles WHERE employee_id = :employee_id")
+            ->with("SELECT * FROM users WHERE employee_id = :employee_id")
             ->willReturn($mockStatement);
 
         $mockStatement->expects($this->once())
@@ -372,13 +372,13 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->getProfileByIdDb('S-006');
+        $result = $this->model->getUserByIdDb('S-006');
 
         $this->assertTrue($result['success']);
         $this->assertEquals('Sarah', $result['data']['first_name']);
     }
 
-    public function testGetProfileByIdReturnsErrorWhenProfileNotFound(): void
+    public function testGetUserByIdReturnsErrorWhenUserNotFound(): void
     {
         $mockStatement = $this->createMock(PDOStatement::class);
         
@@ -394,10 +394,10 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn(false);
 
-        $result = $this->model->getProfileByIdDb('99');
+        $result = $this->model->getUserByIdDb('99');
 
         $this->assertFalse($result['success']);
-        $this->assertEquals('Profile not found', $result['error']);
+        $this->assertEquals('User not found', $result['error']);
     }
 
     /**
@@ -426,7 +426,7 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->getProfileByIdDb('test-emp-id');
+        $result = $this->model->getUserByIdDb('test-emp-id');
 
         if ($expected === '') {
             $this->assertTrue($result['data']['first_name'] === '' || $result['data']['first_name'] === null);
@@ -449,7 +449,7 @@ class ProfileModelTest extends TestCase
         ];
     }
 
-    public function testGetProfileByIdHandlesNullFirstName(): void
+    public function testGetUserByIdHandlesNullFirstName(): void
     {
         $mockData = [
             'id' => 'test-id',
@@ -475,13 +475,13 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->getProfileByIdDb('test-emp-id');
+        $result = $this->model->getUserByIdDb('test-emp-id');
 
         $this->assertTrue($result['success']);
         $this->assertTrue($result['data']['first_name'] === null || $result['data']['first_name'] === '');
     }
 
-    public function testGetProfileByIdHandlesMissingFirstNameField(): void
+    public function testGetUserByIdHandlesMissingFirstNameField(): void
     {
         $mockData = [
             'id' => 'test-id',
@@ -506,7 +506,7 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockData);
 
-        $result = $this->model->getProfileByIdDb('test-emp-id');
+        $result = $this->model->getUserByIdDb('test-emp-id');
 
         $this->assertTrue($result['success']);
         $this->assertTrue(!isset($result['data']['first_name']) || $result['data']['first_name'] === null);
@@ -538,7 +538,7 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn($mockUser);
 
-        $result = $this->model->getProfileByIdDb('S-006');
+        $result = $this->model->getUserByIdDb('S-006');
 
         $this->assertArrayHasKey('first_name', $result['data']);
         $this->assertNotNull($result['data']['first_name']);
@@ -548,10 +548,10 @@ class ProfileModelTest extends TestCase
     }
 
     
-    // DELETE PROFILE TESTS
+    // DELETE USER TESTS
     
 
-    public function testDeleteStaffProfileSuccessfullyByEmployeeId(): void
+    public function testDeleteStaffUserSuccessfullyByEmployeeId(): void
     {
         $mockStatement = $this->createMock(PDOStatement::class);
         $mockStatement2 = $this->createMock(PDOStatement::class);
@@ -576,13 +576,13 @@ class ProfileModelTest extends TestCase
             ->method('fetch')
             ->willReturn(['id' => '123', 'employee_id' => 'S-007', 'is_active' => 0]);
 
-        $result = $this->model->deleteProfileDb('S-007');
+        $result = $this->model->deleteUserDb('S-007');
 
         $this->assertTrue($result['success']);
-        $this->assertEquals('profile deleted successfully', $result['message']);
+        $this->assertEquals('user deleted successfully', $result['message']);
     }
 
-    public function testDeleteProfileReturnsErrorIfEmployeeIdDoesNotExist(): void
+    public function testDeleteUserReturnsErrorIfEmployeeIdDoesNotExist(): void
     {
         $mockStatement = $this->createMock(PDOStatement::class);
 
@@ -598,10 +598,10 @@ class ProfileModelTest extends TestCase
             ->method('rowCount')
             ->willReturn(0);
 
-        $result = $this->model->deleteProfileDb('X-999');
+        $result = $this->model->deleteUserDb('X-999');
 
         $this->assertFalse($result['success']);
-        $this->assertEquals('Profile not found', $result['error']);
+        $this->assertEquals('User not found', $result['error']);
     }
 
     
@@ -665,7 +665,7 @@ class ProfileModelTest extends TestCase
         $result = $this->model->resetPasswordDb('X-999');
 
         $this->assertFalse($result['success']);
-        $this->assertEquals('Profile not found', $result['error']);
+        $this->assertEquals('User not found', $result['error']);
     }
 
     
