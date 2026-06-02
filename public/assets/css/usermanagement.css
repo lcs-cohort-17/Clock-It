@@ -246,6 +246,20 @@ table td {
     color: var(--text);
 }
 
+:root[data-theme="dark"] .table-wrapper {
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+:root[data-theme="dark"] .table {
+    --bs-table-bg: var(--surface);
+    --bs-table-color: var(--text);
+    --bs-table-border-color: var(--border);
+    --bs-table-hover-bg: var(--surface-soft);
+    --bs-table-hover-color: var(--text);
+    margin-bottom: 0;
+}
+
 :root[data-theme="dark"] table thead {
     background: var(--surface-soft);
 }
@@ -254,6 +268,19 @@ table td {
 :root[data-theme="dark"] table td {
     color: var(--text) !important;
     border-color: var(--border);
+}
+
+:root[data-theme="dark"] table th {
+    background: var(--surface-soft);
+    color: var(--muted) !important;
+}
+
+:root[data-theme="dark"] table td {
+    background: var(--surface);
+}
+
+:root[data-theme="dark"] table tbody tr:hover td {
+    background: var(--surface-soft);
 }
 
 :root[data-theme="dark"] .badge-staff {

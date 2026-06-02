@@ -27,65 +27,7 @@ ob_start();
                 Live overview of your team's attendance.
             </p>
 
-            <div class="row g-4">
-
-                <div class="col-md-6 col-xl-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <small class="text-muted">
-                                Currently Onsite
-                            </small>
-
-                            <h2>
-                                <?= $stats['currentlyOnsite'] ?>
-                            </h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-xl-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <small class="text-muted">
-                                Total Staff Today
-                            </small>
-
-                            <h2>
-                                <?= $stats['totalStaffToday'] ?>
-                            </h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-xl-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <small class="text-muted">
-                                Pending Sync
-                            </small>
-
-                            <h2>
-                                <?= $stats['pendingSync'] ?>
-                            </h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-xl-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <small class="text-muted">
-                                Total Events
-                            </small>
-
-                            <h2>
-                                <?= $stats['totalEvents'] ?>
-                            </h2>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+            <?php require __DIR__ . '/../partials/dashboard-cards.php'; ?>
 
         </main>
 

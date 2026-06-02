@@ -26,6 +26,8 @@
   --text: var(--app-text);
   --muted: var(--app-muted);
   --primary: var(--mid-blue);
+  --bs-body-color: var(--app-text);
+  --bs-heading-color: var(--app-text);
 }
 
 :root[data-theme="dark"] {
@@ -121,6 +123,7 @@ body {
   min-width: 0;
   overflow-y: auto;
   background: var(--app-background);
+  color: var(--app-text);
 }
 
 .page-card,
@@ -133,6 +136,15 @@ body {
   border: 1px solid var(--app-border);
   border-radius: 8px;
   box-shadow: 0 12px 28px var(--shadow);
+}
+
+.dashboard-stat-card {
+  min-height: 150px;
+}
+
+.dashboard-stat-card h2,
+.dashboard-stat-card p {
+  color: var(--app-text);
 }
 
 .text-muted,
@@ -400,6 +412,15 @@ body {
   color: var(--app-text);
 }
 
+:root[data-theme="dark"] .form-control::placeholder {
+  color: var(--app-muted);
+  opacity: 1;
+}
+
+:root[data-theme="dark"] #history-search {
+  color: #ffffff;
+}
+
 body.scan-page-body {
   margin: 0;
   overflow: hidden;
@@ -463,6 +484,10 @@ body.scan-page-body {
   border-color: #093c5d;
   color: #ffffff;
   box-shadow: 0 0.5rem 1.25rem rgba(9, 60, 93, 0.24);
+}
+
+:root[data-theme="dark"] .scan-demo-btn {
+  color: #ffffff;
 }
 
 .scan-outline {
