@@ -9,6 +9,8 @@ class LeaveValidator
     // This keeps bad data from ever reaching the model layer.
     public static function validateSubmit(array $payload): array
     {
+         error_log('PAYLOAD: ' . print_r($payload, true)); // add this
+    $errors = [];
         $errors = [];
 
         $type = $payload['type'] ?? null;
@@ -16,7 +18,7 @@ class LeaveValidator
             self::addError(
                 $errors,
                 'type',
-                "type must be \r\n         sick, annual, unpaid or other"
+                "type must be : sick, annual, unpaid or other"
             );
         }
 
