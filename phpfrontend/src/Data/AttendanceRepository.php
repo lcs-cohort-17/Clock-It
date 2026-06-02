@@ -107,6 +107,8 @@ class AttendanceRepository
         'timestamp' => '2026-05-27 14:30:00',
         'actor'     => 'Admin Jane',
         'action'    => 'EDIT',
+        'oldValue'  => '17:00',
+        'newValue'  => '17:05',
         'details'   => 'Modified clock-out time for Amara Nwosu (17:00 → 17:05)',
     ],
     [
@@ -114,6 +116,8 @@ class AttendanceRepository
         'timestamp' => '2026-05-27 11:12:45',
         'actor'     => 'Admin Jane',
         'action'    => 'OVERRIDE',
+        'oldValue'  => 'Not recorded',
+        'newValue'  => '08:01',
         'details'   => 'Manual clock-in added for Sipho Dlamini',
     ],
     [
@@ -121,6 +125,8 @@ class AttendanceRepository
         'timestamp' => '2026-05-26 16:55:10',
         'actor'     => 'Admin Kobus',
         'action'    => 'DELETE',
+        'oldValue'  => '18:01',
+        'newValue'  => 'Removed',
         'details'   => 'Removed duplicate clock-out entry for Naledi Khumalo',
     ],
     [
@@ -128,6 +134,8 @@ class AttendanceRepository
         'timestamp' => '2026-05-26 09:03:22',
         'actor'     => 'Admin Kobus',
         'action'    => 'EDIT',
+        'oldValue'  => 'Unknown',
+        'newValue'  => 'Terminal A',
         'details'   => 'Corrected device from "Unknown" to "Terminal A" for Themba Mthembu',
     ],
 ];

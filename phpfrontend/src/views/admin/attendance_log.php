@@ -86,14 +86,14 @@ sort($typeList);
                 </div>
 
                 <!-- ── Tab toggle ────────────────────────────── -->
-                <div class="tab-group mb-3" role="tablist">
+                <div class="tab-group btn-group mb-3" role="tablist">
                     <button
                         class="tab-btn"
                         :class="{ active: activeTab === 'clock-events' }"
                         @click="activeTab = 'clock-events'"
                         role="tab"
                         :aria-selected="activeTab === 'clock-events'"
-                    >Clock events</button>
+                    >Clock Events</button>
 
                     <button
                         class="tab-btn"
@@ -101,7 +101,7 @@ sort($typeList);
                         @click="activeTab = 'audit-trail'"
                         role="tab"
                         :aria-selected="activeTab === 'audit-trail'"
-                    >Audit trail</button>
+                    >Audit Trail</button>
                 </div>
 
 
@@ -336,14 +336,14 @@ sort($typeList);
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            Export audit
+                            Export CSV
                         </button>
                     </div>
 
                     <!-- Audit trail table -->
                     <div class="data-card">
                         <div class="table-responsive">
-                        <table class="data-table" aria-label="Audit trail">
+                        <table class="data-table table-striped" aria-label="Audit trail">
                             <thead>
                                 <tr>
                                     <th scope="col">
@@ -369,15 +369,17 @@ sort($typeList);
                                             </span>
                                         </button>
                                     </th>
-                                    <th scope="col">Actor</th>
+                                    <th scope="col">Admin Name</th>
                                     <th scope="col">Action</th>
                                     <th scope="col">Details</th>
+                                    <th scope="col">Old Value</th>
+                                    <th scope="col">New Value</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="sortedAuditTrail.length === 0">
                                     <tr>
-                                        <td colspan="4" class="no-records">No records.</td>
+                                        <td colspan="6" class="no-records">No records.</td>
                                     </tr>
                                 </template>
 
@@ -398,6 +400,8 @@ sort($typeList);
                                             ></span>
                                         </td>
                                         <td x-text="entry.details"></td>
+                                        <td x-text="entry.oldValue"></td>
+                                        <td x-text="entry.newValue"></td>
                                     </tr>
                                 </template>
                             </tbody>

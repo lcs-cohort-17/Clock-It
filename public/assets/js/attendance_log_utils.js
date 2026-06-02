@@ -60,11 +60,11 @@
   /**
    * Formats audit trail events as RFC-4180-compliant CSV.
    *
-   * @param {Array<{ timestamp: string, actor: string, action: string, details: string }>} events
+   * @param {Array<{ timestamp: string, actor: string, action: string, details: string, oldValue: string, newValue: string }>} events
    * @returns {string} CSV string with header row
    */
   function formatAuditCSV(events) {
-    var headers = ['Timestamp', 'Actor', 'Action', 'Details'];
+    var headers = ['Timestamp', 'Admin Name', 'Action', 'Details', 'Old Value', 'New Value'];
 
     function escapeCell(value) {
       var str = String(value == null ? '' : value);
@@ -74,7 +74,7 @@
 
     var rows = [headers].concat(
       events.map(function (e) {
-        return [e.timestamp, e.actor, e.action, e.details];
+        return [e.timestamp, e.actor, e.action, e.details, e.oldValue, e.newValue];
       })
     );
 
