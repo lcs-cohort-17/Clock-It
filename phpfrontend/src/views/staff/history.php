@@ -1,165 +1,104 @@
-<?php
-/**
- * Attendance History Page
- * Staff view of their attendance records
- */
-if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+<section class="page-stack" x-data="historyView()">
+    <section class="surface">
+        <div class="surface-header">
+            <div>
+                <h2>Attendance History</h2>
+                <p class="surface-subtitle">Personal list and calendar views backed by the same attendance state.</p>
+            </div>
+            <button class="btn btn-primary" type="button" x-on:click="exportCsv()"><?= ui_icon('download') ?> Export CSV</button>
+        </div>
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ' . route_url('/login'));
-    exit;
-}
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance History - Clock-It</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="<?= asset_url('js/utilities.js') ?>"></script>
-</head>
-<body x-data="{ 
-    currentPage: 1,
-    itemsPerPage: 10,
-    sortField: 'date',
-    sortOrder: 'desc',
-    searchQuery: '',
-    filterType: 'all',
-    records: [
-        { id: 1, date: '2026-05-29', time: '09:00:00', type: 'clock-in', location: 'Office' },
-        { id: 2, date: '2026-05-29', time: '17:30:00', type: 'clock-out', location: 'Office' },
-        { id: 3, date: '2026-05-28', time: '09:15:00', type: 'clock-in', location: 'Office' },
-        { id: 4, date: '2026-05-28', time: '17:45:00', type: 'clock-out', location: 'Office' },
-        { id: 5, date: '2026-05-27', time: '08:50:00', type: 'clock-in', location: 'Office' },
-    ],
-    
-    get filteredRecords() {
-        let filtered = this.records.filter(r => {
-            const typeMatch = this.filterType === 'all' || r.type === this.filterType;
-            const searchMatch = !this.searchQuery || r.date.includes(this.searchQuery) || r.location.includes(this.searchQuery);
-            return typeMatch && searchMatch;
-        });
-        
-        // Sort
-        filtered.sort((a, b) => {
-            const aVal = a[this.sortField];
-            const bVal = b[this.sortField];
-            const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-            return this.sortOrder === 'asc' ? cmp : -cmp;
-        });
-        
-        return filtered;
-    },
-    
-    get paginatedRecords() {
-        const start = (this.currentPage - 1) * this.itemsPerPage;
-        return this.filteredRecords.slice(start, start + this.itemsPerPage);
-    },
-    
-    get totalPages() {
-        return Math.ceil(this.filteredRecords.length / this.itemsPerPage);
-    },
-    
-    sort(field) {
-        if (this.sortField === field) {
-            this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.sortField = field;
-            this.sortOrder = 'asc';
-        }
-    }
-}" @init="window.themeManager.initTheme()">
-    
-    <div style="display: flex; min-height: 100vh;">
-        <!-- Sidebar -->
-        <?php include __DIR__ . '/../partials/sidebar.php'; ?>
-
-        <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <?php include __DIR__ . '/../partials/header.php'; ?>
-
-            <!-- Page Content -->
-            <main class="dashboard-section" style="padding: 2rem;">
-                <div class="container-fluid">
-                    <h2 class="mb-4">Attendance History</h2>
-
-                    <!-- Filters -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <input 
-                                type="text" 
-                                class="form-control" 
-                                placeholder="Search by date or location..."
-                                x-model="searchQuery"
-                            >
-                        </div>
-                        <div class="col-md-6">
-                            <select class="form-select" x-model="filterType">
-                                <option value="all">All Types</option>
-                                <option value="clock-in">Clock In</option>
-                                <option value="clock-out">Clock Out</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- History Table -->
-                    <div class="table-responsive mb-4">
-                        <table class="table table-hover border">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="cursor: pointer;" @click="sort('date')">
-                                        Date <span x-show="sortField === 'date'" x-text="sortOrder === 'asc' ? '▲' : '▼'"></span>
-                                    </th>
-                                    <th style="cursor: pointer;" @click="sort('time')">
-                                        Time <span x-show="sortField === 'time'" x-text="sortOrder === 'asc' ? '▲' : '▼'"></span>
-                                    </th>
-                                    <th>Type</th>
-                                    <th>Location</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="record in paginatedRecords" :key="record.id">
-                                    <tr>
-                                        <td x-text="record.date"></td>
-                                        <td x-text="record.time"></td>
-                                        <td>
-                                            <span class="badge" :class="record.type === 'clock-in' ? 'bg-success' : 'bg-warning'" x-text="record.type.replace('-', ' ').toUpperCase()"></span>
-                                        </td>
-                                        <td x-text="record.location"></td>
-                                    </tr>
-                                </template>
-                                <tr x-show="paginatedRecords.length === 0">
-                                    <td colspan="4" class="text-center text-muted py-4">No records found</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    <nav x-show="totalPages > 1" aria-label="Page navigation">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                                <button class="page-link" @click="currentPage = Math.max(1, currentPage - 1)" type="button">Previous</button>
-                            </li>
-                            <template x-for="page in Array.from({ length: totalPages }, (_, i) => i + 1)" :key="page">
-                                <li class="page-item" :class="{ active: currentPage === page }">
-                                    <button class="page-link" @click="currentPage = page" type="button" x-text="page"></button>
-                                </li>
-                            </template>
-                            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                                <button class="page-link" @click="currentPage = Math.min(totalPages, currentPage + 1)" type="button">Next</button>
-                            </li>
-                        </ul>
-                    </nav>
+        <div class="row g-3">
+            <div class="col-12 col-lg-4">
+                <label class="form-label">Search</label>
+                <input class="form-control" type="search" placeholder="Device, status, note..." x-model="search">
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Type</label>
+                <select class="form-select" x-model="typeFilter">
+                    <option value="">All types</option>
+                    <option>Global Clock In</option>
+                    <option>Global Clock Out</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Date</label>
+                <input class="form-control" type="date" x-model="dateFilter">
+            </div>
+            <div class="col-12 col-lg-2">
+                <label class="form-label">View</label>
+                <div class="segmented">
+                    <button type="button" x-bind:class="{ active: view === 'list' }" x-on:click="view = 'list'">List</button>
+                    <button type="button" x-bind:class="{ active: view === 'calendar' }" x-on:click="view = 'calendar'">Calendar</button>
                 </div>
-            </main>
+            </div>
+        </div>
+    </section>
+
+    <section class="surface" x-show="view === 'list'">
+        <div class="table-shell">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Device</th>
+                        <th>QR Used</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="record in filteredRecords" :key="record.id">
+                        <tr>
+                            <td x-text="record.type"></td>
+                            <td x-text="record.device"></td>
+                            <td><span class="badge-soft" x-text="record.qrUsed"></span></td>
+                            <td><span :class="statusClass(record.status)" x-text="record.status"></span></td>
+                            <td x-text="formatDateTime(record.timestamp)"></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-light" type="button" x-on:click="openDetails(record)"><?= ui_icon('eye') ?></button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="surface" x-show="view === 'calendar'">
+        <div class="list-stack">
+            <template x-for="record in filteredRecords" :key="record.id">
+                <button class="mini-row text-start" type="button" x-on:click="openDetails(record)">
+                    <span>
+                        <strong x-text="dateKey(record.timestamp)"></strong>
+                        <span x-text="record.type"></span>
+                    </span>
+                    <span :class="statusClass(record.status)" x-text="record.status"></span>
+                </button>
+            </template>
+        </div>
+    </section>
+
+    <div class="modal fade" id="historyDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" x-if="selected">
+                <div class="modal-header">
+                    <h5 class="modal-title" x-text="selected.type"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="metadata-grid">
+                        <div class="metadata-item"><span>Timestamp</span><strong x-text="formatDateTime(selected.timestamp)"></strong></div>
+                        <div class="metadata-item"><span>Device</span><strong x-text="selected.device"></strong></div>
+                        <div class="metadata-item"><span>QR</span><strong x-text="selected.qrUsed"></strong></div>
+                        <div class="metadata-item"><span>Status</span><strong x-text="selected.status"></strong></div>
+                        <div class="metadata-item"><span>Sync</span><strong x-text="selected.syncStatus"></strong></div>
+                        <div class="metadata-item"><span>Updated</span><strong x-text="formatDateTime(selected.updatedAt)"></strong></div>
+                    </div>
+                    <p class="surface-subtitle mt-3" x-text="selected.notes"></p>
+                </div>
+            </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</section>

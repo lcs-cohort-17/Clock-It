@@ -1,1 +1,1 @@
-/** side bar component */
+<?php include __DIR__ . '/sidebar.php'; ?>

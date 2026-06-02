@@ -1,9 +1,9 @@
-<section class="page-stack" x-data="calendarView('staff')">
+<section class="page-stack" x-data="calendarView('admin')">
     <section class="calendar-shell surface">
         <div class="calendar-toolbar">
             <div>
                 <h2 x-text="monthLabel"></h2>
-                <p class="surface-subtitle">Your work schedule, attendance markers, leave, and holidays.</p>
+                <p class="surface-subtitle">Attendance, leave, holiday, and schedule indicators.</p>
             </div>
             <div class="calendar-controls">
                 <select class="form-select" x-model.number="monthIndex">
@@ -44,25 +44,33 @@
                 <h2 x-text="formatDate(selectedDate)"></h2>
                 <span class="badge-soft violet" x-text="`${selectedRecords.length} attendance records`"></span>
             </div>
-            <div class="list-stack">
-                <template x-for="record in selectedRecords" :key="record.id">
-                    <div class="mini-row">
-                        <div>
-                            <strong x-text="record.type"></strong>
-                            <span x-text="record.device"></span>
-                        </div>
-                        <span :class="statusClass(record.status)" x-text="record.status"></span>
-                    </div>
-                </template>
-                <template x-if="!selectedRecords.length">
-                    <div class="feedback-panel">No attendance records for this date.</div>
-                </template>
+            <div class="table-shell">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Event</th>
+                            <th>Status</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="record in selectedRecords" :key="record.id">
+                            <tr>
+                                <td x-text="record.employeeName"></td>
+                                <td x-text="record.type"></td>
+                                <td><span :class="statusClass(record.status)" x-text="record.status"></span></td>
+                                <td x-text="formatTime(record.timestamp)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
             </div>
         </section>
 
         <aside class="surface">
             <div class="surface-header">
-                <h2>Markers</h2>
+                <h2>Day Markers</h2>
             </div>
             <div class="list-stack">
                 <template x-for="marker in selectedMarkers" :key="marker.type + marker.label">
@@ -72,7 +80,7 @@
                     </div>
                 </template>
                 <template x-if="!selectedMarkers.length">
-                    <div class="feedback-panel">No schedule markers for this date.</div>
+                    <div class="feedback-panel">No markers for this date.</div>
                 </template>
             </div>
         </aside>

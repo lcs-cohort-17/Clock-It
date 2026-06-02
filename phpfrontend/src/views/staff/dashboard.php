@@ -1,52 +1,129 @@
-<?php
-/**
- * Staff Dashboard / Home Page
- * Main dashboard for staff members
- */
-if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+<section class="page-stack" x-data="staffDashboard()">
+    <div class="hero-panel">
+        <span :class="statusClass(summary.status)" x-text="summary.status"></span>
+        <h2 class="hero-title mt-3">Welcome back, <?= e($user['name']) ?>.</h2>
+        <p class="hero-copy">Your current attendance state, shift timing, QR actions, and recent history are synced from the shared frontend dataset.</p>
+    </div>
 
-// Verify staff access
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ' . route_url('/login'));
-    exit;
-}
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Clock-It</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="<?= asset_url('js/utilities.js') ?>"></script>
-</head>
-<body x-data="{ 
-    currentTime: '<?php echo date('h:i A'); ?>',
-    currentStatus: 'Clocked Out',
-    currentLocation: 'OFFSITE',
-    todaysActivity: {
-        firstClockIn: null,
-        lastClockOut: null,
-        totalHours: 0
-    }
-}" @init="window.themeManager.initTheme(); setInterval(() => { currentTime = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date()); }, 1000)">
-    
-    <div style="display: flex; min-height: 100vh;">
-        <!-- Sidebar -->
-        <?php include __DIR__ . '/../partials/sidebar.php'; ?>
-
-        <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <?php include __DIR__ . '/../partials/header.php'; ?>
-
-            <!-- Dashboard Grid -->
-            <?php include __DIR__ . '/../partials/dashboard-grid.php'; ?>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-icon"><?= ui_icon('clock') ?></div>
+            <span>Clock in</span>
+            <strong x-text="formatTime(summary.clockIn?.timestamp)"></strong>
+            <small x-text="summary.clockIn ? summary.clockIn.device : 'No clock in today'"></small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon"><?= ui_icon('logout') ?></div>
+            <span>Clock out</span>
+            <strong x-text="formatTime(summary.clockOut?.timestamp)"></strong>
+            <small x-text="summary.clockOut ? summary.clockOut.device : 'Clock out pending'"></small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon"><?= ui_icon('spark') ?></div>
+            <span>Total hours</span>
+            <strong x-text="totalHoursLabel"></strong>
+            <small>Calculated from current session</small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon"><?= ui_icon('shield') ?></div>
+            <span>Status</span>
+            <strong style="font-size:1.4rem" x-text="summary.status"></strong>
+            <small x-text="summary.clockIn?.status || 'Ready'"></small>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <div class="action-grid">
+        <a class="action-card" href="<?= route_url('/staff/scan-qr') ?>">
+            <?= ui_icon('qr') ?>
+            <strong>Scan QR</strong>
+            <span>Clock in or clock out with global QR state validation.</span>
+        </a>
+        <a class="action-card" href="<?= route_url('/staff/history') ?>">
+            <?= ui_icon('clock') ?>
+            <strong>History</strong>
+            <span>Review list and calendar attendance records.</span>
+        </a>
+        <a class="action-card" href="<?= route_url('/staff/calendar') ?>">
+            <?= ui_icon('calendar') ?>
+            <strong>Calendar</strong>
+            <span>See work schedule, attendance, leave, and holidays.</span>
+        </a>
+        <a class="action-card" href="<?= route_url('/staff/profile') ?>">
+            <?= ui_icon('users') ?>
+            <strong>Profile</strong>
+            <span>Maintain contact and account settings.</span>
+        </a>
+    </div>
+
+    <div class="split-grid">
+        <section class="surface">
+            <div class="surface-header">
+                <div>
+                    <h2>Today's Activity</h2>
+                    <p class="surface-subtitle">Clock events for the current day.</p>
+                </div>
+                <span class="badge-soft violet" x-text="`${todayEvents.length} events`"></span>
+            </div>
+            <div class="list-stack">
+                <template x-for="record in todayEvents" :key="record.id">
+                    <div class="mini-row">
+                        <div>
+                            <strong x-text="record.type"></strong>
+                            <span x-text="`${record.device} / ${record.qrUsed}`"></span>
+                        </div>
+                        <span :class="statusClass(record.status)" x-text="record.status"></span>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <aside class="surface">
+            <div class="surface-header">
+                <div>
+                    <h2>Upcoming Schedule</h2>
+                    <p class="surface-subtitle">Next assigned shifts.</p>
+                </div>
+            </div>
+            <div class="list-stack">
+                <template x-for="shift in upcomingSchedule" :key="shift.date + shift.shift">
+                    <div class="mini-row">
+                        <div>
+                            <strong x-text="formatDate(shift.date)"></strong>
+                            <span x-text="shift.location"></span>
+                        </div>
+                        <span class="badge-soft violet" x-text="shift.shift"></span>
+                    </div>
+                </template>
+            </div>
+        </aside>
+    </div>
+
+    <section class="surface">
+        <div class="surface-header">
+            <h2>Recent Attendance History</h2>
+            <a class="btn btn-outline-light" href="<?= route_url('/staff/history') ?>">Open history</a>
+        </div>
+        <div class="table-shell">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Device</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="record in recentHistory" :key="record.id">
+                        <tr>
+                            <td x-text="record.type"></td>
+                            <td x-text="record.device"></td>
+                            <td><span :class="statusClass(record.status)" x-text="record.status"></span></td>
+                            <td x-text="formatDateTime(record.timestamp)"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
