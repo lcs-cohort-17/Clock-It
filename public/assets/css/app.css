@@ -100,6 +100,16 @@ body {
   font-weight: 600;
 }
 
+#sidebar h2,
+#sidebar h6,
+#sidebar small {
+  color: #ffffff !important;
+}
+
+#sidebar small {
+  opacity: 0.78;
+}
+
 .main-panel {
   display: flex;
   flex: 1 1 auto;
@@ -350,6 +360,47 @@ body {
   font-size: 12px;
   font-weight: 700;
   text-align: center;
+}
+
+.staff-dashboard-modal .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.staff-dashboard-modal .calendar-day {
+  min-height: 48px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font-weight: 600;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.staff-dashboard-modal .calendar-day:hover:not(.empty),
+.staff-dashboard-modal .calendar-day:focus:not(.empty) {
+  border-color: var(--mid-blue);
+  background: var(--app-surface-soft);
+}
+
+.staff-dashboard-modal .calendar-day.empty {
+  border-color: transparent;
+  background: transparent;
+  cursor: default;
+}
+
+.staff-dashboard-modal .calendar-day.today {
+  border-color: var(--mid-blue);
+}
+
+.staff-dashboard-modal .calendar-day.selected {
+  border-color: var(--mid-blue);
+  background: var(--mid-blue);
+  color: #ffffff;
 }
 
 .staff-history {
@@ -725,5 +776,15 @@ body.scan-page-body {
 
   .staff-dashboard-modal-card {
     padding: 18px;
+  }
+
+  .staff-dashboard-modal .calendar-grid {
+    gap: 4px;
+  }
+
+  .staff-dashboard-modal .calendar-day {
+    min-height: 40px;
+    padding: 2px;
+    font-size: 13px;
   }
 }

@@ -12,7 +12,7 @@ final class CalendarModalTest extends TestCase
 
         $this->assertStringContainsString('x-show="showCalendar"', $content);
         $this->assertStringContainsString('staff-dashboard-modal', $content);
-        $this->assertStringContainsString('x-for="day in calendarDays"', $content);
+        $this->assertStringContainsString('x-for="(day, index) in calendarDays"', $content);
         $this->assertStringContainsString('bi bi-chevron-left', $content);
         $this->assertStringContainsString('bi bi-chevron-right', $content);
     }

@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/app.css')) ?>">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/usermanagement.css')) ?>">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/attendance_log.css')) ?>">
+    <link rel="stylesheet" href="<?= e(app_url('/assets/css/attendance_history.css')) ?>">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/calendar.css')) ?>">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/dashboard.css')) ?>">
 

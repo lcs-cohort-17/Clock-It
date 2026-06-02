@@ -199,3 +199,5 @@ bun.lockb
 *.save
 *.orig
 *~
+
+vendor/

@@ -51,9 +51,10 @@ class="btn btn-sm btn-outline-secondary"
 <div class="calendar-header-day">Fr</div>
 <div class="calendar-header-day">Sa</div>
 
-<template x-for="day in calendarDays" :key="day">
+<template x-for="(day, index) in calendarDays" :key="`${currentYear}-${currentMonth}-${index}`">
 
-<div
+<button
+type="button"
 class="calendar-day"
 :class="{ 
 'empty': !day,
@@ -65,7 +66,7 @@ class="calendar-day"
 
 <span x-text="day || ''"></span>
 
-</div>
+</button>
 
 </template>
 
