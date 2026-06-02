@@ -15,7 +15,7 @@ function navLinkClass(string $route, string $currentPath): string
 
 ?>
 
-<aside id="sidebar" class="bg-dark text-white vh-100 p-3" style="width:280px;">
+<aside id="sidebar" class="bg-dark text-white vh-100 p-3 d-flex flex-column" style="width:280px;">
 
     <div class="mb-4">
         <h2 class="fw-bold mb-1">Clock It</h2>
@@ -63,6 +63,11 @@ function navLinkClass(string $route, string $currentPath): string
         <h6><?= htmlspecialchars($user['name']) ?></h6>
 
         <small><?= htmlspecialchars($user['email']) ?></small>
+
+        <a href="<?= e(app_url('/logout')) ?>" class="btn btn-outline-light w-100 mt-3">
+            <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
+            Sign Out
+        </a>
 
     </div>
 

@@ -2,6 +2,20 @@
 
 declare(strict_types=1);
 
+if (PHP_SAPI === 'cli-server') {
+    $requestedPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    $publicFile = realpath(__DIR__ . $requestedPath);
+
+    if (
+        $requestedPath !== '/'
+        && $publicFile !== false
+        && str_starts_with($publicFile, __DIR__ . DIRECTORY_SEPARATOR)
+        && is_file($publicFile)
+    ) {
+        return false;
+    }
+}
+
 require dirname(__DIR__) . '/phpfrontend/src/bootstrap.php';
 
 session_start();
@@ -10,7 +24,9 @@ $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $path = parse_url($requestUri, PHP_URL_PATH) ?: '/';
 $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
 $scriptDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
-$basePath = ($scriptDir === '' || $scriptDir === '.') ? '' : $scriptDir;
+$basePath = PHP_SAPI === 'cli-server' || $scriptDir === '' || $scriptDir === '.'
+    ? ''
+    : $scriptDir;
 
 if ($basePath !== '' && str_starts_with($path, $basePath)) {
     $path = substr($path, strlen($basePath)) ?: '/';
@@ -181,6 +197,27 @@ switch ($path) {
             'title',
             'loginUsers'
         ));
+        break;
+
+    case '/logout':
+        $_SESSION = [];
+
+        if (ini_get('session.use_cookies')) {
+            $cookieParams = session_get_cookie_params();
+
+            setcookie(session_name(), '', [
+                'expires' => time() - 42000,
+                'path' => $cookieParams['path'],
+                'domain' => $cookieParams['domain'],
+                'secure' => $cookieParams['secure'],
+                'httponly' => $cookieParams['httponly'],
+                'samesite' => $cookieParams['samesite'],
+            ]);
+        }
+
+        session_destroy();
+
+        redirect_to('/login');
         break;
 
     case '/api/login':

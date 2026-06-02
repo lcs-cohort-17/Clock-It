@@ -14,7 +14,7 @@ function staffNavLinkClass(string $route, string $currentPath): string
 }
 ?>
 
-<aside id="sidebar" class="bg-dark text-white p-3" style="width:280px;">
+<aside id="sidebar" class="bg-dark text-white vh-100 p-3 d-flex flex-column" style="width:280px;">
     <div class="mb-4">
         <h2 class="fw-bold mb-1">Clock It</h2>
         <small class="text-light">Attendance Suite</small>
@@ -57,5 +57,9 @@ function staffNavLinkClass(string $route, string $currentPath): string
     <div class="mt-auto pt-4">
         <h6><?= e($user['name']) ?></h6>
         <small><?= e($user['email']) ?></small>
+        <a href="<?= e(app_url('/logout')) ?>" class="btn btn-outline-light w-100 mt-3">
+            <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
+            Sign Out
+        </a>
     </div>
 </aside>
