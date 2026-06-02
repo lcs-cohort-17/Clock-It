@@ -120,6 +120,47 @@
     font-weight: 700;
 }
 
+.dashboard-stat-card {
+    background: #fff;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(13,38,67,.06);
+}
+
+.sheets-card {
+    background: #fff;
+}
+
+.sheets-icon {
+    color: #16a34a;
+    font-size: 2rem;
+}
+
+.dashboard-spin {
+    display: inline-block;
+    animation: dashboard-spin .8s linear infinite;
+}
+
+@keyframes dashboard-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+:root[data-theme="dark"] .dashboard-card,
+:root[data-theme="dark"] .dashboard-stat-card,
+:root[data-theme="dark"] .quick-action-card,
+:root[data-theme="dark"] .sheets-card {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+:root[data-theme="dark"] .dashboard-card-title,
+:root[data-theme="dark"] .quick-action-title {
+    color: var(--text);
+}
+
 @media (max-width: 992px) {
     .quick-actions {
         gap: 12px;

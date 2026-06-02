@@ -60,6 +60,31 @@ document.addEventListener('alpine:init', () => {
       async refresh() {
         await Promise.all([this.fetchOnsiteStaff(), this.fetchRecentActivity()]);
       },
+      exportOnsiteCSV() {
+        if (!this.onsiteStaff.length) {
+          window.alert('No onsite staff to export.');
+          return;
+        }
+
+        const rows = [['Name', 'Role', 'Signed in']].concat(
+          this.onsiteStaff.map((staff) => [
+            staff.name,
+            staff.role,
+            staff.signed_in_at || staff.signedInAt || '',
+          ]),
+        );
+        const csv = rows
+          .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
+          .join('\n');
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        link.download = `attendance_export_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      },
+      connectSheets() {
+        window.alert('Google Sheets connection is coming soon.');
+      },
       init() {
         this.refresh();
         this.pollTimer = setInterval(() => this.refresh(), 10000);

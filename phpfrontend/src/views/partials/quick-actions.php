@@ -34,7 +34,7 @@ declare(strict_types=1);
         <?php elseif ($label === 'Attendance Logs'): ?>
           All clock events with full audit trail
         <?php else: ?>
-          <?= $sheetsConnected ? 'Connected' : 'Not connected' ?>
+          Manage users and integrations
         <?php endif; ?>
       </p>
     </a>
