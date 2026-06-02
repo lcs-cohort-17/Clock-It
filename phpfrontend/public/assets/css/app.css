@@ -123,6 +123,13 @@ table td {
     justify-content: center;
     font-size: 14px;
     font-weight: 700;
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .badge-admin {
@@ -351,4 +358,56 @@ table td {
         background: rgba(11, 42, 68, 0.15);
         border-radius: 999px;
     }
+
+    /* Profile view specific tweaks */
+    .profile-card {
+        padding: 18px;
+        border-radius: 14px;
+    }
+
+    .password-form .input-group .btn {
+        padding: 6px 8px;
+        min-width: 44px;
+    }
+
+    .password-form .progress {
+        height: 6px;
+    }
+
+    .password-form .form-control {
+        font-size: 15px;
+    }
+
+    /* Make the update button easier to tap on small screens */
+    .password-form button[type="submit"] {
+        width: 100%;
+    }
+}
+
+/* Small improvements for all viewports */
+.profile-card .card-body {
+    padding: 18px;
+}
+.input-group .form-control {
+    min-width: 0; /* allow input to shrink in tight spaces */
+}
+.avatar {
+    position: relative;
+    transition: transform 0.2s ease;
+}
+.avatar:hover {
+    transform: scale(1.05);
+}
+.avatar .position-absolute {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.85;
+}
+.avatar:hover .position-absolute {
+    opacity: 1;
+    background-color: #082139 !important;
 }

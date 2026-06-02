@@ -32,9 +32,14 @@ switch ($path) {
         view ('admin/usermanagement', compact ('title'));
         break;
         
-    default:
+    case '/profile':
+        $title = 'Profile | Clock-It';
+        view ('staff/profile', compact ('title'));
+        break;
+        
+    default: 
         http_response_code(404);
         $title = 'Not Found | Clock-It';
         view('404', compact('title'));
         break;
-}
+} 
