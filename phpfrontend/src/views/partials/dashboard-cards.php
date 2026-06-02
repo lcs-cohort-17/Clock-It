@@ -30,7 +30,7 @@ $dashboardCards = [
 
 <div class="row g-4">
     <?php foreach ($dashboardCards as $card): ?>
-        <div class="col-6 col-lg-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <section class="page-card dashboard-stat-card h-100 p-3">
                 <div class="d-flex justify-content-between gap-3">
                     <h2 class="h6 mb-0"><?= e($card['label']) ?></h2>

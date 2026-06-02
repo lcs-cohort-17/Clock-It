@@ -41,3 +41,26 @@
     border-radius: 50%;
     transform: translateX(-50%);
 }
+
+@media (max-width: 575.98px) {
+    .calendar-weekdays,
+    .calendar-days {
+        gap: 4px;
+    }
+
+    .calendar-weekdays {
+        font-size: 10px;
+    }
+
+    .calendar-day {
+        min-height: 44px;
+        padding: 2px;
+        font-size: 13px;
+    }
+
+    .green-dot {
+        bottom: 5px;
+        width: 5px;
+        height: 5px;
+    }
+}

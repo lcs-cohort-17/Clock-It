@@ -442,3 +442,45 @@
         background: transparent;
         color: #ffffff;
     }
+
+@media (max-width: 767.98px) {
+    .data-table {
+        min-width: 760px;
+    }
+
+    .filter-bar,
+    .data-card {
+        border-radius: 6px;
+    }
+
+    .request-btn,
+    .export-btn {
+        justify-content: center;
+    }
+
+    .modal-header-custom,
+    .modal-body-custom,
+    .modal-footer-custom {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .request-btn,
+    .export-btn {
+        width: 100%;
+    }
+
+    .modal-footer-custom {
+        flex-direction: column-reverse;
+    }
+
+    .modal-footer-custom .btn {
+        width: 100%;
+    }
+}

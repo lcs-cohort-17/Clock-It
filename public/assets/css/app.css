@@ -138,6 +138,11 @@ body {
   box-shadow: 0 12px 28px var(--shadow);
 }
 
+.sidebar-toggle,
+.sidebar-backdrop {
+  display: none;
+}
+
 .dashboard-stat-card {
   min-height: 150px;
 }
@@ -530,4 +535,135 @@ body.scan-page-body {
 .scan-card #reader canvas {
   width: 100% !important;
   border-radius: 0.75rem;
+}
+
+@media (max-width: 991.98px) {
+  body {
+    overflow: hidden;
+  }
+
+  #sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    width: min(280px, 86vw) !important;
+    height: 100dvh !important;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  body.sidebar-open #sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle {
+    display: inline-flex;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    background: var(--app-surface);
+    color: var(--app-text);
+    font-size: 24px;
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1030;
+    border: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    display: block;
+  }
+
+  .main-panel {
+    width: 100%;
+  }
+
+  .content.container-fluid,
+  .content > .container-fluid,
+  .staff-dashboard,
+  .staff-history,
+  .settings-page,
+  .scan-page {
+    padding: 20px !important;
+  }
+
+  .staff-history-table {
+    overflow-x: auto;
+  }
+
+  .staff-history-table .table {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .app-header {
+    padding: 10px 12px !important;
+  }
+
+  .theme-toggle {
+    gap: 5px;
+    padding: 4px 6px;
+  }
+
+  .theme-toggle-track {
+    width: 36px;
+  }
+
+  :root[data-theme="dark"] .theme-toggle-thumb {
+    transform: translateX(14px);
+  }
+
+  .content.container-fluid,
+  .content > .container-fluid,
+  .staff-dashboard,
+  .staff-history,
+  .settings-page,
+  .scan-page {
+    padding: 16px !important;
+  }
+
+  .dashboard-stat-card {
+    min-height: 124px;
+  }
+
+  .staff-status-title,
+  .staff-time {
+    font-size: 34px;
+  }
+
+  .staff-history-title {
+    font-size: 28px;
+  }
+
+  .staff-history-toggle {
+    display: flex;
+    width: 100%;
+  }
+
+  .staff-history-toggle-link {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .scan-card .card-body {
+    padding: 24px 16px !important;
+  }
+
+  .scan-demo-btn {
+    width: 100%;
+  }
 }

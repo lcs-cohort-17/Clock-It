@@ -30,5 +30,6 @@
 </head>
 <body>
 <?= $content ?>
+<button type="button" class="sidebar-backdrop" data-sidebar-close aria-label="Close navigation"></button>
 </body>
 </html>

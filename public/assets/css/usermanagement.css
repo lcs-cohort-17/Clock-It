@@ -321,6 +321,10 @@ table td {
         padding: 14px 12px !important;
     }
 
+    .table-wrapper .table {
+        min-width: 820px;
+    }
+
     table th {
         font-size: 11px;
     }

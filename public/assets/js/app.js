@@ -1,6 +1,30 @@
 /**app.js */
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Clock-It loaded');
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.querySelector('[data-sidebar-toggle]');
+  const close = document.querySelector('[data-sidebar-close]');
+
+  function setSidebarOpen(isOpen) {
+    document.body.classList.toggle('sidebar-open', isOpen);
+    toggle?.setAttribute('aria-expanded', String(isOpen));
+    toggle?.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+  }
+
+  toggle?.addEventListener('click', () => {
+    setSidebarOpen(!document.body.classList.contains('sidebar-open'));
+  });
+
+  close?.addEventListener('click', () => setSidebarOpen(false));
+
+  sidebar?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => setSidebarOpen(false));
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 992) {
+      setSidebarOpen(false);
+    }
+  });
 });
 
 
