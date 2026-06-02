@@ -2,25 +2,19 @@
 
 namespace Controllers;
 
-use Models\Profile;
+use App\Models\ProfileDb;
+use Types\ProfileModelInterface;
 use Types\ApiResponse;
 
 class ProfileController
 {
-    private Profile $profileModel;
+    private ProfileModelInterface $profileModel;
 
-    public function __construct(Profile $profileModel)
+    public function __construct(ProfileModelInterface $profileModel)
     {
         $this->profileModel = $profileModel;
     }
-
-    // ─── Helper: Check if user is admin ───────────────────────────────
-    private function isAdmin(?array $user): bool
-    {
-        return $user && isset($user['role']) && $user['role'] === 'admin';
-    }
-
-    // ─── Helper: send JSON response ──────────────────────────────
+    
     private function json(int $status, array $body): void
     {
         http_response_code($status);
@@ -28,20 +22,33 @@ class ProfileController
         echo json_encode($body);
     }
 
-    // ─── Helper: capitalize first name ───────────────────────────
-    private function capitalizeFirstName(?string $name): ?string
+    private function capitalizeFirstName(?string $first_name): ?string
     {
-        if ($name === null || $name === '') return $name;
-        return strtoupper(substr($name, 0, 1)) . strtolower(substr($name, 1));
+        if ($first_name === null || $first_name === '') {
+            return $first_name;
+        }
+        return strtoupper(substr($first_name, 0, 1)) . strtolower(substr($first_name, 1));
     }
 
-    // ─── GET ALL ─────────────────────────────────────────────────
+    private function generateJwt(array $payload): string
+    {
+        $secret = $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this';
+        $header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
+        $payload['exp'] = time() + 7200;
+        $payloadEncoded = base64_encode(json_encode($payload));
+        $signature = hash_hmac('sha256', "{$header}.{$payloadEncoded}", $secret, true);
+        $signatureEncoded = base64_encode($signature);
+        
+        return "{$header}.{$payloadEncoded}.{$signatureEncoded}";
+    }
+
+    // ─── GET ALL USERS ─────────────────────────────────────────────
     public function adminGettingAllUsers(): void
     {
         try {
-            $result = $this->profileModel->adminGettingAllUsers();
+            $result = $this->profileModel->adminGettingAllUsersDb();
 
-            if (!$result->success) {
+            if (!$result->isSuccess()) {
                 $this->json(400, $result->toArray());
                 return;
             }
@@ -52,20 +59,20 @@ class ProfileController
         }
     }
 
-    // ─── GET BY ID ───────────────────────────────────────────────
-    public function getProfileById(string $employeeId): void
+    // ─── GET USER BY ID ────────────────────────────────────────────
+    public function getProfileById(string $employee_id): void
     {
         try {
-            $result = $this->profileModel->getProfileById($employeeId);
+            // Pass the value - variable name can be different from parameter name
+            $result = $this->profileModel->getProfileByIdDb($employee_id);
 
-            if (!$result->success) {
-                $this->json(400, ['success' => false, 'error' => $result->error]);
+            if (!$result->isSuccess()) {
+                $this->json(404, ['success' => false, 'error' => $result->getError()]);
                 return;
             }
 
-            // Remove sensitive fields before sending
             $safeData = $result->data;
-            unset($safeData['password'], $safeData['password_hash'], $safeData['reset_token']);
+            unset($safeData['password']);
 
             $this->json(200, ['success' => true, 'data' => $safeData]);
         } catch (\Throwable $e) {
@@ -73,24 +80,36 @@ class ProfileController
         }
     }
 
-    // ─── CREATE ──────────────────────────────────────────────────
+    // ─── CREATE USER ───────────────────────────────────────────────
     public function adminCreatingUser(array $body): void
     {
         try {
-            $firstName  = $body['first_name']  ?? null;
-            $lastName   = $body['last_name']   ?? null;
-            $employeeId = $body['employee_id'] ?? null;
+            $first_name = $body['first_name']  ?? null;
+            $last_name  = $body['last_name']   ?? null;
+            $employee_id = $body['employee_id'] ?? null;
             $role       = $body['role']        ?? null;
             $email      = $body['email']       ?? null;
+            $img        = $body['img']         ?? null;  // ← ADDED img
 
-            if (!$firstName || !$lastName || !$employeeId || !$role || !$email) {
-                $this->json(400, ['success' => false, 'error' => 'All fields are required']);
+            if (!$first_name || !$last_name || !$employee_id || !$role || !$email) {
+                $this->json(400, [
+                    'success' => false, 
+                    'error' => 'All fields are required: first_name, last_name, employee_id, role, email'
+                ]);
                 return;
             }
 
-            $result = $this->profileModel->adminCreatingUser($firstName, $lastName, $employeeId, $role, $email);
+            // Pass img as the 6th parameter to match your model
+            $result = $this->profileModel->adminCreatingUserDb(
+                $first_name, 
+                $last_name, 
+                $employee_id, 
+                $role, 
+                $email,
+                $img  // ← ADDED img parameter
+            );
 
-            if (!$result->success) {
+            if (!$result->isSuccess()) {
                 $this->json(400, $result->toArray());
                 return;
             }
@@ -101,7 +120,7 @@ class ProfileController
         }
     }
 
-    // ─── LOGIN ───────────────────────────────────────────────────
+    // ─── LOGIN ─────────────────────────────────────────────────────
     public function loginProfile(array $body): void
     {
         try {
@@ -109,27 +128,33 @@ class ProfileController
             $password = $body['password'] ?? null;
 
             if (!$email || !$password) {
-                $this->json(400, ['success' => false, 'error' => 'Email and password are required']);
+                $this->json(400, [
+                    'success' => false, 
+                    'error' => 'Email and password are required'
+                ]);
                 return;
             }
 
-            $result = $this->profileModel->loginProfile($email);
+            $result = $this->profileModel->loginProfileDb($email);
 
-            if (!$result->success) {
-                // Don't expose whether email exists
-                $this->json(401, ['success' => false, 'error' => 'Invalid email or password']);
+            if (!$result->isSuccess()) {
+                $this->json(401, [
+                    'success' => false, 
+                    'error' => 'Invalid email or password'
+                ]);
                 return;
             }
 
             $user = $result->data;
 
-            // Verify password
             if (!password_verify($password, $user['password'])) {
-                $this->json(401, ['success' => false, 'error' => 'Invalid email or password']);
+                $this->json(401, [
+                    'success' => false, 
+                    'error' => 'Invalid email or password'
+                ]);
                 return;
             }
 
-            // Generate JWT
             $token = $this->generateJwt([
                 'userId'      => $user['id'],
                 'email'       => $user['email'],
@@ -137,39 +162,37 @@ class ProfileController
                 'employee_id' => $user['employee_id'],
             ]);
 
-            // Get profile for capitalized first_name
-            $profileResult = $this->profileModel->getProfileById($user['employee_id']);
-            $firstName = null;
-            if ($profileResult->success && !empty($profileResult->data['first_name'])) {
-                $firstName = $this->capitalizeFirstName($profileResult->data['first_name']);
-            }
+            $first_name = $user['first_name'] ? $this->capitalizeFirstName($user['first_name']) : null;
 
             $this->json(200, [
                 'success'    => true,
                 'token'      => $token,
-                'first_name' => $firstName,
+                'first_name' => $first_name,
                 'user'       => [
-                    'id'          => $user['id'],
-                    'first_name'  => $firstName,
+                    'user_id'          => $user['user_id'],
+                    'first_name'  => $first_name,
                     'last_name'   => $user['last_name'],
                     'email'       => $user['email'],
                     'employee_id' => $user['employee_id'],
                     'role'        => $user['role'],
-                    // password intentionally omitted
-                ],
+                    'img'         => $user['img'] ?? null,  // ← ADDED img to response
+                ]
             ]);
         } catch (\Throwable $e) {
             $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
         }
     }
 
-    // ─── UPDATE ──────────────────────────────────────────────────
-    public function adminUpdatingUser(string $employeeId, array $body): void
+    // ─── UPDATE USER ───────────────────────────────────────────────
+    public function adminUpdatingUser(string $employee_id, array $body): void
     {
         try {
-            $result = $this->profileModel->adminUpdatingUser($employeeId, $body);
+            // IMPORTANT: Your table uses 'id', not 'user_id'
+            unset($body['user_id'], $body['password'], $body['created_at'], $body['updated_at']);
 
-            if (!$result->success) {
+            $result = $this->profileModel->adminUpdatingUserDb($employee_id, $body);
+
+            if (!$result->isSuccess()) {
                 $this->json(400, $result->toArray());
                 return;
             }
@@ -180,13 +203,13 @@ class ProfileController
         }
     }
 
-    // ─── DELETE (SOFT) ───────────────────────────────────────────
-    public function adminDeletingUser(string $employeeId): void
+    // ─── DELETE USER ───────────────────────────────────────────────
+    public function adminDeletingUser(string $employee_id): void
     {
         try {
-            $result = $this->profileModel->adminDeletingUser($employeeId);
+            $result = $this->profileModel->adminDeletingUserDb($employee_id);
 
-            if (!$result->success) {
+            if (!$result->isSuccess()) {
                 $this->json(400, $result->toArray());
                 return;
             }
@@ -197,13 +220,13 @@ class ProfileController
         }
     }
 
-    // ─── RESET PASSWORD (Admin) ───────────────────────────────────
-    public function resetPassword(string $employeeId): void
+    // ─── RESET PASSWORD ────────────────────────────────────────────
+    public function resetPassword(string $employee_id): void
     {
         try {
-            $result = $this->profileModel->resetPassword($employeeId);
+            $result = $this->profileModel->resetPasswordDb($employee_id);
 
-            if (!$result->success) {
+            if (!$result->isSuccess()) {
                 $this->json(400, $result->toArray());
                 return;
             }
@@ -214,84 +237,89 @@ class ProfileController
         }
     }
 
-    // ─── UPDATE PASSWORD (Staff) ──────────────────────────────────
-    public function updatePassword(string $employeeId, array $body, array $user): void
+    // ─── UPDATE OWN PASSWORD ───────────────────────────────────────
+    public function updatePassword(string $employee_id, array $body): void
     {
         try {
             $oldPassword = $body['oldPassword'] ?? null;
             $newPassword = $body['newPassword'] ?? null;
+            $email       = $body['email'] ?? null;
 
             if (!$oldPassword || !$newPassword) {
-                $this->json(400, ['success' => false, 'error' => 'Old password and new password are required']);
+                $this->json(400, [
+                    'success' => false, 
+                    'error' => 'Old password and new password are required'
+                ]);
                 return;
             }
 
-            // Fetch user to verify old password
-            $userResult = $this->profileModel->loginProfile($user['email']);
+            if (!$email) {
+                $this->json(400, [
+                    'success' => false, 
+                    'error' => 'Email is required'
+                ]);
+                return;
+            }
 
-            if (!$userResult->success) {
-                $this->json(404, ['success' => false, 'error' => 'User not found']);
+            $userResult = $this->profileModel->loginProfileDb($email);
+
+            if (!$userResult->isSuccess()) {
+                $this->json(404, [
+                    'success' => false, 
+                    'error' => 'User not found'
+                ]);
                 return;
             }
 
             if (!password_verify($oldPassword, $userResult->data['password'])) {
-                $this->json(401, ['success' => false, 'error' => 'Old password is incorrect']);
+                $this->json(401, [
+                    'success' => false, 
+                    'error' => 'Old password is incorrect'
+                ]);
                 return;
             }
 
-            // Hash new password — controller hashes, model just stores
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+            $result = $this->profileModel->updatePasswordDb($employee_id, $hashedPassword);
 
-            $result = $this->profileModel->updatePassword($employeeId, $hashedPassword);
-
-            if (!$result->success) {
+            if (!$result->isSuccess()) {
                 $this->json(400, $result->toArray());
                 return;
             }
 
-            $this->json(200, ['success' => true, 'message' => 'Password updated successfully']);
+            $this->json(200, [
+                'success' => true, 
+                'message' => 'Password updated successfully'
+            ]);
         } catch (\Throwable $e) {
             $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
         }
     }
 
-    // ─── JWT Helper ──────────────────────────────────────────────
-    private function generateJwt(array $payload): string
-    {
-        $secret  = $_ENV['JWT_SECRET'] ?? 'secret';
-        $header  = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
-        $payload = base64_encode(json_encode(array_merge($payload, ['exp' => time() + 7200])));
-        $sig     = base64_encode(hash_hmac('sha256', "{$header}.{$payload}", $secret, true));
-
-        return "{$header}.{$payload}.{$sig}";
-    }
-  
-  
-      public function clearCache($request, $response)
+    // ─── CLEAR CACHE ───────────────────────────────────────────────
+    public function clearCache(array $requestData): void
     {
         try {
-            $user = $request->getAttribute('user');
-            $employeeId = $user['employee_id'] ?? null;
+            $employee_id = $requestData['employee_id'] ?? null;
 
-            if (!$employeeId) {
-                return $response->withStatus(401)->withJson([
-                    'success' => false,
+            if (!$employee_id) {
+                $this->json(401, [
+                    'success' => false, 
                     'error' => 'User must be logged in to clear cache'
                 ]);
+                return;
             }
 
-            $result = $this->profileDb->clearCache($employeeId);
+            $result = $this->profileModel->clearCacheDb($employee_id);
 
-            if (!$result['success']) {
-                return $response->withStatus(400)->withJson($result);
+            if (!$result->isSuccess()) {
+                $this->json(400, $result->toArray());
+                return;
             }
 
-            return $response->withStatus(200)->withJson($result);
-        } catch (\Exception $e) {
-            return $response->withStatus(500)->withJson([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
+            $this->json(200, $result->toArray());
+        } catch (\Throwable $e) {
+            $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
         }
     }
 }

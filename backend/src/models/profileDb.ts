@@ -4,7 +4,7 @@ import type { Profile } from '../types/profileInterface.js'
 import { generatePassword } from '../utils/generatePassword.js'
 import bcrypt from 'bcrypt'
 
-export const getProfilesDb = async (): Promise<ApiResponse<Profile[]>> => {
+export const adminGettingAllUsersDb = async (): Promise<ApiResponse<Profile[]>> => {
 
   const { data, error } = await supabase
     .from('profiles')
@@ -48,7 +48,7 @@ export async function getProfileByIdDb(employeeId: string): Promise<ApiResponse<
 //END OF ZAHRAA'S CODE
 
 // ─── CREATE ──────────────────────────────────────────────────
-export const createProfileDb = async ( 
+export const adminCreatingUserDb = async ( 
     first_name: string, 
     last_name: string, 
     employee_id: string, 
@@ -105,9 +105,9 @@ export const loginProfileDb = async ( email: string): Promise<ApiResponse<Profil
         return { success: true, data }
 }
 
-// export async function createProfileDb() {}
+// export async function adminCreatingUserDb() {}
 // ─── UPDATE ──────────────────────────────────────────────────
-export const updateProfileDb = async (
+export const adminUpdatingUserDb = async (
   employee_id: string,
   updates: Partial<Profile>
 ): Promise<ApiResponse<Profile>> => {
@@ -130,7 +130,7 @@ export const updateProfileDb = async (
 }
 
 // ─── DELETE (SOFT) ───────────────────────────────────────────
-export const deleteProfileDb = async (
+export const adminDeletingUserDb = async (
   employee_id: string
 ): Promise<ApiResponse<Profile>> => {
 

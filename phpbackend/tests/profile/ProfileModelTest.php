@@ -62,7 +62,7 @@ class ProfileModelTest extends TestCase
 
         $this->mockDb->expects($this->once())
             ->method('prepare')
-            ->with("SELECT * FROM profiles")
+            ->with("SELECT * FROM users")
             ->willReturn($mockStatement);
 
         $mockStatement->expects($this->once())
@@ -361,7 +361,7 @@ class ProfileModelTest extends TestCase
         
         $this->mockDb->expects($this->once())
             ->method('prepare')
-            ->with("SELECT * FROM profiles WHERE employee_id = :employee_id")
+            ->with("SELECT * FROM users WHERE employee_id = :employee_id")
             ->willReturn($mockStatement);
 
         $mockStatement->expects($this->once())

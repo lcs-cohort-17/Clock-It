@@ -1,14 +1,7 @@
-// main file to handle all the incoming requests and route them to the appropriate controllers
 <?php
 
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\Factory\AppFactory;
-use Dotenv\Dotenv;
-use Tuupola\Middleware\CorsMiddleware;
-
 // =============================================
-// ERROR HANDLING (PHP equivalent)
+// ERROR HANDLING
 // =============================================
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Change to 1 in development
@@ -24,102 +17,127 @@ set_exception_handler(function ($exception) {
         'error' => 'Internal Server Error',
         'message' => $exception->getMessage()
     ]);
-});
-
-// Global error handler for warnings/notices (similar to unhandledRejection)
-set_error_handler(function ($severity, $message, $file, $line) {
-    error_log("ERROR [$severity]: $message in $file on line $line");
+    exit;
 });
 
 // =============================================
 // SETUP
 // =============================================
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
-$app = AppFactory::create();
+// =============================================
+// CORS HEADERS
+// =============================================
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Content-Type: application/json');
 
-// CORS
-$app->add(new CorsMiddleware([
-    "origin" => ["*"],
-    "methods" => ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "headers.allow" => ["Authorization", "Content-Type"],
-    "headers.expose" => [],
-    "credentials" => false,
-    "cache" => 0,
-]));
-
-// Parse JSON body
-$app->addBodyParsingMiddleware();
+// Handle preflight OPTIONS requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 // =============================================
-// HARDCODED AUTH MIDDLEWARE (like in your Node code)
-// =============================================
-$app->add(function (Request $request, $handler) {
-    $request = $request->withAttribute('auth', [
-        'userId' => '07cd9434-1b18-4d96-b029-0595b26d067c',
-        'role'   => 'admin',
-        'token'  => 'mock-token'
-    ]);
-    
-    return $handler->handle($request);
-});
-
-// =============================================
-// DEBUG LOGGING MIDDLEWARE
-// =============================================
-$app->add(function (Request $request, $handler) {
-    $method = $request->getMethod();
-    $uri = $request->getUri()->getPath();
-    error_log("[DEBUG] $method $uri");
-    
-    return $handler->handle($request);
-});
-
-// =============================================
-// ROUTES
+// ROUTING - Use your own simple router
 // =============================================
 
-// Test route
-$app->get('/test', function (Request $request, Response $response) {
-    $response->getBody()->write(json_encode([
-        'message' => 'Test route works!'
-    ]));
-    return $response->withHeader('Content-Type', 'application/json');
-});
+$method = $_SERVER['REQUEST_METHOD'];
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Mount your route groups
-$app->group('/api/admin', function ($group) {
-    // Include your admin routes here
-    require __DIR__ . '/../src/routes/adminDashboardRoutes.php';
-});
+// Remove /api prefix if present
+$path = preg_replace('#^/api#', '', $path);
 
-$app->group('/api/google', function ($group) {
-    require __DIR__ . '/../src/routes/googleRoutes.php';
-});
+error_log("[DEBUG] $method $path");
 
-$app->group('/api/leaves', function ($group) {
-    require __DIR__ . '/../src/routes/leaveRoutes.php';
-});
-
-$app->group('/profiles', function ($group) {
-    require __DIR__ . '/../src/routes/profileRoutes.php';
-});
-
-// 404 Not Found Handler
-$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function (Request $request, Response $response) {
-    $response->getBody()->write(json_encode([
-        'success' => false,
-        'error' => 'Route not found: ' . $request->getMethod() . ' ' . $request->getUri()->getPath()
-    ]));
-    return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
-});
+// Get JSON input for POST/PATCH/PUT requests
+$input = json_decode(file_get_contents('php://input'), true) ?? [];
 
 // =============================================
-// RUN SERVER
+// TEST ROUTE
 // =============================================
-$app->run();
+if ($method === 'GET' && $path === '/test') {
+    echo json_encode(['message' => 'Test route works!']);
+    exit;
+}
 
-echo "Server running on http://localhost:4321\n"; // Only shows in CLI
+// =============================================
+// PROFILE ROUTES - Your existing routes
+// =============================================
+
+// Load your controllers and routes
+use App\Models\ProfileDb;
+use Controllers\ProfileController;
+
+$model = new ProfileDb();
+$controller = new ProfileController($model);
+
+// GET all users
+if ($method === 'GET' && $path === '/admin/users') {
+    $controller->adminGettingAllUsers();
+    exit;
+}
+
+// GET user by employee_id
+if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    $controller->getProfileById($matches[1]);
+    exit;
+}
+
+// POST - Create user
+if ($method === 'POST' && $path === '/admin/users') {
+    $controller->adminCreatingUser($input);
+    exit;
+}
+
+// PATCH - Update user
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    $controller->adminUpdatingUser($matches[1], $input);
+    exit;
+}
+
+// DELETE - Soft delete user
+if ($method === 'DELETE' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    $controller->adminDeletingUser($matches[1]);
+    exit;
+}
+
+// POST - Login
+if ($method === 'POST' && $path === '/login') {
+    $controller->loginProfile($input);
+    exit;
+}
+
+// POST - Clear cache
+if ($method === 'POST' && $path === '/admin/users/clear-cache') {
+    $controller->clearCache($input);
+    exit;
+}
+
+// PATCH - Update password
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/update-password$#', $path, $matches)) {
+    $controller->updatePassword($matches[1], $input);
+    exit;
+}
+
+// PATCH - Reset password (admin)
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) {
+    $controller->resetPassword($matches[1]);
+    exit;
+}
+
+// =============================================
+// 404 NOT FOUND
+// =============================================
+http_response_code(404);
+echo json_encode([
+    'success' => false,
+    'error' => 'Route not found: ' . $method . ' ' . $path
+]);
+exit;
