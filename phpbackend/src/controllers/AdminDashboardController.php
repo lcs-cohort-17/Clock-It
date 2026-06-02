@@ -102,37 +102,38 @@ class AdminDashboardController
     private function formatRecentActivityRecord(array $record): array
     {
         return [
-            'profile_id' => $record['profile_id'] ?? null,
-            'event_time' => $record['event_time'] ?? null,
-            'event_type' => $record['event_type'] ?? null,
-            'sync_status' => $record['sync_status'] ?? null,
-            'device_info' => $record['device_info'] ?? null,
-            'staff' => $this->formatStaff($record),
+            'name' => $this->formatStaff($record),
+            // 'user_id' => $record['user_id'] ?? null,
+            'timestamp' => $record['event_time'] ?? null,
+            'action' => $record['event_type'] ?? null,
+            // 'sync_status' => $record['sync_status'] ?? null,
+            // 'device_info' => $record['device_info'] ?? null,
+            // 'staff' => $this->formatStaff($record),
         ];
     }
 
     private function formatOnsiteRecord(array $record): array
     {
         return [
-            'profile_id' => $record['profile_id'] ?? null,
-            'event_time' => $record['event_time'] ?? null,
-            'location' => $record['location'] ?? null,
-            'staff' => $this->formatStaff($record),
+            'name' => $this->formatStaff($record),
+            'role' => $record['users']['role'] ?? null,
+            'sign_in_time' => $record['event_time'] ?? null,
+            // 'location' => $record['location'] ?? null,
         ];
     }
 
     private function formatStaff(array $record): string
     {
-        $profile = $record['profiles'] ?? [];
+        $user = $record['users'] ?? [];
 
-        if (is_array($profile) && array_is_list($profile)) {
-            $profile = $profile[0] ?? [];
+        if (is_array($user) && array_is_list($user)) {
+            $user = $user[0] ?? [];
         }
 
-        if (!is_array($profile)) {
+        if (!is_array($user)) {
             return '';
         }
 
-        return trim(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? ''));
+        return trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
     }
 }

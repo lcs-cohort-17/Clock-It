@@ -35,10 +35,10 @@ class AdminDashboardRouter
         $path = rtrim($path, '/') ?: '/';
 
         return match (true) {
-            $method === 'GET' && $path === '/stats' => $this->handleStats(),
-            $method === 'POST' && $path === '/export/sheets' => $this->handleExportSheets(),
-            $method === 'GET' && $path === '/recent-activity' => $this->handleRecentActivity(),
-            $method === 'GET' && $path === '/onsite' => $this->handleOnsite(),
+            $method === 'GET' && $path === '/api/admin/dashboard/stats' => $this->handleStats(),
+            $method === 'POST' && $path === '/api/admin/dashboard/export/sheets' => $this->handleExportSheets(),
+            $method === 'GET' && $path === '/api/admin/dashboard/recent-activity' => $this->handleRecentActivity(),
+            $method === 'GET' && $path === '/api/admin/dashboard/onsite' => $this->handleOnsite(),
             default => $this->notFound(),
         };
     }
@@ -90,10 +90,10 @@ class AdminDashboardRouter
 
     private function handleRecentActivity(): array
     {
-        $page = (int) ($this->queryParams['page'] ?? 1);
-        $limit = (int) ($this->queryParams['limit'] ?? 10);
-        $result = $this->controller->recentActivity($page ?: 1, $limit ?: 10);
+        $page = max(1, (int) ($this->queryParams['page'] ?? 1));
+        $limit = max(1, (int) ($this->queryParams['limit'] ?? 10));
 
+        $result = $this->controller->recentActivity($page, $limit);
         return [
             'status' => $result['status'],
             'headers' => ['content-type' => 'application/json'],

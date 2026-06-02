@@ -91,7 +91,7 @@ $app->get('/test', function (Request $request, Response $response) {
 });
 
 // Mount your route groups
-$app->group('/api/admin', function ($group) {
+$app->group('/api/admin/dashboard', function ($group) {
     // Include your admin routes here
     require __DIR__ . '/../src/routes/adminDashboardRoutes.php';
 });

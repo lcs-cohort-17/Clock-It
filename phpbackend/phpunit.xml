@@ -1,16 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php"
-         colors="true">
-    <testsuites>
-        <testsuite name="Attendance Tests">
-            <directory>tests\Attendance</directory>
-        </testsuite>
-    </testsuites>
-    <source>
-        <include>
-            <directory>src</directory>
-        </include>
-    </source>
 <phpunit bootstrap="vendor/autoload.php">
     <testsuites>
         <testsuite name="Application Tests">
