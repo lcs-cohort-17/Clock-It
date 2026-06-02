@@ -29,8 +29,9 @@ class AdminDashboardModel
 
         $active = $this->tryFetchCount(
             "SELECT COUNT(*) AS count FROM sessions 
-            WHERE clock_out_time IS NULL,
-             AND clock_in_time >= '{$today['start']}'",
+            WHERE clock_out_time IS NULL
+             AND clock_in_time >= '{$today['start']}'
+             AND clock_in_time < '{$today['end']}'",
             $errors
         );
 
