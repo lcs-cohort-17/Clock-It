@@ -15,7 +15,7 @@ $adminNavItems = [
     <nav aria-label="Admin navigation">
         <?php foreach ($adminNavItems as $href => $label): ?>
             <?php $isActive = $currentPath === $href || ($href === '/admin-dashboard' && $currentPath === '/admin/dashboard'); ?>
-            <a href="<?= htmlspecialchars($href) ?>"<?= $isActive ? ' aria-current="page" style="background:#ffffff30;"' : '' ?>>
+            <a href="<?= htmlspecialchars($href) ?>"<?= $isActive ? ' class="active" aria-current="page"' : '' ?>>
                 <?= htmlspecialchars($label) ?>
             </a>
         <?php endforeach; ?>

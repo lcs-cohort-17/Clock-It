@@ -17,7 +17,6 @@ if (!function_exists('render_google_sheets_settings_card')) {
                 <div>
                     <h2>Google Sheets Integration</h2>
                     <p class="muted">Connect attendance export to Google Sheets.</p>
-                    <p class="muted">Two-way sync of attendance data with auto field mapping.</p>
                 </div>
             </div>
 
@@ -88,17 +87,6 @@ if (!function_exists('render_security_settings_card')) {
             <form method="post" action="/admin/settings" class="settings-form">
                 <input type="hidden" name="action" value="save_security">
 
-                <label for="security-timeout">Session timeout (minutes)</label>
-                <input
-                    id="security-timeout"
-                    name="security_timeout"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value="<?= htmlspecialchars((string) $timeout) ?>"
-                    required
-                >
-
                 <?php if ($error !== ''): ?>
                     <p class="alert error"><?= htmlspecialchars($error) ?></p>
                 <?php endif; ?>
@@ -107,8 +95,8 @@ if (!function_exists('render_security_settings_card')) {
                     <p class="alert success"><?= htmlspecialchars($success) ?></p>
                 <?php endif; ?>
 
-                <label><input type="checkbox" checked> Require strong passwords</label>
-                <label><input type="checkbox"> Enable two-factor authentication</label>
+                <label><input type="checkbox" checked name="require_strong_passwords"> Require strong passwords</label>
+                <label><input type="checkbox" name="enable_two_factor"> Enable two-factor authentication</label>
                 <button type="submit">Save Security Settings</button>
             </form>
         </div>
@@ -126,8 +114,9 @@ if (!function_exists('render_data_retention_settings_card')) {
         <div class="card settings-card data-retention-settings-card">
             <h2>Data Retention</h2>
             <p class="muted">Keep attendance logs for 12 months.</p>
+
             <form method="post" action="/admin/settings" class="settings-form">
-                <input type="hidden" name="action" value="purge_retention">
+                <input type="hidden" name="action" value="save_retention_days">
 
                 <label for="retention-days">Keep records for (days)</label>
                 <input
@@ -144,12 +133,10 @@ if (!function_exists('render_data_retention_settings_card')) {
                     <p class="alert error"><?= htmlspecialchars($error) ?></p>
                 <?php endif; ?>
 
-                <?php if ($success !== ''): ?>
-                    <p class="alert success"><?= htmlspecialchars($success) ?></p>
-                <?php endif; ?>
-
-                <p class="muted">Stored records: <?= count($records) ?></p>
-                <button class="danger" type="submit">Purge Old Records</button>
+                <div class="settings-form-actions">
+                    <button type="submit" name="action" value="save_retention_days">Save retention days</button>
+                    <button class="danger" type="submit" name="action" value="purge_retention">Purge Old Records</button>
+                </div>
             </form>
         </div>
         <?php

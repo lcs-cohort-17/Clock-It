@@ -4,6 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../partials/settings_features.php';
+// Ensure any leftover retention flash messages are cleared so no banner appears
+unset($_SESSION['retention_success'], $_SESSION['retention_error']);
 
 // ── POST action handling ──────────────────────────────────────────────────────
 
@@ -42,39 +44,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unset($_SESSION['security_error']);
         }
     }
+
+    // -- Data retention settings ----------------------------------------------
+    if ($action === 'save_retention_days' || $action === 'purge_retention') {
+        $raw = (string) ($_POST['retention_days'] ?? '');
+
+        $isValid = $raw !== ''
+            && ctype_digit($raw)
+            && (int) $raw > 0;
+
+        if (!$isValid) {
+            $_SESSION['retention_error'] = 'Please enter a positive whole number for retention days.';
+            unset($_SESSION['retention_success']);
+        } else {
+            $days = (int) $raw;
+            $_SESSION['retention_days'] = $days;
+
+            if ($action === 'purge_retention') {
+                $records = (array) ($_SESSION['retention_records'] ?? []);
+                $threshold = strtotime(sprintf('-%d days', $days));
+                $_SESSION['retention_records'] = array_values(array_filter($records, function ($record) use ($threshold) {
+                    if (!is_array($record) || !isset($record['timestamp'])) {
+                        return false;
+                    }
+
+                    $timestamp = strtotime((string) $record['timestamp']);
+                    return $timestamp !== false && $timestamp >= $threshold;
+                }));
+                // No success message set for retention actions to avoid showing the green alert.
+            } else {
+                // Saved retention days silently without a success flash.
+            }
+
+            unset($_SESSION['retention_error']);
+        }
+    }
 }
+
+$pageTitle = 'Settings';
+$user = $user ?? ['name' => 'Demo Admin'];
+
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings – Clock-It Admin</title>
-</head>
-<body>
+<div class="app-shell">
+    <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
+    <div class="main-panel">
+        <?php require __DIR__ . '/../partials/header.php'; ?>
+        <main class="content">
+            <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-4xl">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-bold text-slate-900">Settings</h1>
+                        <p class="mt-2 text-lg text-slate-600">Manage integrations and security preferences.</p>
+                    </div>
 
-<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
-<nav class="sidebar admin-sidebar">
-    <div class="sidebar-brand">
-        <span class="brand-name">Clock-It</span>
-        <span class="brand-role">Admin portal</span>
+                    <section class="grid gap-6 lg:grid-cols-2">
+                        <?php render_google_sheets_settings_card(); ?>
+                        <?php render_security_settings_card(); ?>
+                        <?php render_data_retention_settings_card(); ?>
+                    </section>
+                </div>
+            </div>
+        </main>
     </div>
-    <ul class="sidebar-nav">
-        <li><a href="/admin-dashboard">Dashboard</a></li>
-        <li><a href="/admin/settings">Settings</a></li>
-    </ul>
-</nav>
-
-<!-- ── Main content ─────────────────────────────────────────────────────────── -->
-<main class="admin-main">
-    <h1>Settings</h1>
-
-    <div class="settings-cards">
-        <?php render_google_sheets_settings_card(); ?>
-        <?php render_security_settings_card(); ?>
-        <?php render_data_retention_settings_card(); ?>
-    </div>
-</main>
-
-</body>
-</html>
+</div>
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/app.php';

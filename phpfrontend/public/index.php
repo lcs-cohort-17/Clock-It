@@ -141,7 +141,9 @@ switch ($path) {
 
     case '/admin/settings':
         $title = 'Settings | Clock-It';
-        view('admin/settings', compact('title'));
+        $user = $adminUser;
+        view('admin/settings', compact('title', 'user'));
+        break;
     case '/admin-dashboard/settings':
         $title = 'Settings | Clock-It';
         $user = $adminUser;
