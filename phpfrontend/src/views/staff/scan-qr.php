@@ -23,7 +23,7 @@ if (!isset($_SESSION['user_id'])) {
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.2.11/minified/html5-qrcode.min.js"></script>
     <script src="<?= asset_url('js/utilities.js') ?>"></script>
 </head>
-<body x-data="{ 
+<body x-data="{
     scannerOpen: false,
     scanResult: '',
     scanError: '',
@@ -31,88 +31,82 @@ if (!isset($_SESSION['user_id'])) {
     lastScan: null,
     scanner: null,
     scannerStarting: false,
-    
-    async startScanner() {
+
+    startScanner: async function () {
         if (this.scannerOpen || this.scannerStarting) return;
-        const allowed = window.confirm('Clock-It needs camera access to scan a QR code. Choose OK, then allow camera access in your browser prompt.');
-        if (!allowed) return;
 
         this.scanError = '';
         this.scanResult = '';
         this.scannerStarting = true;
         this.scannerOpen = true;
 
-        this.$nextTick(async () => {
+        await this.$nextTick();
+
+        try {
             if (!this.scanner) {
                 this.scanner = new Html5Qrcode('reader');
             }
 
-            try {
-                await this.scanner.start(
-                    { facingMode: 'environment' },
-                    { fps: 10, qrbox: { width: 220, height: 220 } },
-                    (decodedText) => this.handleScan(decodedText),
-                    () => {}
-                );
-            } catch (environmentError) {
-                try {
-                    await this.scanner.start(
-                    { facingMode: 'user' },
-                    { fps: 10, qrbox: { width: 220, height: 220 } },
-                    (decodedText) => this.handleScan(decodedText),
-                    () => {}
-                    );
-                } catch (userError) {
-                    this.scanError = 'Camera access was blocked or no camera was found. Allow camera permission and try again.';
-                    this.scannerOpen = false;
-                    this.scanner = null;
-                }
-            } finally {
-                this.scannerStarting = false;
+            const cameras = await Html5Qrcode.getCameras();
+
+            if (!cameras || cameras.length === 0) {
+                throw new Error('No camera found');
             }
-        });
+
+            await this.scanner.start(
+                cameras[0].id,
+                {
+                    fps: 10,
+                    qrbox: 220
+                },
+                (decodedText) => this.handleScan(decodedText)
+            );
+
+        } catch (err) {
+            console.error(err);
+            this.scanError = 'Camera blocked or not available.';
+            this.scannerOpen = false;
+            this.scanner = null;
+        }
+
+        this.scannerStarting = false;
     },
-    
-    async stopScanner() {
+
+    stopScanner: async function () {
         if (this.scanner) {
             try {
                 await this.scanner.stop();
                 await this.scanner.clear();
-            } catch (error) {
-            } finally {
-                this.scanner = null;
-                this.scannerOpen = false;
-                this.scannerStarting = false;
-            }
-            return;
+            } catch (e) {}
         }
 
+        this.scanner = null;
         this.scannerOpen = false;
         this.scannerStarting = false;
     },
-    
-    handleScan(code) {
+
+    handleScan: function (code) {
         const scanType = window.qrUtils.getScanType(code);
+
         if (!scanType) {
-            this.scanError = 'Invalid QR code. Use CLOCK_IN or CLOCK_OUT.';
+            this.scanError = 'Invalid QR code';
             return;
         }
+
         window.qrUtils.recordScan(scanType);
+
         this.scanResult = code.trim().toUpperCase();
-        this.scanError = '';
         this.lastScan = new Date().toLocaleString();
+        this.scanError = '';
+
         this.stopScanner();
     },
-    
-    handleManualScan() {
+
+    handleManualScan: function () {
         if (this.manualInput) {
             this.handleScan(this.manualInput);
             this.manualInput = '';
         }
-    },
-    
-    demo(code) {
-        this.handleScan(code);
     }
 }" @init="window.themeManager.initTheme()">
     
@@ -132,7 +126,7 @@ if (!isset($_SESSION['user_id'])) {
 
                     <!-- Scanner View -->
                     <div class="row">
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-lg-12 mb-4">
                             <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-light">
                                     <h5 class="mb-0">QR Scanner</h5>
@@ -165,20 +159,6 @@ if (!isset($_SESSION['user_id'])) {
                                             <button class="btn btn-outline-secondary" @click="handleManualScan()" type="button">Submit</button>
                                         </div>
                                     </div>
-
-                                    <!-- Demo Buttons -->
-                                    <div class="d-grid gap-2">
-                                        <button class="btn btn-outline-success" @click="demo('CLOCK_IN')" type="button">
-                                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Demo Clock In
-                                        </button>
-                                        <button class="btn btn-outline-warning" @click="demo('CLOCK_OUT')" type="button">
-                                            <i class="bi bi-stop-circle me-1" aria-hidden="true"></i>Demo Clock Out
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="col-lg-6">
                             <!-- Scan Result -->
                             <div class="card border-0 shadow-sm" x-show="scanResult">

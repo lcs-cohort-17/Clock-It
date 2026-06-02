@@ -1,9 +1,10 @@
 <?php
 // FRONTEND-ONLY ROUTER
-// No Composer, no vendor folder, no backend models/controllers, no PHPUnit needed.
-// This file only provides sample data so the PHP pages can display in the browser.
+// This file provides sample data and small demo endpoints so the PHP pages can display in the browser.
 
 declare(strict_types=1);
+
+require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 $sessionPath = dirname(__DIR__) . '/storage/sessions';
 if (is_dir($sessionPath) && is_writable($sessionPath)) {
@@ -101,6 +102,81 @@ function login_as(array $user): void
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_name'] = $user['name'];
     $_SESSION['user_role'] = $user['role'];
+}
+
+function json_response(array $payload, int $statusCode = 200): never
+{
+    http_response_code($statusCode);
+    header('Content-Type: application/json');
+    echo json_encode($payload);
+    exit;
+}
+
+function request_json(): array
+{
+    $payload = json_decode(file_get_contents('php://input') ?: '[]', true);
+    return is_array($payload) ? $payload : [];
+}
+
+function generate_qr_data_url(string $text): string
+{
+    $renderer = new BaconQrCode\Renderer\ImageRenderer(
+        new BaconQrCode\Renderer\RendererStyle\RendererStyle(360, 2),
+        new BaconQrCode\Renderer\Image\SvgImageBackEnd()
+    );
+    $writer = new BaconQrCode\Writer($renderer);
+    $svg = $writer->writeString($text);
+
+    return 'data:image/svg+xml;base64,' . base64_encode($svg);
+}
+
+if ($path === '/api/qr-code' && $method === 'POST') {
+    $payload = request_json();
+    $text = trim((string) ($payload['text'] ?? ''));
+
+    if ($text === '') {
+        json_response(['error' => 'QR text is required.'], 422);
+    }
+
+    json_response(['imageUrl' => generate_qr_data_url($text)]);
+}
+
+function send_user_invite_email(string $name, string $email, string $role, string $password): bool
+{
+    $subject = 'Clock-It Login Details';
+    $message = implode("\n\n", [
+        "Hi {$name}",
+        "Role: {$role}",
+        "Here is your generated password you can login with: {$password}",
+        'You can change it once successfully logged in.',
+        "If you are not {$name} kindly ignore this message.",
+        'Team Clock It Team.',
+    ]);
+    $headers = [
+        'From: Clock-It <no-reply@clock-it.local>',
+        'Reply-To: no-reply@clock-it.local',
+        'Content-Type: text/plain; charset=UTF-8',
+    ];
+
+    return @mail($email, $subject, $message, implode("\r\n", $headers));
+}
+
+if ($path === '/api/users/invite' && $method === 'POST') {
+    $payload = request_json();
+    $name = trim((string) ($payload['name'] ?? ''));
+    $email = trim((string) ($payload['email'] ?? ''));
+    $role = trim((string) ($payload['role'] ?? ''));
+    $password = trim((string) ($payload['password'] ?? ''));
+
+    if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $role === '' || $password === '') {
+        json_response(['error' => 'Name, valid email, role, and password are required.'], 422);
+    }
+
+    if (!send_user_invite_email($name, $email, $role, $password)) {
+        json_response(['error' => 'User was added, but PHP mail is not configured or could not send the invite email.'], 500);
+    }
+
+    json_response(['sent' => true]);
 }
 
 // Frontend-only login simulation: no real authentication.

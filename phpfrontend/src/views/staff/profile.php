@@ -75,6 +75,12 @@ if (!isset($_SESSION['user_id'])) {
         };
         reader.readAsDataURL(file);
     },
+    requestPhotoUpload() {
+        const allowed = confirm('Allow Clock-It to access your device images so you can upload a profile photo?');
+        if (!allowed) return;
+
+        this.$refs.photoInput.click();
+    },
     saveProfile() {
         alert('Profile saved successfully!');
         this.editMode = false;
@@ -188,11 +194,23 @@ if (!isset($_SESSION['user_id'])) {
                             <!-- Avatar -->
                             <div class="card border-0 shadow-sm mb-4 text-center">
                                 <div class="card-body">
-                                    <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-navy), var(--secondary-blue)); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
-                                        <i class="bi bi-person" aria-hidden="true"></i>
+                                    <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-navy), var(--secondary-blue)); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; overflow: hidden;">
+                                        <template x-if="photoPreview">
+                                            <img :src="photoPreview" alt="Profile photo preview" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </template>
+                                        <template x-if="!photoPreview">
+                                            <i class="bi bi-person" aria-hidden="true"></i>
+                                        </template>
                                     </div>
                                     <p class="text-muted small">Profile Picture</p>
-                                    <button class="btn btn-sm btn-outline-secondary" type="button">
+                                    <input
+                                        class="visually-hidden"
+                                        type="file"
+                                        accept="image/*"
+                                        x-ref="photoInput"
+                                        @change="uploadPhoto($event)"
+                                    >
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" @click="requestPhotoUpload()">
                                         <i class="bi bi-upload me-1" aria-hidden="true"></i>Upload Photo
                                     </button>
                                 </div>

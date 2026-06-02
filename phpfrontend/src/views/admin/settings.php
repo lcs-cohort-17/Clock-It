@@ -112,21 +112,6 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
                                 <i class="bi bi-save me-2" aria-hidden="true"></i>Save Settings
                             </button>
                         </div>
-
-                        <!-- Sidebar Info -->
-                        <div class="col-md-4">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="card-title">Need Help?</h6>
-                                    <p class="text-muted small">
-                                        Contact support for assistance with configuration and setup.
-                                    </p>
-                                    <button class="btn btn-sm btn-outline-secondary w-100">
-                                        <i class="bi bi-envelope me-1" aria-hidden="true"></i>Contact Support
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </main>

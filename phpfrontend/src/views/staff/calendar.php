@@ -57,6 +57,10 @@ if (!isset($_SESSION['user_id'])) {
         for (let i = 1; i <= this.daysInMonth; i++) {
             days.push({ key: `${this.year}-${this.month}-${i}`, day: i });
         }
+        const remainingCells = (7 - (days.length % 7)) % 7;
+        for (let i = 0; i < remainingCells; i++) {
+            days.push({ key: `${this.year}-${this.month}-after-${i}`, day: null });
+        }
         return days;
     },
     
@@ -146,17 +150,20 @@ if (!isset($_SESSION['user_id'])) {
                     <h2 class="mb-4">Attendance Calendar</h2>
 
                     <div class="row justify-content-center">
-                        <div class="col-xl-7 col-lg-8">
+                        <div class="col-xl-8 col-lg-8">
                             <!-- Calendar -->
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-light">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <button class="btn btn-sm btn-outline-secondary" @click="previousMonth()" type="button">
+                            <div class="card border-0 shadow-sm attendance-calendar-card">
+                                <div class="card-header bg-light attendance-calendar-header">
+                                    <div class="d-flex justify-content-between align-items-center gap-3">
+                                        <button class="btn btn-sm btn-outline-secondary calendar-nav-btn" @click="previousMonth()" type="button">
                                             <i class="bi bi-chevron-left" aria-hidden="true"></i>
                                             <span class="visually-hidden">Previous month</span>
                                         </button>
-                                        <h5 class="mb-0" x-text="monthName + ' ' + year"></h5>
-                                        <button class="btn btn-sm btn-outline-secondary" @click="nextMonth()" type="button">
+                                        <div class="text-center">
+                                            <h5 class="mb-0" x-text="monthName + ' ' + year"></h5>
+                                            <small class="text-muted">Monthly attendance view</small>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-secondary calendar-nav-btn" @click="nextMonth()" type="button">
                                             <i class="bi bi-chevron-right" aria-hidden="true"></i>
                                             <span class="visually-hidden">Next month</span>
                                         </button>
@@ -175,13 +182,17 @@ if (!isset($_SESSION['user_id'])) {
                                         <template x-for="item in calendarDays" :key="item.key">
                                             <button
                                                 class="calendar-day"
-                                                :class="[item.day ? getDayStatusColor(getDayStatus(item.day)) : 'calendar-day-placeholder', isToday(item.day) ? 'is-today' : '', isSelected(item.day) ? 'is-selected' : '']"
+                                                :class="[item.day ? `calendar-day-${getDayStatus(item.day)}` : 'calendar-day-placeholder', isToday(item.day) ? 'is-today' : '', isSelected(item.day) ? 'is-selected' : '']"
                                                 :disabled="!item.day"
                                                 type="button"
                                                 @click="selectDay(item.day)"
+                                                :aria-label="item.day ? `${monthName} ${item.day}, ${year}: ${getDayStatusText(getDayStatus(item.day))}` : 'Empty calendar cell'"
                                             >
-                                                <span x-text="item.day"></span>
-                                                <small x-text="getDayStatusText(getDayStatus(item.day))"></small>
+                                                <span class="calendar-day-number" x-text="item.day"></span>
+                                                <span class="calendar-day-status">
+                                                    <span class="calendar-status-dot" aria-hidden="true"></span>
+                                                    <small x-text="getDayStatusText(getDayStatus(item.day))"></small>
+                                                </span>
                                             </button>
                                         </template>
                                     </div>
