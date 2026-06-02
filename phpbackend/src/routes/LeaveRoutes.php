@@ -33,11 +33,13 @@ function handleLeaveRoutes(LeaveController $controller, array $request = []): vo
         return;
     }
 
+    //updateRequest - admin edits the leave request body
     if ($method === 'PUT' && preg_match('#^/api/admin/leave-requests/([^/]+)/updateRequest$#', $uri, $matches) === 1) {
         $controller->updateLeave($auth, $matches[1], $body);
         return;
     }
-
+    
+    //error path
     http_response_code(404);
     echo json_encode(['message' => 'Not Found'], JSON_UNESCAPED_SLASHES);
 }
