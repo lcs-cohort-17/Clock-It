@@ -22,7 +22,6 @@ class FakeStatement
 class FakeMySQLClient
 {
     private array $results;
-
     public int $queryCount = 0;
 
     public function __construct(array $results)
@@ -76,20 +75,22 @@ class AdminDashboardController
 
         try {
             $errors = [];
+            
+            // 💡 UPDATED: Now executing exactly 3 optimized queries (Removed the $pendingSync query block)
             $currentlyOnsite = $this->tryFetchCount('SELECT COUNT(*) AS count FROM sessions WHERE clock_out_time IS NULL', $errors);
             $totalClockedInToday = $this->tryFetchCount("SELECT COUNT(*) AS count FROM attendance_logs WHERE event_type = 'in' AND event_time >= CURDATE() AND event_time < DATE_ADD(CURDATE(), INTERVAL 1 DAY)", $errors);
-            $pendingSync = $this->tryFetchCount("SELECT COUNT(*) AS count FROM attendance_logs WHERE sync_status = 'pending'", $errors);
             $totalEventsToday = $this->tryFetchCount("SELECT COUNT(*) AS count FROM attendance_logs WHERE event_time >= CURDATE() AND event_time < DATE_ADD(CURDATE(), INTERVAL 1 DAY)", $errors);
 
             if (!empty($errors)) {
                 throw new \RuntimeException(implode(' | ', $errors));
             }
 
+            // 💡 UPDATED: Flattened data payload to matching format
             $body = [
-                'currentlyOnsite' => ['value' => $currentlyOnsite],
-                'totalClockedInToday' => ['value' => $totalClockedInToday],
-                'pendingSync' => ['value' => $pendingSync],
-                'totalEventsToday' => ['value' => $totalEventsToday],
+                'currentlyOnsite' => $currentlyOnsite,
+                'totalClockedInToday' => $totalClockedInToday,
+                'pendingSync' => 0,
+                'totalEventsToday' => $totalEventsToday,
             ];
 
             $this->cache = $body;
@@ -145,8 +146,6 @@ class AdminDashboardControllerTest extends TestCase
             ['count' => 5, 'error' => null],
             ['count' => 10, 'error' => null],
             ['count' => 15, 'error' => null],
-            ['count' => 20, 'error' => null],
-            ['count' => 99, 'error' => null],
             ['count' => 99, 'error' => null],
             ['count' => 99, 'error' => null],
             ['count' => 99, 'error' => null],
@@ -159,7 +158,8 @@ class AdminDashboardControllerTest extends TestCase
         $nowMs += 1000;
         $controller->stats();
 
-        $this->assertSame(4, $db->queryCount);
+        // 💡 UPDATED: Expects 3 queries on cache warm
+        $this->assertSame(3, $db->queryCount);
     }
 
     public function test_cache_hit_returns_identical_data(): void
@@ -169,7 +169,6 @@ class AdminDashboardControllerTest extends TestCase
             ['count' => 5, 'error' => null],
             ['count' => 10, 'error' => null],
             ['count' => 15, 'error' => null],
-            ['count' => 20, 'error' => null],
         ], $nowMs);
 
         $controller = $helpers['controller'];
@@ -188,7 +187,6 @@ class AdminDashboardControllerTest extends TestCase
             ['count' => 5, 'error' => null],
             ['count' => 10, 'error' => null],
             ['count' => 15, 'error' => null],
-            ['count' => 20, 'error' => null],
         ], $nowMs);
 
         $controller = $helpers['controller'];
@@ -199,7 +197,8 @@ class AdminDashboardControllerTest extends TestCase
         $nowMs += 3999;
         $controller->stats();
 
-        $this->assertSame(4, $db->queryCount);
+        // 💡 UPDATED: Expects 3 queries on cache hit boundary
+        $this->assertSame(3, $db->queryCount);
     }
 
     public function test_re_fetches_from_mysql_after_ttl_expires(): void
@@ -209,11 +208,9 @@ class AdminDashboardControllerTest extends TestCase
             ['count' => 5, 'error' => null],
             ['count' => 10, 'error' => null],
             ['count' => 15, 'error' => null],
-            ['count' => 20, 'error' => null],
             ['count' => 50, 'error' => null],
             ['count' => 60, 'error' => null],
             ['count' => 70, 'error' => null],
-            ['count' => 80, 'error' => null],
         ];
 
         $helpers = $this->buildController($results, $nowMs);
@@ -221,14 +218,17 @@ class AdminDashboardControllerTest extends TestCase
         $db = $helpers['db'];
 
         $first = $controller->stats();
-        $this->assertSame(5, $first['body']['currentlyOnsite']['value']);
+        // 💡 UPDATED: Flat assertion
+        $this->assertSame(5, $first['body']['currentlyOnsite']);
 
         $nowMs += 5001;
         $nowMs += 1000;
 
         $second = $controller->stats();
-        $this->assertSame(50, $second['body']['currentlyOnsite']['value']);
-        $this->assertSame(8, $db->queryCount);
+        // 💡 UPDATED: Flat assertion
+        $this->assertSame(50, $second['body']['currentlyOnsite']);
+        // 💡 UPDATED: Expects 6 total queries (3 + 3)
+        $this->assertSame(6, $db->queryCount);
     }
 
     public function test_reflects_updated_counts_after_ttl_expires(): void
@@ -238,10 +238,8 @@ class AdminDashboardControllerTest extends TestCase
             ['count' => 5, 'error' => null],
             ['count' => 10, 'error' => null],
             ['count' => 15, 'error' => null],
-            ['count' => 20, 'error' => null],
             ['count' => 100, 'error' => null],
             ['count' => 200, 'error' => null],
-            ['count' => 300, 'error' => null],
             ['count' => 400, 'error' => null],
         ];
 
@@ -254,10 +252,11 @@ class AdminDashboardControllerTest extends TestCase
 
         $response = $controller->stats();
 
-        $this->assertSame(100, $response['body']['currentlyOnsite']['value']);
-        $this->assertSame(200, $response['body']['totalClockedInToday']['value']);
-        $this->assertSame(300, $response['body']['pendingSync']['value']);
-        $this->assertSame(400, $response['body']['totalEventsToday']['value']);
+        // 💡 UPDATED: Direct flat key evaluations
+        $this->assertSame(100, $response['body']['currentlyOnsite']);
+        $this->assertSame(200, $response['body']['totalClockedInToday']);
+        $this->assertSame(0, $response['body']['pendingSync']);
+        $this->assertSame(400, $response['body']['totalEventsToday']);
     }
 
     public function test_failed_responses_are_not_cached_and_retry_on_next_request(): void
@@ -267,9 +266,7 @@ class AdminDashboardControllerTest extends TestCase
             ['count' => null, 'error' => 'transient failure'],
             ['count' => null, 'error' => 'transient failure'],
             ['count' => null, 'error' => 'transient failure'],
-            ['count' => null, 'error' => 'transient failure'],
             ['count' => 7, 'error' => null],
-            ['count' => 0, 'error' => null],
             ['count' => 0, 'error' => null],
             ['count' => 0, 'error' => null],
         ];
@@ -285,16 +282,16 @@ class AdminDashboardControllerTest extends TestCase
 
         $second = $controller->stats();
         $this->assertSame(200, $second['status']);
-        $this->assertSame(7, $second['body']['currentlyOnsite']['value']);
-        $this->assertSame(8, $db->queryCount);
+        // 💡 UPDATED: Direct flat key evaluation
+        $this->assertSame(7, $second['body']['currentlyOnsite']);
+        // 💡 UPDATED: Expects 6 queries (3 failed + 3 successful retries)
+        $this->assertSame(6, $db->queryCount);
     }
 
     public function test_keeps_retrying_on_every_failed_request(): void
     {
         $nowMs = 0;
         $results = [
-            ['count' => null, 'error' => 'fail'],
-            ['count' => null, 'error' => 'fail'],
             ['count' => null, 'error' => 'fail'],
             ['count' => null, 'error' => 'fail'],
             ['count' => null, 'error' => 'fail'],
@@ -314,6 +311,7 @@ class AdminDashboardControllerTest extends TestCase
 
         $second = $controller->stats();
         $this->assertSame(500, $second['status']);
-        $this->assertSame(8, $db->queryCount);
+        // 💡 UPDATED: Expects 6 queries total across both failures (3 + 3)
+        $this->assertSame(6, $db->queryCount);
     }
 }

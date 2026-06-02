@@ -28,7 +28,10 @@ class AdminDashboardModel
         $today = $this->getTodayRange();
 
         $active = $this->tryFetchCount(
-            'SELECT COUNT(*) AS count FROM sessions WHERE clock_out_time IS NULL',
+            "SELECT COUNT(*) AS count FROM sessions 
+            WHERE clock_out_time IS NULL
+             AND clock_in_time >= '{$today['start']}'
+             AND clock_in_time < '{$today['end']}'",
             $errors
         );
 
@@ -38,11 +41,6 @@ class AdminDashboardModel
              WHERE event_type = 'in'
                AND event_time >= '{$today['start']}'
                AND event_time < '{$today['end']}'",
-            $errors
-        );
-
-        $pending = $this->tryFetchCount(
-            "SELECT COUNT(*) AS count FROM attendance_logs WHERE sync_status = 'pending'",
             $errors
         );
 
@@ -59,50 +57,57 @@ class AdminDashboardModel
         }
 
         return [
-            'currentlyOnsite' => ['value' => $active, 'icon' => 'people'],
-            'totalClockedInToday' => ['value' => $clockIns, 'icon' => 'login'],
-            'pendingSync' => ['value' => $pending, 'icon' => 'sync_problem'],
-            'totalEventsToday' => ['value' => $events, 'icon' => 'event'],
+            'currentlyOnsite' =>  $active,
+            'totalClockedInToday' =>  $clockIns,
+            'pendingSync' =>  0,
+            'totalEventsToday' =>  $events,
         ];
     }
 
     public function fetchRecentActivity(int $page, int $limit): array
-    {
-        $page = max(1, $page);
-        $limit = max(1, $limit);
-        $offset = ($page - 1) * $limit;
+{
+    $page = max(1, $page);
+    $limit = max(1, $limit);
+    $offset = ($page - 1) * $limit;
 
-        return $this->fetchRows(
-            "SELECT
-                al.profile_id,
-                al.event_time,
-                al.event_type,
-                al.sync_status,
-                al.device_info,
-                p.first_name,
-                p.last_name
-             FROM attendance_logs al
-             LEFT JOIN profiles p ON p.id = al.profile_id
-             ORDER BY al.event_time DESC
-             LIMIT {$limit} OFFSET {$offset}"
-        );
-    }
+        $sql = "
+            SELECT
+            al.user_id,
+            al.event_time,
+            al.event_type,
+            u.first_name,
+            u.last_name,
+            u.role
+        FROM attendance_logs al
+        LEFT JOIN users u ON u.id = al.user_id
+        ORDER BY al.event_time DESC
+        LIMIT {$limit} OFFSET {$offset}";
 
-    public function fetchCurrentlyOnsite(): array
+        return $this->fetchRows($sql);
+}
+
+
+
+public function fetchCurrentlyOnsite(): array
     {
-        return $this->fetchRows(
-            "SELECT
-                al.profile_id,
-                al.event_time,
-                al.location,
-                al.event_type,
-                p.first_name,
-                p.last_name
-             FROM attendance_logs al
-             LEFT JOIN profiles p ON p.id = al.profile_id
-             ORDER BY al.event_time DESC"
-        );
+        $today = $this->getTodayRange();
+
+        // Fixed: Only get staff who have an active session today
+        $sql = "SELECT
+                    s.user_id,
+                    s.clock_in_time AS event_time,
+                    u.first_name,
+                    u.last_name,
+                    u.role
+                FROM sessions s
+                LEFT JOIN users u ON u.id = s.user_id
+                WHERE s.clock_out_time IS NULL
+                  AND s.clock_in_time >= '{$today['start']}'
+                ORDER BY s.clock_in_time DESC";
+
+        return $this->fetchRows($sql);
     }
+    
 
     private function tryFetchCount(string $sql, array &$errors): int
     {
@@ -138,11 +143,13 @@ class AdminDashboardModel
         return array_map(function (array $row): array {
             $firstName = $row['first_name'] ?? null;
             $lastName = $row['last_name'] ?? null;
-            unset($row['first_name'], $row['last_name']);
+            $role = $row['role'] ?? null;
+            unset($row['first_name'], $row['last_name'], $row['role']);
 
-            $row['profiles'] = [
+            $row['users'] = [
                 'first_name' => $firstName,
                 'last_name' => $lastName,
+                'role' => $role,
             ];
 
             return $row;

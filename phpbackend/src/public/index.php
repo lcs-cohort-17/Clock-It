@@ -5,7 +5,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use Dotenv\Dotenv;
-use Tuupola\Middleware\CorsMiddleware;
 
 // =============================================
 // ERROR HANDLING (PHP equivalent)
@@ -34,22 +33,27 @@ set_error_handler(function ($severity, $message, $file, $line) {
 // =============================================
 // SETUP
 // =============================================
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 
 $app = AppFactory::create();
 
 // CORS
-$app->add(new CorsMiddleware([
-    "origin" => ["*"],
-    "methods" => ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "headers.allow" => ["Authorization", "Content-Type"],
-    "headers.expose" => [],
-    "credentials" => false,
-    "cache" => 0,
-]));
+// Use this instead. It does NOT require any external "CorsMiddleware" class.
+$app->add(function ($request, $handler) {
+    $response = $handler->handle($request);
+    return $response
+        ->withHeader('Access-Control-Allow-Origin', '*')
+        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+});
+
+// Important: Add this to handle the "OPTIONS" pre-flight requests!
+$app->options('/{routes:.+}', function ($request, $response, $args) {
+    return $response;
+});
 
 // Parse JSON body
 $app->addBodyParsingMiddleware();
@@ -60,7 +64,7 @@ $app->addBodyParsingMiddleware();
 $app->add(function (Request $request, $handler) {
     $request = $request->withAttribute('auth', [
         'userId' => '07cd9434-1b18-4d96-b029-0595b26d067c',
-        'role'   => 'admin',
+        'role'   => 'employee',
         'token'  => 'mock-token'
     ]);
     
@@ -91,22 +95,12 @@ $app->get('/test', function (Request $request, Response $response) {
 });
 
 // Mount your route groups
-$app->group('/api/admin', function ($group) {
+$app->group('/api/admin/dashboard', function ($group) {
     // Include your admin routes here
-    require __DIR__ . '/../src/routes/adminDashboardRoutes.php';
+    require __DIR__ . '/../routes/AdminDashboardRoutes.php';
 });
-
-$app->group('/api/google', function ($group) {
-    require __DIR__ . '/../src/routes/googleRoutes.php';
-});
-
-$app->group('/api/leaves', function ($group) {
-    require __DIR__ . '/../src/routes/leaveRoutes.php';
-});
-
-$app->group('/profiles', function ($group) {
-    require __DIR__ . '/../src/routes/profileRoutes.php';
-});
+// Other route groups (google, attendance, profiles) are not mounted here
+// to avoid requiring files that are not present in this PHP backend copy.
 
 // 404 Not Found Handler
 $app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function (Request $request, Response $response) {
