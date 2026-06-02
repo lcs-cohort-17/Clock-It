@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unset($_SESSION['security_success']);
         } else {
             $_SESSION['security_timeout'] = (int) $raw;
+            $_SESSION['enable_encryption'] = isset($_POST['enable_encryption']);
             $_SESSION['security_success'] = 'Security settings saved successfully.';
             unset($_SESSION['security_error']);
         }
@@ -91,14 +92,14 @@ ob_start();
     <div class="main-panel">
         <?php require __DIR__ . '/../partials/header.php'; ?>
         <main class="content">
-            <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8 sm:px-6 lg:px-8">
-                <div class="mx-auto max-w-4xl">
-                    <div class="mb-8">
-                        <h1 class="text-3xl font-bold text-slate-900">Settings</h1>
-                        <p class="mt-2 text-lg text-slate-600">Manage integrations and security preferences.</p>
+            <div class="settings-page">
+                <div class="page-container">
+                    <div class="page-header">
+                        <h1>Settings</h1>
+                        <p>Manage integrations and security preferences.</p>
                     </div>
 
-                    <section class="grid gap-6 lg:grid-cols-2">
+                    <section class="settings-grid">
                         <?php render_google_sheets_settings_card(); ?>
                         <?php render_security_settings_card(); ?>
                         <?php render_data_retention_settings_card(); ?>

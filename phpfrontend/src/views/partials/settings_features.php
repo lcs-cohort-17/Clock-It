@@ -14,9 +14,9 @@ if (!function_exists('render_google_sheets_settings_card')) {
                 <div class="settings-icon">
                     <?= google_sheets_icon('google-sheets-icon') ?>
                 </div>
-                <div>
+                <div class="settings-card-title">
                     <h2>Google Sheets Integration</h2>
-                    <p class="muted">Connect attendance export to Google Sheets.</p>
+                    <p class="muted">Two-way sync of attendance data with auto field mapping.</p>
                 </div>
             </div>
 
@@ -54,7 +54,7 @@ if (!function_exists('render_google_sheets_settings_card')) {
                 <form method="post" action="/admin/settings">
                     <input type="hidden" name="action" value="connect_google_sheets">
                     <a class="settings-action secondary" href="/admin/settings">Cancel</a>
-                    <button type="submit">Confirm &amp; Connect</button>
+                    <button type="submit" class="settings-action">Confirm &amp; Connect</button>
                 </form>
             </div>
         <?php endif; ?>
@@ -68,7 +68,7 @@ if (!function_exists('render_google_sheets_settings_card')) {
                 <form method="post" action="/admin/settings">
                     <input type="hidden" name="action" value="disconnect_google_sheets">
                     <a class="settings-action secondary" href="/admin/settings">Keep connected</a>
-                    <button class="danger" type="submit">Yes, disconnect</button>
+                    <button class="settings-action danger" type="submit">Yes, disconnect</button>
                 </form>
             </div>
         <?php endif; ?>
@@ -79,11 +79,18 @@ if (!function_exists('render_google_sheets_settings_card')) {
 if (!function_exists('render_security_settings_card')) {
     function render_security_settings_card(): void {
         $timeout = (int)    ($_SESSION['security_timeout'] ?? 30);
+        $enableEncryption = (bool) ($_SESSION['enable_encryption'] ?? true);
         $error   = (string) ($_SESSION['security_error']   ?? '');
         $success = (string) ($_SESSION['security_success'] ?? '');
         ?>
         <div class="card settings-card security-settings-card">
-            <h2>Security Settings</h2>
+            <div class="settings-card-header">
+                <div>
+                    <h2>Security</h2>
+                    <p class="muted">Session management, encryption, and access control.</p>
+                </div>
+            </div>
+
             <form method="post" action="/admin/settings" class="settings-form">
                 <input type="hidden" name="action" value="save_security">
 
@@ -95,9 +102,30 @@ if (!function_exists('render_security_settings_card')) {
                     <p class="alert success"><?= htmlspecialchars($success) ?></p>
                 <?php endif; ?>
 
-                <label><input type="checkbox" checked name="require_strong_passwords"> Require strong passwords</label>
-                <label><input type="checkbox" name="enable_two_factor"> Enable two-factor authentication</label>
-                <button type="submit">Save Security Settings</button>
+                <div class="settings-field">
+                    <label for="security-timeout">Session timeout (minutes)</label>
+                    <input id="security-timeout" type="number" name="security_timeout" min="1" value="<?= htmlspecialchars((string) $timeout) ?>" class="settings-input">
+                </div>
+
+                <div class="settings-field">
+                    <div class="settings-option-row">
+                        <div>
+                            <p class="settings-option-label">Data encryption (in transit &amp; at rest)</p>
+                            <p class="settings-note">Recommended for compliance.</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="enable_encryption" <?= $enableEncryption ? 'checked' : '' ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-field settings-info-block">
+                    <p class="settings-info-title">Role-based access (RBAC)</p>
+                    <p class="settings-note">Always enforced. Staff cannot access admin areas. All role checks are server-side.</p>
+                </div>
+
+                <button type="submit" class="settings-action">Save Security Settings</button>
             </form>
         </div>
         <?php
@@ -112,8 +140,12 @@ if (!function_exists('render_data_retention_settings_card')) {
         $success = (string)($_SESSION['retention_success'] ?? '');
         ?>
         <div class="card settings-card data-retention-settings-card">
-            <h2>Data Retention</h2>
-            <p class="muted">Keep attendance logs for 12 months.</p>
+            <div class="settings-card-header">
+                <div>
+                    <h2>Data retention</h2>
+                    <p class="muted">Auto-purge attendance records older than the threshold.</p>
+                </div>
+            </div>
 
             <form method="post" action="/admin/settings" class="settings-form">
                 <input type="hidden" name="action" value="save_retention_days">
@@ -126,6 +158,7 @@ if (!function_exists('render_data_retention_settings_card')) {
                     min="1"
                     step="1"
                     value="<?= htmlspecialchars((string) $days) ?>"
+                    class="settings-input"
                     required
                 >
 
@@ -134,8 +167,8 @@ if (!function_exists('render_data_retention_settings_card')) {
                 <?php endif; ?>
 
                 <div class="settings-form-actions">
-                    <button type="submit" name="action" value="save_retention_days">Save retention days</button>
-                    <button class="danger" type="submit" name="action" value="purge_retention">Purge Old Records</button>
+                    <button class="settings-action" type="submit" name="action" value="save_retention_days">Save retention days</button>
+                    <button class="settings-action danger" type="submit" name="action" value="purge_retention">Purge old records now</button>
                 </div>
             </form>
         </div>
