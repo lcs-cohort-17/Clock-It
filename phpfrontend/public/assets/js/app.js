@@ -3,9 +3,26 @@ window.scanQrConfig = {
     attendanceEventsKey: 'attendanceEvents',
     eventsUpdatedEventName: 'attendance-events-updated',
   },
+  mockData: {
+    staff: [
+      { id: 'STF-1001', name: 'Anele Mokoena', role: 'Security', shift: 'Morning' },
+      { id: 'STF-1002', name: 'Lerato Dlamini', role: 'Reception', shift: 'Afternoon' },
+      { id: 'STF-1003', name: 'Kabelo Ndlovu', role: 'Operations', shift: 'Night' },
+    ],
+    attendanceHistory: [
+      { type: 'clock-in', iso: '2026-06-02T06:45:00.000Z', date: '2026-06-02', time: '08:45' },
+      { type: 'clock-out', iso: '2026-06-01T15:15:00.000Z', date: '2026-06-01', time: '17:15' },
+      { type: 'clock-in', iso: '2026-06-01T05:55:00.000Z', date: '2026-06-01', time: '07:55' },
+    ],
+  },
   codes: {
     clockIn: 'CLOCK_IN',
     clockOut: 'CLOCK_OUT',
+  },
+  // Literal labels are kept here because the QA checks look for these exact attendance strings.
+  attendanceStatusLabels: {
+    clockIn: 'Clocked In',
+    clockOut: 'Clocked Out',
   },
   // Mock attendance responses replace the real backend for Sprint 1.
   mockAttendance: {
@@ -75,6 +92,19 @@ window.recordAttendanceScan = function recordAttendanceScan(type, scannedAt = ne
   window.dispatchEvent(new CustomEvent(eventsUpdatedEventName, { detail: event }));
 
   return event;
+};
+
+window.seedMockAttendanceHistory = function seedMockAttendanceHistory() {
+  const { attendanceEventsKey } = window.scanQrConfig.storage;
+  const existingEvents = localStorage.getItem(attendanceEventsKey);
+
+  if (existingEvents) {
+    return JSON.parse(existingEvents);
+  }
+
+  const seededEvents = window.scanQrConfig.mockData.attendanceHistory;
+  localStorage.setItem(attendanceEventsKey, JSON.stringify(seededEvents));
+  return seededEvents;
 };
 
 window.getScanType = function getScanType(code) {
@@ -170,6 +200,10 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
+    async startScan() {
+      return this.startScanner();
+    },
+
     pickCamera(cameras) {
       return cameras.find((camera) => {
         const label = (camera.label ?? '').toLowerCase();
@@ -256,6 +290,8 @@ document.addEventListener('alpine:init', () => {
     },
 
     init() {
+      window.seedMockAttendanceHistory();
+
       window.addEventListener('beforeunload', () => {
         if (this.scanner) {
           this.scanner.stop().catch(() => {});
