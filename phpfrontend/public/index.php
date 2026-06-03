@@ -90,9 +90,14 @@ switch ($path) {
         break;
 
         case '/password':
-        require __DIR__ . '/../src/views/staff/password/password.php';
+        require __DIR__ . '/../src/views/staff/password.php';
         break;
 
+        case '/admin-leave-requests':
+        require __DIR__ . '/../src/views/admin/admin-leave-requests.php';
+        break;
+
+       
     case '/scan-qr':
         $title = 'Scan QR | Clock-It';
         $user = $staffUser;

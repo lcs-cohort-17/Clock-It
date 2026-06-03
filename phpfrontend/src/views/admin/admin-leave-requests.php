@@ -23,9 +23,9 @@
     <div class="card admin-card shadow-none mb-4">
         <div class="card-body p-4 d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                <div class="text-navy fs-2"><i class="bi bi-person-check-fill"></i></div>
+                <div class="text-navy fs-2 heading-mid-blue-icon"><i class="bi bi-person-check-fill"></i></div>
                 <div>
-                    <h4 class="mb-0 text-navy fw-bold">Employee Leave Management</h4>
+                    <h4 class="mb-0 text-navy fw-bold heading-mid-blue">Employee Leave Management</h4>
                     <p class="text-muted small mb-0">Review, approve, or reject company-wide staff leave requests.</p>
                 </div>
             </div>

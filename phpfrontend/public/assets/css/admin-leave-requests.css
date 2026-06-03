@@ -1,0 +1,34 @@
+/* Styles for Admin Leave Requests page */
+
+.admin-card { border-radius: 8px; }
+
+.truncate-text { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.badge-annual { background: linear-gradient(90deg,#e6ffed,#e0f7e9); color:#0f5132; padding:.35em .6em; border-radius:.5rem; }
+.badge-sick { background: linear-gradient(90deg,#fff6e6,#fff3e0); color:#794c00; padding:.35em .6em; border-radius:.5rem; }
+.badge-study { background: linear-gradient(90deg,#eef2ff,#eef6ff); color:#1e3a8a; padding:.35em .6em; border-radius:.5rem; }
+.badge-funeral { background:#f8d7da; color:#842029; padding:.35em .6em; border-radius:.5rem; }
+
+.table-responsive { overflow-x:auto; }
+.table thead th { color: #3b5ea5; }
+
+/* Status badge variants */
+.bg-warning.text-dark { background:#fff3cd !important; color:#664d03 !important; }
+.bg-success.text-white { background:#198754 !important; color:#fff !important; }
+.bg-danger.text-white { background:#dc3545 !important; color:#fff !important; }
+
+/* Small helpers */
+.container-fluid { max-width: 1400px; }
+
+.heading-mid-blue,
+.heading-mid-blue-icon {
+  color: #3b5ea5;
+}
+
+/* Modal styling tweaks */
+.modal-content { border-radius: 10px; }
+
+@media (max-width:576px){
+  .truncate-text { max-width: 160px; }
+  .ps-4 { padding-left: 1rem !important; }
+}

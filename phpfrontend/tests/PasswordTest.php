@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../src/views/staff/password/password_logic.php';
+require_once dirname(__DIR__) . '/src/views/staff/password_logic.php';
 
 class PasswordTest extends TestCase
 {
