@@ -1,21 +1,21 @@
 <?php
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+declare(strict_types=1);
 
-use Dotenv\Dotenv;
+namespace App\Config;
+
 use PDO;
 use PDOException;
 
-// Load .env file credentials (Get env creds from database manager)
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
-$dotenv->load();
-
-class Database {
+class Database
+{
 
     private static ?Database $instance = null;
     private ?PDO $connection = null;
 
-    private function __construct() {
+    private function __construct()
+    {
+        $this->loadEnv();
 
         $dsn = sprintf(
             'mysql:host=%s;port=%s;dbname=%s;charset=%s',
@@ -56,7 +56,8 @@ class Database {
         }
     }
 
-    public static function getInstance(): self {
+    public static function getInstance(): self
+    {
 
         if (self::$instance === null) {
             self::$instance = new self();
@@ -65,11 +66,53 @@ class Database {
         return self::$instance;
     }
 
-    public function getConnection(): PDO {
-        return $this->connection;
+    public static function getConnection(): PDO
+    {
+        return self::getInstance()->connection;
     }
 
     private function __clone() {}
 
     public function __wakeup() {}
+
+    private function loadEnv(): void
+    {
+        $envPath = __DIR__ . '/../../';
+        $file = $envPath . '.env';
+
+        if (class_exists(\Dotenv\Dotenv::class) && is_file($file)) {
+            $dotenvClass = \Dotenv\Dotenv::class;
+            $dotenvClass::createImmutable($envPath)->safeLoad();
+            return;
+        }
+
+        if (!is_readable($file)) {
+            return;
+        }
+
+        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines === false) {
+            return;
+        }
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                continue;
+            }
+
+            [$key, $value] = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+
+            if ($key === '' || getenv($key) !== false) {
+                continue;
+            }
+
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+            putenv("{$key}={$value}");
+        }
+    }
 }
