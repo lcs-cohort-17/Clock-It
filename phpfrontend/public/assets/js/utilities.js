@@ -111,28 +111,31 @@ window.timeUtils = {
 
 window.qrUtils = {
   isValidQRCode: (code) => {
-    const normalizedCode = code.trim().toUpperCase();
-    return normalizedCode === 'CLOCK_IN' || normalizedCode === 'CLOCK_OUT';
+    return window.qrUtils.getScanType(code) !== null;
   },
 
   getScanType: (code) => {
     const normalizedCode = code.trim().toUpperCase();
-    if (normalizedCode === 'CLOCK_IN') return 'clock-in';
-    if (normalizedCode === 'CLOCK_OUT') return 'clock-out';
+    if (normalizedCode === 'CLOCK_IN' || normalizedCode.includes('TYPE: CLOCK IN') || normalizedCode.includes('STATUS: CLOCKED IN')) return 'clock-in';
+    if (normalizedCode === 'CLOCK_OUT' || normalizedCode.includes('TYPE: CLOCK OUT') || normalizedCode.includes('STATUS: CLOCKED OUT')) return 'clock-out';
     return null;
   },
 
   recordScan: (scanType) => {
     const events = JSON.parse(localStorage.getItem('attendanceEvents') || '[]');
-    events.push({
+    const event = {
       type: scanType,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    events.push(event);
     localStorage.setItem('attendanceEvents', JSON.stringify(events));
 
     window.dispatchEvent(new CustomEvent('attendance-events-updated', {
-      detail: { scanType, timestamp: new Date().toISOString() }
+      detail: { scanType, timestamp: event.timestamp }
     }));
+
+    return event;
   }
 };
 

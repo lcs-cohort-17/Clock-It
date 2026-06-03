@@ -1736,20 +1736,76 @@ body.dark-mode .btn-close {
 }
 
 .qr-code-card.is-expired {
-  opacity: 0.72;
+  border: 1px solid var(--slate-200);
+}
+
+.qr-code-image-frame {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: min(100%, 20rem);
+  margin-inline: auto;
+}
+
+.qr-code-image-frame.is-expired .qr-code-image {
+  filter: grayscale(1);
 }
 
 .qr-code-image {
-  width: min(100%, 17.5rem);
+  width: 100%;
   height: auto;
   border: 1px solid var(--slate-200);
   border-radius: 0.5rem;
   background: var(--white);
-  padding: 0.75rem;
+  padding: 1rem;
+  image-rendering: auto;
 }
 
 .qr-code-image-sm {
+  width: 100%;
+}
+
+.qr-code-image-frame-sm {
   width: min(100%, 13rem);
+}
+
+.qr-expired-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(220, 38, 38, 0.42);
+  background:
+    linear-gradient(rgba(9, 60, 93, 0.9), rgba(15, 23, 42, 0.94)),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 0.75rem, transparent 0.75rem 1.5rem);
+  color: #fee2e2;
+  font-size: clamp(1.25rem, 6vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-shadow: 0 0.125rem 0.35rem rgba(15, 23, 42, 0.42);
+  z-index: 1;
+}
+
+.qr-expired-overlay::before,
+.qr-expired-overlay::after {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(254, 226, 226, 0.72);
+}
+
+.qr-expired-overlay::before {
+  top: 34%;
+}
+
+.qr-expired-overlay::after {
+  bottom: 34%;
 }
 
 .qr-code-details {
@@ -1856,6 +1912,20 @@ body.dark-mode .btn-close {
 
 body.dark-mode .qr-code-image {
   border-color: #334155;
+}
+
+body.dark-mode .qr-expired-overlay {
+  border-color: rgba(96, 165, 250, 0.34);
+  background:
+    linear-gradient(rgba(8, 26, 47, 0.94), rgba(15, 23, 42, 0.96)),
+    repeating-linear-gradient(135deg, rgba(96, 165, 250, 0.12) 0 0.75rem, transparent 0.75rem 1.5rem);
+  color: #cbe4ff;
+  text-shadow: 0 0.125rem 0.45rem rgba(0, 0, 0, 0.58);
+}
+
+body.dark-mode .qr-expired-overlay::before,
+body.dark-mode .qr-expired-overlay::after {
+  background: rgba(147, 197, 253, 0.64);
 }
 
 body.dark-mode .qr-code-details {

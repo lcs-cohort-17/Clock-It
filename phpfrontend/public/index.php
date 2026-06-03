@@ -19,6 +19,47 @@ $baseUrl = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
 $baseUrl = $baseUrl === '' ? '' : $baseUrl;
 $GLOBALS['baseUrl'] = $baseUrl;
 
+function serve_public_asset_if_requested(string $requestPath, string $baseUrl): void
+{
+    $prefixes = array_filter([
+        ($baseUrl !== '' ? $baseUrl : '') . '/assets/',
+        '/public/assets/',
+        '/assets/',
+    ]);
+
+    foreach (array_unique($prefixes) as $prefix) {
+        if (!str_starts_with($requestPath, $prefix)) {
+            continue;
+        }
+
+        $relativePath = substr($requestPath, strlen($prefix));
+        $assetRoot = realpath(__DIR__ . '/assets');
+        $assetPath = realpath(__DIR__ . '/assets/' . $relativePath);
+
+        if ($assetRoot === false || $assetPath === false || !str_starts_with($assetPath, $assetRoot) || !is_file($assetPath)) {
+            http_response_code(404);
+            exit;
+        }
+
+        $extension = strtolower(pathinfo($assetPath, PATHINFO_EXTENSION));
+        $contentTypes = [
+            'css' => 'text/css; charset=UTF-8',
+            'js' => 'application/javascript; charset=UTF-8',
+            'png' => 'image/png',
+            'svg' => 'image/svg+xml',
+            'woff' => 'font/woff',
+            'woff2' => 'font/woff2',
+        ];
+
+        header('Content-Type: ' . ($contentTypes[$extension] ?? 'application/octet-stream'));
+        header('Cache-Control: public, max-age=3600');
+        readfile($assetPath);
+        exit;
+    }
+}
+
+serve_public_asset_if_requested($requestPath, $baseUrl);
+
 if (str_starts_with($requestPath, $scriptName)) {
     $path = substr($requestPath, strlen($scriptName)) ?: '/';
 } elseif ($baseUrl !== '' && str_starts_with($requestPath, $baseUrl)) {
@@ -121,7 +162,7 @@ function request_json(): array
 function generate_qr_data_url(string $text): string
 {
     $renderer = new BaconQrCode\Renderer\ImageRenderer(
-        new BaconQrCode\Renderer\RendererStyle\RendererStyle(360, 2),
+        new BaconQrCode\Renderer\RendererStyle\RendererStyle(512, 4),
         new BaconQrCode\Renderer\Image\SvgImageBackEnd()
     );
     $writer = new BaconQrCode\Writer($renderer);

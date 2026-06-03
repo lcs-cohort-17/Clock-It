@@ -16,8 +16,8 @@ if (!isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan QR Code - Clock-It</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="<?= asset_url('vendor/bootstrap/css/bootstrap.min.css') ?>" rel="stylesheet">
+    <link rel="stylesheet" href="<?= asset_url('vendor/bootstrap-icons/font/bootstrap-icons.min.css') ?>">
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.2.11/minified/html5-qrcode.min.js"></script>
@@ -25,10 +25,9 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 <body x-data="{
     scannerOpen: false,
-    scanResult: '',
+    scanResult: null,
     scanError: '',
     manualInput: '',
-    lastScan: null,
     scanner: null,
     scannerStarting: false,
 
@@ -36,7 +35,7 @@ if (!isset($_SESSION['user_id'])) {
         if (this.scannerOpen || this.scannerStarting) return;
 
         this.scanError = '';
-        this.scanResult = '';
+        this.scanResult = null;
         this.scannerStarting = true;
         this.scannerOpen = true;
 
@@ -90,13 +89,20 @@ if (!isset($_SESSION['user_id'])) {
 
         if (!scanType) {
             this.scanError = 'Invalid QR code';
+            this.scanResult = null;
             return;
         }
 
-        window.qrUtils.recordScan(scanType);
+        const scanEvent = window.qrUtils.recordScan(scanType);
+        const scanDate = new Date(scanEvent.timestamp);
 
-        this.scanResult = code.trim().toUpperCase();
-        this.lastScan = new Date().toLocaleString();
+        this.scanResult = {
+            type: scanType,
+            status: scanType === 'clock-in' ? 'Clocked In' : 'Clocked Out',
+            actionLabel: scanType === 'clock-in' ? 'Clock In Recorded' : 'Clock Out Recorded',
+            date: scanDate.toLocaleDateString(),
+            time: scanDate.toLocaleTimeString()
+        };
         this.scanError = '';
 
         this.stopScanner();
@@ -125,8 +131,8 @@ if (!isset($_SESSION['user_id'])) {
                     <h2 class="mb-4">Scan QR Code</h2>
 
                     <!-- Scanner View -->
-                    <div class="row">
-                        <div class="col-lg-12 mb-4">
+                    <div class="row g-4">
+                        <div class="col-lg-7">
                             <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-light">
                                     <h5 class="mb-0">QR Scanner</h5>
@@ -159,19 +165,29 @@ if (!isset($_SESSION['user_id'])) {
                                             <button class="btn btn-outline-secondary" @click="handleManualScan()" type="button">Submit</button>
                                         </div>
                                     </div>
-                        <div class="col-lg-6">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-5">
                             <!-- Scan Result -->
                             <div class="card border-0 shadow-sm" x-show="scanResult">
-                                <div class="card-header" :class="scanResult.includes('CLOCK_IN') ? 'bg-success' : 'bg-warning'" style="color: white;">
+                                <div class="card-header" :class="scanResult?.type === 'clock-in' ? 'bg-success' : 'bg-warning'" style="color: white;">
                                     <h5 class="mb-0">
-                                        <i class="bi" :class="scanResult.includes('CLOCK_IN') ? 'bi-check-circle' : 'bi-stop-circle'" aria-hidden="true"></i>
-                                        <span x-text="scanResult.includes('CLOCK_IN') ? 'Clock In Recorded' : 'Clock Out Recorded'"></span>
+                                        <i class="bi" :class="scanResult?.type === 'clock-in' ? 'bi-check-circle' : 'bi-stop-circle'" aria-hidden="true"></i>
+                                        <span x-text="scanResult?.actionLabel"></span>
                                     </h5>
                                 </div>
-                                <div class="card-body text-center">
-                                    <p class="lead mb-2" x-text="scanResult"></p>
-                                    <p class="text-muted small" x-text="'Recorded at: ' + lastScan"></p>
-                                    <button class="btn btn-primary" @click="scanResult = ''; lastScan = null;" type="button">
+                                <div class="card-body">
+                                    <dl class="row mb-4">
+                                        <dt class="col-sm-4">Status</dt>
+                                        <dd class="col-sm-8 fw-semibold" x-text="scanResult?.status"></dd>
+                                        <dt class="col-sm-4">Date</dt>
+                                        <dd class="col-sm-8" x-text="scanResult?.date"></dd>
+                                        <dt class="col-sm-4">Time</dt>
+                                        <dd class="col-sm-8" x-text="scanResult?.time"></dd>
+                                    </dl>
+                                    <button class="btn btn-primary" @click="scanResult = null;" type="button">
                                         <i class="bi bi-check-lg me-1" aria-hidden="true"></i>Done
                                     </button>
                                 </div>
@@ -197,6 +213,6 @@ if (!isset($_SESSION['user_id'])) {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= asset_url('vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
 </body>
 </html>
