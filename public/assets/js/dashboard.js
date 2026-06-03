@@ -5,7 +5,9 @@ document.addEventListener('alpine:init', () => {
     return {
       onsiteStaff: [],
       recentActivity: [],
-      loading: false,
+      initialLoading: true,
+      refreshing: false,
+      initialized: false,
       error: null,
       pollTimer: null,
       initials(name) {
@@ -23,7 +25,6 @@ document.addEventListener('alpine:init', () => {
       },
       async fetchOnsiteStaff() {
         try {
-          this.loading = true;
           this.error = null;
           const response = await fetch(`${basePath}/api/onsite.php`, { headers: { Accept: 'application/json' } });
 
@@ -35,13 +36,10 @@ document.addEventListener('alpine:init', () => {
         } catch (error) {
           this.error = 'Unable to load onsite staff right now.';
           this.onsiteStaff = [];
-        } finally {
-          this.loading = false;
         }
       },
       async fetchRecentActivity() {
         try {
-          this.loading = true;
           this.error = null;
           const response = await fetch(`${basePath}/api/activity.php`, { headers: { Accept: 'application/json' } });
 
@@ -53,12 +51,18 @@ document.addEventListener('alpine:init', () => {
         } catch (error) {
           this.error = 'Unable to load recent activity right now.';
           this.recentActivity = [];
-        } finally {
-          this.loading = false;
         }
       },
       async refresh() {
-        await Promise.all([this.fetchOnsiteStaff(), this.fetchRecentActivity()]);
+        if (this.refreshing) return;
+
+        this.refreshing = true;
+        try {
+          await Promise.all([this.fetchOnsiteStaff(), this.fetchRecentActivity()]);
+        } finally {
+          this.initialLoading = false;
+          this.refreshing = false;
+        }
       },
       exportOnsiteCSV() {
         if (!this.onsiteStaff.length) {
@@ -86,8 +90,11 @@ document.addEventListener('alpine:init', () => {
         window.alert('Google Sheets connection is coming soon.');
       },
       init() {
+        if (this.initialized) return;
+
+        this.initialized = true;
         this.refresh();
-        this.pollTimer = setInterval(() => this.refresh(), 10000);
+        this.pollTimer = setInterval(() => this.refresh(), 60000);
       },
     };
   };

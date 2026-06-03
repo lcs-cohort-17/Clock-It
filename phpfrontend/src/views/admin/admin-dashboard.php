@@ -24,39 +24,32 @@ ob_start();
 
         <?php require __DIR__ . '/../partials/header.php'; ?>
 
-        <main class="content container-fluid p-4" x-data="attendanceDashboard()" x-init="init()">
-            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+        <main class="content container-fluid p-4 p-lg-5 admin-dashboard-page" x-data="attendanceDashboard()">
+            <div class="dashboard-page-header d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
                 <div>
                     <h1 class="display-6 fw-bold">Admin Dashboard</h1>
                     <p class="text-muted mb-0">Live overview of your team's attendance.</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-outline-secondary" @click="refresh()" :disabled="loading">
-                        <i class="bi bi-arrow-repeat" :class="{ 'dashboard-spin': loading }" aria-hidden="true"></i>
-                        <span x-text="loading ? 'Syncing...' : 'Sync now'"></span>
-                    </button>
-                    <button type="button" class="btn btn-main" @click="exportOnsiteCSV()">
-                        <i class="bi bi-download" aria-hidden="true"></i>
-                        Export CSV
+                    <button type="button" class="btn btn-outline-secondary" @click="refresh()" :disabled="refreshing">
+                        <i class="bi bi-arrow-repeat" :class="{ 'dashboard-spin': refreshing }" aria-hidden="true"></i>
+                        <span x-text="refreshing ? 'Syncing...' : 'Sync now'"></span>
                     </button>
                 </div>
             </div>
 
             <?php require __DIR__ . '/../partials/dashboard-cards.php'; ?>
 
+            <div class="dashboard-section mt-4">
+                <?php require __DIR__ . '/../partials/quick-actions.php'; ?>
+            </div>
+
             <div class="row g-4 dashboard-layout mt-1">
-                <div class="col-12 col-xl-4">
-                    <?php require __DIR__ . '/../partials/quick-actions.php'; ?>
+                <div class="col-12 col-xl-5">
+                    <?php require __DIR__ . '/../partials/onsite-card.php'; ?>
                 </div>
-                <div class="col-12 col-xl-8">
-                    <div class="row g-4">
-                        <div class="col-12 col-lg-5">
-                            <?php require __DIR__ . '/../partials/onsite-card.php'; ?>
-                        </div>
-                        <div class="col-12 col-lg-7">
-                            <?php require __DIR__ . '/../partials/activity-card.php'; ?>
-                        </div>
-                    </div>
+                <div class="col-12 col-xl-7">
+                    <?php require __DIR__ . '/../partials/activity-card.php'; ?>
                 </div>
             </div>
 

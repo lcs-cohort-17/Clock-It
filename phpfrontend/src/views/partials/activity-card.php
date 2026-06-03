@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 ?>
-<section class="card dashboard-card activity-card rounded-4 border shadow-sm bg-white">
-  <div class="card-header dashboard-card-header activity-card-header bg-white border-0 p-4 pb-0">
+<section class="card dashboard-card activity-card h-100 rounded-4 border shadow-sm">
+  <div class="card-header dashboard-card-header activity-card-header border-0 p-4 pb-0">
     <h2 class="h5 dashboard-card-title mb-0">Recent activity</h2>
   </div>
 
   <div class="card-body dashboard-card-body activity-card-body p-4">
-    <div class="d-flex justify-content-center mb-3" x-show="loading" x-cloak>
+    <div class="d-flex justify-content-center mb-3" x-show="initialLoading" x-cloak>
       <div class="spinner-border spinner-border-sm text-primary" role="status">
         <span class="visually-hidden">Loading recent activity</span>
       </div>
     </div>
 
-    <div class="empty-state activity-empty-state" x-show="!loading && recentActivity.length === 0">
+    <div class="empty-state activity-empty-state" x-show="!initialLoading && recentActivity.length === 0">
       No events today.
     </div>
 

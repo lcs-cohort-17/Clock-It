@@ -1,5 +1,6 @@
 .attendance-history {
     color: var(--text, #1e293b);
+    font-family: inherit;
 }
 
 .history-toolbar,
@@ -39,6 +40,20 @@
     gap: 8px;
 }
 
+.attendance-history .export-btn {
+    border-color: var(--border, #d6e0e5);
+    background: var(--surface, #fff);
+    color: var(--text, #093c5d);
+    font-weight: 600;
+}
+
+.attendance-history .export-btn:hover,
+.attendance-history .export-btn:focus {
+    border-color: var(--primary, #3b7597);
+    background: var(--primary, #3b7597);
+    color: #fff;
+}
+
 .history-view-toggle {
     display: flex;
     padding: 3px;
@@ -63,8 +78,14 @@
 }
 
 .history-view-toggle button.active {
-    background: #2563eb;
+    background: var(--primary, #3b7597);
     color: #fff;
+}
+
+.history-view-toggle button:hover:not(.active),
+.history-view-toggle button:focus:not(.active) {
+    background: var(--surface-soft, #eef3f5);
+    color: var(--text, #093c5d);
 }
 
 .history-filters {
@@ -99,6 +120,13 @@
     background: var(--surface, #fff);
     color: var(--text, #1e293b);
     font-size: .875rem;
+}
+
+.history-filters input:focus,
+.history-filters select:focus {
+    border-color: var(--primary, #3b7597);
+    box-shadow: 0 0 0 3px rgba(59, 117, 151, .16);
+    outline: 0;
 }
 
 .history-metrics {
@@ -191,6 +219,15 @@
 .history-calendar-header button {
     padding: 6px 10px;
     border: 1px solid var(--border, #cbd5e1);
+}
+
+.history-pagination button:hover:not(:disabled),
+.history-pagination button:focus:not(:disabled),
+.history-calendar-header button:hover,
+.history-calendar-header button:focus {
+    border-color: var(--primary, #3b7597);
+    background: var(--surface-soft, #f8fafc);
+    color: var(--text, #1e293b);
 }
 
 .history-pagination button:disabled {

@@ -13,7 +13,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
             <div>
                 <p class="staff-eyebrow mb-2">Good morning, <?= e($firstName) ?></p>
                 <h1 class="staff-status-title mb-2"><?= e($statusText) ?></h1>
-                <span class="badge rounded-pill text-bg-light border">
+                <span class="staff-location-badge">
                     You are currently <?= e($locationStatus) ?>
                 </span>
                 <p class="text-muted mt-3 mb-0">No QR scan recorded yet.</p>

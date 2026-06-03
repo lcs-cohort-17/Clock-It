@@ -400,18 +400,276 @@ table td {
 }
 
 /* Small improvements for all viewports */
-.profile-card .card-body {
-    padding: 18px;
+.profile-page-inner {
+    max-width: 980px;
+    margin: 0 auto;
 }
+
+.profile-page-header h1 {
+    color: var(--text);
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.profile-card {
+    padding: 28px;
+    border-radius: 18px;
+}
+
+.profile-identity {
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+}
+
+.profile-avatar {
+    display: inline-flex;
+    width: 92px;
+    height: 92px;
+    flex: 0 0 92px;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--mid-blue), var(--deep-navy));
+    color: #fff;
+    cursor: pointer;
+    font-size: 1.55rem;
+    font-weight: 800;
+    box-shadow: 0 8px 20px var(--shadow);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.profile-avatar:hover,
+.profile-avatar:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px var(--shadow);
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-name {
+    color: var(--text);
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.profile-role-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--text);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.profile-photo-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--mid-blue);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.profile-photo-link:hover,
+.profile-photo-link:focus {
+    color: var(--text);
+    text-decoration: underline;
+}
+
+.profile-edit-form .form-label {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.profile-edit-form .form-control {
+    min-height: 46px;
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.profile-edit-form .form-control:disabled {
+    background: var(--surface-soft);
+    color: var(--muted);
+    opacity: 1;
+}
+
+.profile-card .btn-outline-primary {
+    border-color: var(--mid-blue);
+    color: var(--mid-blue);
+}
+
+.profile-card .btn-outline-primary:hover,
+.profile-card .btn-outline-primary:focus {
+    border-color: var(--mid-blue);
+    background: var(--mid-blue);
+    color: #fff;
+}
+
+.profile-card .btn-outline-secondary {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.profile-card .btn-outline-secondary:hover,
+.profile-card .btn-outline-secondary:focus {
+    border-color: var(--mid-blue);
+    background: var(--surface-soft);
+    color: var(--text);
+}
+
+.profile-details-grid,
+.profile-support-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.profile-detail,
+.profile-support-action {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-soft);
+}
+
+.profile-detail small {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.profile-detail span {
+    color: var(--text);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.profile-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.profile-section-heading > i {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--surface-soft);
+    color: var(--mid-blue);
+    font-size: 1.2rem;
+}
+
+.profile-section-heading h2 {
+    color: var(--text);
+    font-weight: 800;
+}
+
+.password-form {
+    max-width: 660px;
+}
+
+.password-form .form-label {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.password-form .form-control,
+.password-form .input-group .btn {
+    min-height: 46px;
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.password-form .form-control:focus {
+    border-color: var(--mid-blue);
+    box-shadow: 0 0 0 3px rgba(59, 117, 151, .16);
+}
+
+.password-form .progress {
+    height: 7px;
+    background: var(--surface-soft);
+}
+
+.profile-support-action {
+    display: flex;
+    min-height: 92px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text);
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color .2s ease, transform .2s ease;
+}
+
+.profile-support-action:hover,
+.profile-support-action:focus {
+    border-color: var(--mid-blue);
+    color: var(--text);
+    transform: translateY(-2px);
+}
+
+.profile-support-action small {
+    color: var(--muted);
+}
+
+.profile-support-danger {
+    color: #b42318;
+}
+
+.profile-crop-backdrop {
+    position: fixed;
+    z-index: 1060;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(3, 16, 28, .68);
+}
+
+.profile-crop-modal {
+    width: min(100%, 480px);
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, .28);
+}
+
+.profile-crop-modal h2 {
+    color: var(--text);
+    font-weight: 800;
+}
+
+.profile-crop-canvas {
+    display: block;
+    width: min(100%, 360px);
+    height: auto;
+    margin: 0 auto;
+    border-radius: 14px;
+    background: var(--surface-soft);
+}
+
 .input-group .form-control {
-    min-width: 0; /* allow input to shrink in tight spaces */
-}
-.avatar {
-    position: relative;
-    transition: transform 0.2s ease;
-}
-.avatar:hover {
-    transform: scale(1.05);
+    min-width: 0;
 }
 .profile-avatar .profile-camera {
     width: 32px;
@@ -425,4 +683,30 @@ table td {
 .profile-avatar:hover .profile-camera {
     opacity: 1;
     background-color: #082139 !important;
+}
+
+:root[data-theme="dark"] .profile-card {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+:root[data-theme="dark"] .password-form .form-control::placeholder {
+    color: var(--muted);
+}
+
+@media (max-width: 768px) {
+    .profile-card {
+        padding: 20px;
+    }
+
+    .profile-details-grid,
+    .profile-support-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-avatar {
+        width: 76px;
+        height: 76px;
+        flex-basis: 76px;
+    }
 }

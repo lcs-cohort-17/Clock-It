@@ -15,7 +15,7 @@ declare(strict_types=1);
     ?>
 
     <a
-      class="btn btn-<?= e($action['variant']) ?> card dashboard-card quick-action-card rounded-4 border shadow-sm bg-white text-start"
+      class="btn btn-<?= e($action['variant']) ?> card dashboard-card quick-action-card rounded-4 border shadow-sm text-start"
       href="<?= e($href) ?>"
       aria-label="<?= e($label) ?>"
     >

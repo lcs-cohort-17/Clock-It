@@ -267,28 +267,6 @@
         color: #ffffff;
     }
 
-    /* ── Request Leave/Sick button ── */
-    .request-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        background: #ffffff;
-        color: #1e293b;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-        white-space: nowrap;
-    }
-    .request-btn:hover {
-    background: #6aad2d;
-    border-color: #6aad2d;
-    color: #ffffff;
-    }
-
     /* ── Sync badges ── */
     .sync-badge {
         display: inline-block;
@@ -300,22 +278,6 @@
     .sync-badge.synced  { background: #dcfce7; color: #16a34a; }
     .sync-badge.pending { background: #fef9c3; color: #a16207; }
     .sync-badge.failed  { background: #fee2e2; color: #dc2626; }
-
-    /* ── Action edit button ── */
-    .action-btn {
-        padding: 4px 10px;
-        font-size: 0.75rem;
-        border: none;
-        border-radius: 4px;
-        background: transparent;
-        color: #475569;
-        cursor: pointer;
-        transition: color 0.15s ease, background-color 0.15s ease;
-    }
-    .action-btn:hover {
-        background: transparent;
-        color: #1e293b;
-    }
 
     /* ── Audit action badges ── */
     .audit-action {
@@ -416,7 +378,6 @@
     :root[data-theme="dark"] .custom-dropdown-btn,
     :root[data-theme="dark"] .custom-dropdown-menu,
     :root[data-theme="dark"] .export-btn,
-    :root[data-theme="dark"] .request-btn,
     :root[data-theme="dark"] .modal-box {
         background: var(--surface);
         border-color: var(--border);
@@ -437,12 +398,6 @@
     :root[data-theme="dark"] .modal-close-btn:hover {
         background: var(--surface-soft);
     }
-    :root[data-theme="dark"] .action-btn,
-    :root[data-theme="dark"] .action-btn:hover {
-        background: transparent;
-        color: #ffffff;
-    }
-
 @media (max-width: 767.98px) {
     .data-table {
         min-width: 760px;
@@ -453,7 +408,6 @@
         border-radius: 6px;
     }
 
-    .request-btn,
     .export-btn {
         justify-content: center;
     }
@@ -471,7 +425,6 @@
         font-size: 1.5rem;
     }
 
-    .request-btn,
     .export-btn {
         width: 100%;
     }
@@ -483,4 +436,80 @@
     .modal-footer-custom .btn {
         width: 100%;
     }
+}
+
+/* Admin attendance theme normalization */
+.content .page-title,
+.content .modal-title-custom {
+    color: var(--text);
+}
+
+.content .page-subtitle,
+.content .no-records,
+.content .sort-btn,
+.content .search-icon,
+.content .custom-dropdown-btn .chevron {
+    color: var(--muted);
+}
+
+.content .filter-bar,
+.content .data-card,
+.content .search-input,
+.content .custom-dropdown-btn,
+.content .custom-dropdown-menu,
+.content .export-btn,
+.content .modal-box {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+}
+
+.content .search-input:focus,
+.content .custom-dropdown-btn:focus,
+.content .custom-dropdown-btn[aria-expanded="true"] {
+    border-color: var(--mid-blue);
+    box-shadow: 0 0 0 3px rgba(59, 117, 151, 0.16);
+}
+
+.content .custom-dropdown-item,
+.content .data-table tbody td {
+    color: var(--text);
+}
+
+.content .data-table thead th,
+.content .data-table tbody td {
+    border-color: var(--border);
+}
+
+.content .data-table thead th {
+    background: var(--surface);
+    color: var(--muted);
+}
+
+.content .data-table tbody tr:hover td {
+    background: var(--surface-soft);
+}
+
+.content .export-btn:hover,
+.content .export-btn:focus,
+.content .custom-dropdown-item.selected,
+.content .custom-dropdown-item:not(.selected):hover {
+    border-color: var(--mid-blue);
+    background: var(--mid-blue);
+    color: #fff;
+}
+
+.content .tab-btn {
+    color: var(--muted);
+}
+
+.content .tab-btn:hover:not(.active) {
+    color: var(--text);
+}
+
+.content .tab-btn.active {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
 }
