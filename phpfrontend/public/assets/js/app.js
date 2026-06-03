@@ -1,3 +1,9 @@
+/**app.js */
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Clock-It loaded');
+});
+
+
 window.scanQrConfig = {
   storage: {
     attendanceEventsKey: 'attendanceEvents',
