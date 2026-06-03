@@ -28,7 +28,7 @@ $dashboardCards = [
 ];
 ?>
 
-<div class="row g-4">
+<div class="row g-4 dashboard-stats">
     <?php foreach ($dashboardCards as $card): ?>
         <div class="col-12 col-sm-6 col-lg-3">
             <section class="page-card dashboard-stat-card h-100 p-3">

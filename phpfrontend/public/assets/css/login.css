@@ -8,6 +8,35 @@
     color-scheme: light;
 }
 
+:root[data-theme="dark"] {
+    --clockit-soft: #102c40;
+    --clockit-navy: #f5f5f5;
+    --clockit-blue: #c9d6dc;
+    --clockit-green: #9CB07A;
+    --text-muted: rgba(201, 214, 220, 0.82);
+    --border-soft: rgba(59, 117, 151, 0.85);
+    --login-surface: #173c53;
+    --login-surface-soft: #204b63;
+    --login-heading: #f5f5f5;
+    --login-primary: #3B7597;
+    color-scheme: dark;
+}
+
+:root[data-theme="dark"] .promo-section {
+    background: linear-gradient(135deg, #093C5D, #3B7597, #9CB07A);
+    color: #fff;
+}
+
+:root[data-theme="dark"] .promo-logo-row p,
+:root[data-theme="dark"] .promo-feature p {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme="dark"] .mobile-brand-mark {
+    background: var(--login-primary);
+    color: #fff;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -273,7 +302,8 @@ button:disabled {
 }
 
 .login-tabs {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     border-radius: 0.5rem;
     background: var(--clockit-soft);
     padding: 0.25rem;
@@ -281,7 +311,7 @@ button:disabled {
 }
 
 .login-tab {
-    flex: 1;
+    min-width: 0;
     border: 0;
     border-radius: 0.375rem;
     background: transparent;
@@ -289,7 +319,14 @@ button:disabled {
     padding: 0.625rem 0.75rem;
     font-size: 0.875rem;
     font-weight: 500;
+    line-height: 1.25rem;
+    text-align: center;
+    white-space: nowrap;
     transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+:root[data-theme="dark"] .auth-panel {
+    background: var(--login-surface);
 }
 
 .login-tab:hover {
@@ -309,7 +346,14 @@ button:disabled {
 
 .login-panel {
     display: grid;
+    min-height: 15rem;
+    align-content: start;
     gap: 1.5rem;
+}
+
+:root[data-theme="dark"] .login-tab.is-active {
+    background: var(--login-surface);
+    color: var(--login-heading);
 }
 
 .form-field {
@@ -349,6 +393,17 @@ button:disabled {
     font-size: 0.875rem;
     line-height: 1.25rem;
     transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+:root[data-theme="dark"] .input-wrap input,
+:root[data-theme="dark"] .modal-body .form-control {
+    border-color: var(--border-soft);
+    background: var(--login-surface-soft);
+    color: var(--login-heading);
+}
+
+:root[data-theme="dark"] .input-wrap input::placeholder {
+    color: rgba(201, 214, 220, 0.68);
 }
 
 .input-wrap input::placeholder {
@@ -439,6 +494,11 @@ button:disabled {
     transition: background 160ms ease, opacity 160ms ease, box-shadow 160ms ease;
 }
 
+:root[data-theme="dark"] .submit-button {
+    background: var(--login-primary);
+    color: #fff;
+}
+
 .submit-button:hover {
     background: var(--clockit-blue);
 }
@@ -512,6 +572,18 @@ button:disabled {
     font-size: 0.875rem;
     font-weight: 500;
     transition: background 160ms ease;
+}
+
+:root[data-theme="dark"] .social-button,
+:root[data-theme="dark"] .demo-accounts,
+:root[data-theme="dark"] .modal-content {
+    border-color: var(--border-soft);
+    background: var(--login-surface-soft);
+    color: var(--login-heading);
+}
+
+:root[data-theme="dark"] .divider span {
+    background: rgba(201, 214, 220, 0.22);
 }
 
 .social-button:hover {

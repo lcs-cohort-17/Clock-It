@@ -59,7 +59,6 @@ sort($typeList);
             <div
                 class="container-fluid py-4 px-4"
                 x-data="attendancePage()"
-                x-effect="window.ExportCSVButton && window.ExportCSVButton.setRows(filteredClockEvents)"
                 x-cloak
             >
 
@@ -70,30 +69,25 @@ sort($typeList);
                         <p class="page-subtitle">Full clock-event history with override and audit trail.</p>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
-                        <!-- Request Leave/Sick — Ticket 1 -->
-                        <button class="request-btn" @click="openModal()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                            Request Leave/Sick
-                        </button>
-
-                        <div aria-label="Export CSV">
-                            <?php include __DIR__ . '/../partials/export_csv_button.php'; ?>
-                        </div>
-                    </div>
+                    <button class="export-btn" @click="activeTab === 'audit-trail' ? exportAuditCSV() : exportClockEventsCSV()" :aria-label="activeTab === 'audit-trail' ? 'Export audit trail as CSV' : 'Export attendance logs as CSV'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        <span x-text="activeTab === 'audit-trail' ? 'Export Audit Trail' : 'Export CSV'"></span>
+                    </button>
                 </div>
 
                 <!-- ── Tab toggle ────────────────────────────── -->
-                <div class="tab-group mb-3" role="tablist">
+                <div class="tab-group btn-group mb-3" role="tablist">
                     <button
                         class="tab-btn"
                         :class="{ active: activeTab === 'clock-events' }"
                         @click="activeTab = 'clock-events'"
                         role="tab"
                         :aria-selected="activeTab === 'clock-events'"
-                    >Clock events</button>
+                    >Clock Events</button>
 
                     <button
                         class="tab-btn"
@@ -101,7 +95,7 @@ sort($typeList);
                         @click="activeTab = 'audit-trail'"
                         role="tab"
                         :aria-selected="activeTab === 'audit-trail'"
-                    >Audit trail</button>
+                    >Audit Trail</button>
                 </div>
 
 
@@ -126,7 +120,7 @@ sort($typeList);
                         <div class="row g-3 align-items-center">
 
                             <!-- Search -->
-                            <div class="col-12 col-md-5">
+                            <div class="col-12 col-md-8">
                                 <div class="search-wrapper">
                                     <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                         <circle cx="11" cy="11" r="8"/>
@@ -142,66 +136,8 @@ sort($typeList);
                                 </div>
                             </div>
 
-                            <!-- All staff dropdown -->
-                            <div class="col-12 col-md-4">
-                                <span class="visually-hidden">Staff Filter</span>
-                                <div class="custom-dropdown" @click.away="staffDropdownOpen = false">
-                                    <button
-                                        class="custom-dropdown-btn"
-                                        @click="staffDropdownOpen = !staffDropdownOpen"
-                                        :aria-expanded="staffDropdownOpen"
-                                        aria-haspopup="listbox"
-                                    >
-                                        <span x-text="staffFilter || 'All staff'"></span>
-                                        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <polyline points="6 9 12 15 18 9"/>
-                                        </svg>
-                                    </button>
-
-                                    <div
-                                        class="custom-dropdown-menu"
-                                        x-show="staffDropdownOpen"
-                                        x-transition:enter="transition ease-out duration-100"
-                                        x-transition:enter-start="opacity-0 -translate-y-1"
-                                        x-transition:enter-end="opacity-100 translate-y-0"
-                                        x-transition:leave="transition ease-in duration-75"
-                                        x-transition:leave-start="opacity-100 translate-y-0"
-                                        x-transition:leave-end="opacity-0 -translate-y-1"
-                                        role="listbox"
-                                    >
-                                        <div
-                                            class="custom-dropdown-item"
-                                            :class="{ selected: staffFilter === '' }"
-                                            @click="staffFilter = ''; staffDropdownOpen = false"
-                                            role="option"
-                                            :aria-selected="staffFilter === ''"
-                                        >
-                                            <svg class="item-check" :class="{ hidden: staffFilter !== '' }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <polyline points="20 6 9 17 4 12"/>
-                                            </svg>
-                                            All staff
-                                        </div>
-
-                                        <?php foreach ($staffList as $staff): ?>
-                                        <div
-                                            class="custom-dropdown-item"
-                                            :class="{ selected: staffFilter === <?= json_encode($staff) ?> }"
-                                            @click="staffFilter = '<?= htmlspecialchars($staff, ENT_QUOTES) ?>'; staffDropdownOpen = false"
-                                            role="option"
-                                            :aria-selected="staffFilter === <?= json_encode($staff) ?>"
-                                        >
-                                            <svg class="item-check" :class="{ hidden: staffFilter !== <?= json_encode($staff) ?> }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <polyline points="20 6 9 17 4 12"/>
-                                            </svg>
-                                            <?= htmlspecialchars($staff) ?>
-                                        </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- All statuses dropdown -->
-                            <div class="col-12 col-md-3">
+                            <div class="col-12 col-md-4">
                                 <span class="visually-hidden">Status Filter</span>
                                 <div class="custom-dropdown" @click.away="statusDropdownOpen = false">
                                     <button
@@ -273,13 +209,12 @@ sort($typeList);
                                     <th scope="col">Device</th>
                                     <th scope="col">Location</th>
                                     <th scope="col">Sync</th>
-                                    <th scope="col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="filteredClockEvents.length === 0">
                                     <tr>
-                                        <td colspan="7" class="no-records">No records.</td>
+                                        <td colspan="6" class="no-records">No records.</td>
                                     </tr>
                                 </template>
 
@@ -300,12 +235,6 @@ sort($typeList);
                                                 }"
                                                 x-text="event.sync"
                                             ></span>
-                                        </td>
-                                        <td>
-                                            <button class="action-btn" :aria-label="'Edit ' + event.staff + ' record'">
-                                                <i class="bi bi-pencil" aria-hidden="true"></i>
-                                                Edit
-                                            </button>
                                         </td>
                                     </tr>
                                 </template>
@@ -328,22 +257,10 @@ sort($typeList);
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
                 >
-                    <!-- Export audit button -->
-                    <div class="d-flex justify-content-end mb-2">
-                        <button class="export-btn" @click="exportAuditCSV()" aria-label="Export audit trail as CSV">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="7 10 12 15 17 10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                            Export audit
-                        </button>
-                    </div>
-
                     <!-- Audit trail table -->
                     <div class="data-card">
                         <div class="table-responsive">
-                        <table class="data-table" aria-label="Audit trail">
+                        <table class="data-table table-striped" aria-label="Audit trail">
                             <thead>
                                 <tr>
                                     <th scope="col">
@@ -369,15 +286,17 @@ sort($typeList);
                                             </span>
                                         </button>
                                     </th>
-                                    <th scope="col">Actor</th>
+                                    <th scope="col">Admin Name</th>
                                     <th scope="col">Action</th>
                                     <th scope="col">Details</th>
+                                    <th scope="col">Old Value</th>
+                                    <th scope="col">New Value</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="sortedAuditTrail.length === 0">
                                     <tr>
-                                        <td colspan="4" class="no-records">No records.</td>
+                                        <td colspan="6" class="no-records">No records.</td>
                                     </tr>
                                 </template>
 
@@ -398,6 +317,8 @@ sort($typeList);
                                             ></span>
                                         </td>
                                         <td x-text="entry.details"></td>
+                                        <td x-text="entry.oldValue"></td>
+                                        <td x-text="entry.newValue"></td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -542,7 +463,6 @@ sort($typeList);
             <!-- ═══════════════════════════════════════════════
                  Alpine.js component — defined in attendance_log_page.js.
                  ═══════════════════════════════════════════════ -->
-            <script src="<?= e(app_url('/assets/js/export_csv_button.js')) ?>"></script>
             <script src="<?= e(app_url('/assets/js/attendance_log_page.js')) ?>"></script>
 
         </main>

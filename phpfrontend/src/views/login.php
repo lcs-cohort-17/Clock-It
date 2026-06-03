@@ -33,6 +33,14 @@ $staffRoute = app_url('/staff-dashboard');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title ?? 'Login | Clock-It', ENT_QUOTES, 'UTF-8') ?></title>
+    <script>
+        (() => {
+            const savedTheme = localStorage.getItem('theme');
+            const theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+        })();
+    </script>
     <link rel="icon" href="<?= e(app_url('/favicon.svg')) ?>" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/login.css')) ?>">

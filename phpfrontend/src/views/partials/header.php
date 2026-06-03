@@ -30,10 +30,6 @@
                 <i class="bi bi-moon-stars-fill theme-icon theme-icon-moon" aria-hidden="true"></i>
             </button>
 
-            <span class="badge bg-success">
-                Online
-            </span>
-
             <span class="badge bg-secondary">
                 <?= $isAdminDashboard ? 'Admin' : 'Staff' ?>
             </span>

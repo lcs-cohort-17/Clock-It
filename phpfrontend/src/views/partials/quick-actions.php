@@ -15,7 +15,7 @@ declare(strict_types=1);
     ?>
 
     <a
-      class="btn btn-<?= e($action['variant']) ?> card dashboard-card quick-action-card rounded-4 border shadow-sm bg-white text-start"
+      class="btn btn-<?= e($action['variant']) ?> card dashboard-card quick-action-card rounded-4 border shadow-sm text-start"
       href="<?= e($href) ?>"
       aria-label="<?= e($label) ?>"
     >
@@ -34,7 +34,7 @@ declare(strict_types=1);
         <?php elseif ($label === 'Attendance Logs'): ?>
           All clock events with full audit trail
         <?php else: ?>
-          <?= $sheetsConnected ? 'Connected' : 'Not connected' ?>
+          Manage users and integrations
         <?php endif; ?>
       </p>
     </a>

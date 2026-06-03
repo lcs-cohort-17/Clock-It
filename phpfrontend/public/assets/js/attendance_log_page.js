@@ -41,6 +41,34 @@
     URL.revokeObjectURL(url);
   }
 
+  function formatClockEventsCSV(events) {
+    var headers = ['Staff Name', 'Event Type', 'Timestamp', 'Device', 'Location', 'Sync Status'];
+
+    function escapeCell(value) {
+      var str = String(value == null ? '' : value);
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+
+    var rows = [headers].concat(
+      events.map(function (event) {
+        return [
+          event.staff,
+          event.type,
+          event.timestamp,
+          event.device,
+          event.location,
+          event.sync
+        ];
+      })
+    );
+
+    return rows
+      .map(function (row) {
+        return row.map(escapeCell).join(',');
+      })
+      .join('\n');
+  }
+
   // ── Component factory ────────────────────────────────────────
   function attendancePage(opts) {
     opts = opts || {};
@@ -106,6 +134,13 @@
         var csv      = _utils.formatAuditCSV(this.sortedAuditTrail);
         var date     = new Date().toISOString().split('T')[0];
         var filename = 'audit_trail_' + date + '.csv';
+        (_download || triggerDownload)(csv, filename);
+      },
+
+      exportClockEventsCSV: function (_download) {
+        var csv      = formatClockEventsCSV(this.filteredClockEvents);
+        var date     = new Date().toISOString().split('T')[0];
+        var filename = 'attendance_logs_' + date + '.csv';
         (_download || triggerDownload)(csv, filename);
       },
 
