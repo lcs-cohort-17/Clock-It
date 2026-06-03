@@ -1,258 +1,160 @@
 <?php
 // src/services/GoogleSheetsService.php
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+$autoload = __DIR__ . '/../../vendor/autoload.php';
+if (file_exists($autoload)) {
+    require_once $autoload;
+}
 
 class GoogleSheetsService
 {
     private bool $connected = false;
     private ?Google_Service_Sheets $sheetsService = null;
     private ?Google_Service_Drive $driveService = null;
+    private string $spreadsheetId = '';
 
-    public function __construct()
+    public function __construct(?string $spreadsheetId = null)
     {
-        $credentialsPath = __DIR__ . '/../../credentials.json';
+        $this->spreadsheetId = trim((string) ($spreadsheetId ?? $this->loadSpreadsheetId()));
 
-        if (!file_exists($credentialsPath)) {
+        if (!class_exists('Google_Client')) {
+            error_log('Google API PHP client not installed. Run composer install in phpbackend.');
+            return;
+        }
+
+        $credentialsPath = $this->credentialsPath();
+
+        if (!is_file($credentialsPath)) {
+            error_log('Google service account credentials not found at ' . $credentialsPath);
             return;
         }
 
         try {
             $client = new Google_Client();
+            $client->setApplicationName('Clock-It Attendance');
             $client->setAuthConfig($credentialsPath);
-            $client->addScope(Google_Service_Sheets::SPREADSHEETS);
-            $client->addScope(Google_Service_Drive::DRIVE);
+            $client->setScopes([
+                Google_Service_Sheets::SPREADSHEETS,
+                Google_Service_Drive::DRIVE_FILE,
+            ]);
 
             $this->sheetsService = new Google_Service_Sheets($client);
             $this->driveService  = new Google_Service_Drive($client);
             $this->connected     = true;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->connected = false;
-            error_log('Google Sheets Service connection failed: ' . $e->getMessage());
+            error_log('Google Sheets connection failed: ' . $e->getMessage());
         }
     }
+
+    // ── Public API ───────────────────────────────────────────────────────────
 
     public function isConnected(): bool
     {
         return $this->connected;
     }
 
+    public function spreadsheetId(): string
+    {
+        return $this->spreadsheetId;
+    }
+
+    public function setSpreadsheetId(string $spreadsheetId): void
+    {
+        $this->spreadsheetId = trim($spreadsheetId);
+    }
+
+    public function readRows(string $range = 'A1:Z'): array
+    {
+        if (!$this->connected || $this->spreadsheetId === '') {
+            return [];
+        }
+
+        try {
+            $response = $this->sheetsService->spreadsheets_values->get($this->spreadsheetId, $range);
+            return $response->getValues() ?? [];
+        } catch (Throwable $e) {
+            error_log('Google Sheets read failed: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function replaceRows(array $rows, string $range = 'A1'): bool
+    {
+        if (!$this->connected || $this->spreadsheetId === '' || empty($rows)) {
+            return false;
+        }
+
+        try {
+            $body       = new Google_Service_Sheets_ValueRange(['values' => $rows]);
+            $clearRange = str_contains($range, '!')
+                ? preg_replace('/!.*/', '!A:Z', $range)
+                : 'A:Z';
+
+            $this->sheetsService->spreadsheets_values->clear(
+                $this->spreadsheetId,
+                $clearRange ?: 'A:Z',
+                new Google_Service_Sheets_ClearValuesRequest()
+            );
+            $this->sheetsService->spreadsheets_values->update(
+                $this->spreadsheetId,
+                $range,
+                $body,
+                ['valueInputOption' => 'USER_ENTERED']
+            );
+            return true;
+        } catch (Throwable $e) {
+            error_log('Google Sheets replace rows failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function appendRows(array $rows, string $range = 'A1'): bool
+    {
+        if (!$this->connected || $this->spreadsheetId === '' || empty($rows)) {
+            return false;
+        }
+
+        try {
+            $body = new Google_Service_Sheets_ValueRange(['values' => $rows]);
+            $this->sheetsService->spreadsheets_values->append(
+                $this->spreadsheetId,
+                $range,
+                $body,
+                [
+                    'valueInputOption' => 'USER_ENTERED',
+                    'insertDataOption' => 'INSERT_ROWS',
+                ]
+            );
+            return true;
+        } catch (Throwable $e) {
+            error_log('Google Sheets append rows failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function createSpreadsheet(string $title): string
     {
-        if (!$this->connected || empty($title)) {
+        if (!$this->connected) {
             return '';
         }
 
         try {
             $spreadsheet = new Google_Service_Sheets_Spreadsheet([
-                'properties' => ['title' => $title]
+                'properties' => ['title' => $title],
             ]);
-
-            $response = $this->sheetsService->spreadsheets->create($spreadsheet);
-            return $response->getSpreadsheetId();
-        } catch (Exception $e) {
-            error_log('Failed to create spreadsheet: ' . $e->getMessage());
+            $response            = $this->sheetsService->spreadsheets->create($spreadsheet);
+            $this->spreadsheetId = (string) $response->getSpreadsheetId();
+            return $this->spreadsheetId;
+        } catch (Throwable $e) {
+            error_log('Google Sheets create spreadsheet failed: ' . $e->getMessage());
             return '';
         }
     }
 
-    public function writeAttendanceData(array $data): bool
+    public function shareReadableByLink(): void
     {
-        if (!$this->connected || empty($data)) {
-            return false;
-        }
-
-        try {
-            // Only try to get sheet ID if GoogleSheetsModel exists
-            if (class_exists('GoogleSheetsModel')) {
-                $sheetId = (new GoogleSheetsModel())->getSheetId();
-            } else {
-                // For testing without database
-                return false;
-            }
-
-            if (empty($sheetId)) {
-                return false;
-            }
-
-            $rows = [['Employee ID', 'Event Type', 'Timestamp']];
-            foreach ($data as $record) {
-                $rows[] = [
-                    $record['employee_id'] ?? '',
-                    $record['event_type']  ?? '',
-                    $record['timestamp']   ?? date('Y-m-d H:i:s'),
-                ];
-            }
-
-            $body = new Google_Service_Sheets_ValueRange(['values' => $rows]);
-            $this->sheetsService->spreadsheets_values->update(
-                $sheetId,
-                'A1',
-                $body,
-                ['valueInputOption' => 'RAW']
-            );
-
-            return true;
-        } catch (Exception $e) {
-            error_log('Failed to write attendance data: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    public function exportAttendance(array $attendanceData): string
-    {
-        if (!$this->connected) {
-            throw new RuntimeException('Google Sheets is not connected. Check credentials.json.');
-        }
-
-        if (empty($attendanceData)) {
-            throw new InvalidArgumentException('No attendance data supplied for export.');
-        }
-
-        $sheetId = $this->getConfiguredSpreadsheetId();
-        $usedConfiguredSheet = !empty($sheetId);
-
-        if (empty($sheetId)) {
-            $sheetId = $this->createSpreadsheet('Attendance Export ' . date('Y-m-d H:i:s'));
-
-            if (!empty($sheetId) && class_exists('GoogleSheetsModel')) {
-                (new GoogleSheetsModel())->saveSheetId($sheetId);
-            }
-        }
-
-        if (empty($sheetId)) {
-            throw new RuntimeException('Unable to access or create a Google Sheet.');
-        }
-
-        $isLogExport = array_key_exists('timestamp', $attendanceData[0] ?? [])
-            || array_key_exists('event_type', $attendanceData[0] ?? []);
-
-        if ($isLogExport) {
-            $rows = [[
-                'Staff Name',
-                'Event Type',
-                'Timestamp',
-                'Device',
-                'Location',
-                'Sync Status',
-            ]];
-
-            foreach ($attendanceData as $record) {
-                $rows[] = [
-                    $record['staff_name'] ?? $record['staff'] ?? '',
-                    $record['type'] ?? $record['event_type'] ?? '',
-                    $record['timestamp'] ?? '',
-                    $record['device'] ?? '',
-                    $record['location'] ?? '',
-                    $record['sync'] ?? $record['sync_status'] ?? '',
-                ];
-            }
-        } else {
-            $rows = [[
-                'Staff Name',
-                'Date',
-                'Clock In',
-                'Clock Out',
-                'Total Hours',
-            ]];
-
-            foreach ($attendanceData as $record) {
-                $rows[] = [
-                    $record['staff_name'] ?? '',
-                    $record['date'] ?? '',
-                    $record['clock_in'] ?? '',
-                    $record['clock_out'] ?? '',
-                    $record['total_hours'] ?? '',
-                ];
-            }
-        }
-
-        $wroteRows = $this->writeRows($sheetId, $rows);
-
-        if (!$wroteRows && $usedConfiguredSheet) {
-            $sheetId = $this->createSpreadsheet('Attendance Export ' . date('Y-m-d H:i:s'));
-
-            if (!empty($sheetId) && class_exists('GoogleSheetsModel')) {
-                (new GoogleSheetsModel())->saveSheetId($sheetId);
-            }
-
-            $wroteRows = !empty($sheetId) && $this->writeRows($sheetId, $rows);
-        }
-
-        if (!$wroteRows) {
-            throw new RuntimeException('Unable to write attendance data to Google Sheet.');
-        }
-
-        $this->makeReadableByLink($sheetId);
-
-        return $this->generateSheetUrl($sheetId);
-    }
-
-    private function getConfiguredSpreadsheetId(): string
-    {
-        if (class_exists('GoogleSheetsModel')) {
-            $modelSheetId = (new GoogleSheetsModel())->getSheetId();
-
-            if (!empty($modelSheetId)) {
-                return $modelSheetId;
-            }
-        }
-
-        return trim(
-            $_ENV['GOOGLE_SHEETS_SPREADSHEET_ID']
-            ?? getenv('GOOGLE_SHEETS_SPREADSHEET_ID')
-            ?: ''
-        );
-    }
-
-    private function writeRows(string $sheetId, array $rows): bool
-    {
-        try {
-            $body = new Google_Service_Sheets_ValueRange(['values' => $rows]);
-
-            $this->sheetsService->spreadsheets_values->update(
-                $sheetId,
-                'A1',
-                $body,
-                ['valueInputOption' => 'RAW']
-            );
-
-            return true;
-        } catch (Exception $e) {
-            error_log('Failed to write rows to spreadsheet: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    public function appendAttendanceRows(string $sheetId, array $rows): bool
-    {
-        if (!$this->connected || empty($sheetId) || empty($rows)) {
-            return false;
-        }
-
-        try {
-            $body = new Google_Service_Sheets_ValueRange(['values' => $rows]);
-
-            $this->sheetsService->spreadsheets_values->append(
-                $sheetId,
-                'A1',
-                $body,
-                [
-                    'valueInputOption'  => 'RAW',
-                    'insertDataOption'  => 'INSERT_ROWS',
-                ]
-            );
-
-            return true;
-        } catch (Exception $e) {
-            error_log('Failed to append rows to spreadsheet: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    private function makeReadableByLink(string $sheetId): void
-    {
-        if (!$this->driveService) {
+        if (!$this->driveService || $this->spreadsheetId === '') {
             return;
         }
 
@@ -261,48 +163,107 @@ class GoogleSheetsService
                 'type' => 'anyone',
                 'role' => 'reader',
             ]);
-
-            $this->driveService->permissions->create($sheetId, $permission);
-        } catch (Exception $e) {
-            error_log('Failed to update spreadsheet sharing: ' . $e->getMessage());
+            $this->driveService->permissions->create($this->spreadsheetId, $permission);
+        } catch (Throwable $e) {
+            error_log('Google Sheets share permission failed: ' . $e->getMessage());
         }
     }
 
-    public function readAttendanceData(): array
+    public function url(): string
     {
-        if (!$this->connected) {
-            return [];
-        }
-
-        try {
-            if (class_exists('GoogleSheetsModel')) {
-                $sheetId = (new GoogleSheetsModel())->getSheetId();
-            } else {
-                return [];
-            }
-
-            if (empty($sheetId)) {
-                return [];
-            }
-
-            $response = $this->sheetsService->spreadsheets_values->get(
-                $sheetId,
-                'A1:Z'
-            );
-
-            return $response->getValues() ?? [];
-        } catch (Exception $e) {
-            error_log('Failed to read attendance data: ' . $e->getMessage());
-            return [];
-        }
+        return $this->spreadsheetId === ''
+            ? ''
+            : 'https://docs.google.com/spreadsheets/d/' . $this->spreadsheetId;
     }
 
-    public function generateSheetUrl(string $sheetId): string
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    /**
+     * Read a value from the .env file or fall back to a real PHP env var /
+     * $_ENV / $_SERVER — in that priority order.
+     *
+     * This makes GoogleSheetsService self-contained: it no longer depends on
+     * Database::env(), which is not guaranteed to exist.
+     */
+    private static function env(string $key): string
     {
-        if (empty($sheetId)) {
-            return '';
+        // 1. Try to parse the .env file that sits two directories above this file
+        //    (phpbackend/.env).  We parse it ourselves so this class has no
+        //    dependency on any framework or the Database class.
+        static $envCache = null;
+
+        if ($envCache === null) {
+            $envCache = [];
+            $envFile  = __DIR__ . '/../../.env';
+
+            if (is_file($envFile)) {
+                foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+                    $line = trim($line);
+                    // Skip comments and lines without an = sign
+                    if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
+                        continue;
+                    }
+                    [$envKey, $envVal] = explode('=', $line, 2);
+                    $envKey = trim($envKey);
+                    // Strip optional surrounding quotes from the value
+                    $envVal = trim(trim($envVal), '"\'');
+                    if ($envKey !== '') {
+                        $envCache[$envKey] = $envVal;
+                    }
+                }
+            }
         }
 
-        return "https://docs.google.com/spreadsheets/d/{$sheetId}";
+        if (isset($envCache[$key]) && $envCache[$key] !== '') {
+            return $envCache[$key];
+        }
+
+        // 2. Fall back to putenv() / $_ENV / $_SERVER (set by the web server or CLI)
+        $value = getenv($key);
+        if ($value !== false && $value !== '') {
+            return $value;
+        }
+
+        return (string) ($_ENV[$key] ?? $_SERVER[$key] ?? '');
+    }
+
+    private function credentialsPath(): string
+    {
+        $configured = self::env('GOOGLE_APPLICATION_CREDENTIALS')
+            ?: self::env('GOOGLE_SHEETS_CREDENTIALS_PATH')
+            ?: '';
+
+        if ($configured !== '') {
+            // Absolute path → use as-is; relative path → resolve from project root
+            if (str_starts_with($configured, DIRECTORY_SEPARATOR)
+                || (strlen($configured) > 1 && $configured[1] === ':') // Windows C:\...
+            ) {
+                return $configured;
+            }
+            return realpath(__DIR__ . '/../../' . $configured)
+                ?: (__DIR__ . '/../../' . $configured);
+        }
+
+        // Default: credentials.json in the project root (phpbackend/)
+        return __DIR__ . '/../../credentials.json';
+    }
+
+    private function loadSpreadsheetId(): string
+    {
+        $fromEnv = self::env('GOOGLE_SHEETS_SPREADSHEET_ID');
+        if ($fromEnv !== '') {
+            return $fromEnv;
+        }
+
+        // Optional fallback: src/config/Google.php returning ['spreadsheet_id' => '...']
+        $configFile = __DIR__ . '/../config/Google.php';
+        if (is_file($configFile)) {
+            $config = require $configFile;
+            if (!empty($config['spreadsheet_id'])) {
+                return (string) $config['spreadsheet_id'];
+            }
+        }
+
+        return '';
     }
 }

@@ -5,11 +5,14 @@ document.addEventListener('alpine:init', () => {
     return {
       onsiteStaff: [],
       recentActivity: [],
+      sheetsConnected: null,
+      sheetsUrl: '',
       initialLoading: true,
       refreshing: false,
       initialized: false,
       error: null,
       pollTimer: null,
+
       initials(name) {
         return String(name || '')
           .trim()
@@ -20,65 +23,78 @@ document.addEventListener('alpine:init', () => {
           .slice(0, 2)
           .toUpperCase();
       },
+
       normalizePayload(payload) {
         return Array.isArray(payload) ? payload : payload?.data || [];
       },
+
       async fetchOnsiteStaff() {
         try {
           this.error = null;
-          const response = await fetch(`${basePath}/api/onsite.php`, { headers: { Accept: 'application/json' } });
-
-          if (!response.ok) {
-            throw new Error('Unable to fetch onsite staff.');
-          }
-
+          const response = await fetch(`${basePath}/api/admin/onsite`, {
+            headers: { Accept: 'application/json' },
+          });
+          if (!response.ok) throw new Error('Unable to fetch onsite staff.');
           this.onsiteStaff = this.normalizePayload(await response.json());
-        } catch (error) {
+        } catch {
           this.error = 'Unable to load onsite staff right now.';
           this.onsiteStaff = [];
         }
       },
+
       async fetchRecentActivity() {
         try {
           this.error = null;
-          const response = await fetch(`${basePath}/api/activity.php`, { headers: { Accept: 'application/json' } });
-
-          if (!response.ok) {
-            throw new Error('Unable to fetch recent activity.');
-          }
-
+          const response = await fetch(`${basePath}/api/admin/recent-activity`, {
+            headers: { Accept: 'application/json' },
+          });
+          if (!response.ok) throw new Error('Unable to fetch recent activity.');
           this.recentActivity = this.normalizePayload(await response.json()).slice(0, 10);
-        } catch (error) {
+        } catch {
           this.error = 'Unable to load recent activity right now.';
           this.recentActivity = [];
         }
       },
+
+      async fetchSheetsStatus() {
+        try {
+          const response = await fetch(`${basePath}/api/admin/sheets/status`, {
+            headers: { Accept: 'application/json' },
+          });
+          if (!response.ok) return;
+          const payload = await response.json();
+          this.sheetsConnected = payload.connected ?? false;
+          this.sheetsUrl = payload.sheet_url || '';
+        } catch {
+          this.sheetsConnected = false;
+        }
+      },
+
       async refresh() {
         if (this.refreshing) return;
-
         this.refreshing = true;
         try {
-          await Promise.all([this.fetchOnsiteStaff(), this.fetchRecentActivity()]);
+          await Promise.all([
+            this.fetchOnsiteStaff(),
+            this.fetchRecentActivity(),
+            this.fetchSheetsStatus(),
+          ]);
         } finally {
           this.initialLoading = false;
           this.refreshing = false;
         }
       },
+
       exportOnsiteCSV() {
         if (!this.onsiteStaff.length) {
           window.alert('No onsite staff to export.');
           return;
         }
-
         const rows = [['Name', 'Role', 'Signed in']].concat(
-          this.onsiteStaff.map((staff) => [
-            staff.name,
-            staff.role,
-            staff.signed_in_at || staff.signedInAt || '',
-          ]),
+          this.onsiteStaff.map((s) => [s.name, s.role, s.signed_in_at || s.signedInAt || '']),
         );
         const csv = rows
-          .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
+          .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
           .join('\n');
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -86,12 +102,13 @@ document.addEventListener('alpine:init', () => {
         link.click();
         URL.revokeObjectURL(link.href);
       },
+
       connectSheets() {
-        window.alert('Google Sheets connection is coming soon.');
+        window.open(this.sheetsUrl || 'https://docs.google.com/spreadsheets', '_blank', 'noopener');
       },
+
       init() {
         if (this.initialized) return;
-
         this.initialized = true;
         this.refresh();
         this.pollTimer = setInterval(() => this.refresh(), 60000);
