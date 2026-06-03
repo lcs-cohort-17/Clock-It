@@ -95,12 +95,30 @@ if ($method === 'POST' && $path === '/admin/users') {
     $controller->adminCreatingUser($input);
     exit;
 }
+// PATCH - Soft delete user (set is_active = 0)
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/deactivate$#', $path, $matches)) {
+    $controller->softDeleteUser($matches[1]);
+    exit;
+}
 
-// PATCH - Update user
+// PATCH - Activate user (set is_active = 1)
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/activate$#', $path, $matches)) {
+    $controller->activateUser($matches[1]);
+    exit;
+}
+
+// PATCH - Update user (partial update)
 if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    // Check if this is a deactivate/activate request - if not, it's regular update
+    // The order matters! Put the more specific routes FIRST
     $controller->adminUpdatingUser($matches[1], $input);
     exit;
 }
+// // PATCH - Update user
+// if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+//     $controller->adminUpdatingUser($matches[1], $input);
+//     exit;
+// }
 
 // DELETE - Soft delete user
 if ($method === 'DELETE' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {

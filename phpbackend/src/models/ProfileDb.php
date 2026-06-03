@@ -96,48 +96,54 @@ class ProfileDb implements ProfileModelInterface
             return new ApiResponse(false, null, 'Role must be either staff or admin');
         }
         
-        // Validate employee_id format
-        if ($role === 'staff' && substr($employee_id, 0, 2) !== 'S-') {
-            return new ApiResponse(false, null, 'Staff employee_id must start with S-');
-        }
-        if ($role === 'admin' && substr($employee_id, 0, 2) !== 'A-') {
-            return new ApiResponse(false, null, 'Admin employee_id must start with A-');
-        }
-        
         // Generate plain text password and hash it
         $plainPassword = $this->generatePassword();
+        echo "Generated password: $plainPassword\n"; // Debugging line - remove in production
         $hashedPassword = password_hash($plainPassword, PASSWORD_BCRYPT);
         
         try {
-            // CHANGED: profiles -> users
+            // DON'T validate employee_id format - the trigger will handle it!
+            // Just insert, let the database trigger generate the correct employee_id
+            
             $stmt = $this->db->prepare(
                 "INSERT INTO users (first_name, last_name, employee_id, role, is_active, email, password, img) 
-                 VALUES (:first_name, :last_name, :employee_id, :role, 1, :email, :password, :img)"
+                VALUES (:first_name, :last_name, :employee_id, :role, 1, :email, :password, :img)"
             );
+            
             $stmt->execute([
                 'first_name' => $first_name,
                 'last_name' => $last_name,
-                'employee_id' => $employee_id,
+                'employee_id' => $employee_id,  // Send it, but trigger may override
                 'role' => $role,
                 'email' => $email,
                 'password' => $hashedPassword,
                 'img' => $img
             ]);
             
-            // Get the created record - CHANGED: profiles -> users
-            $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
-            $stmt2->execute(['employee_id' => $employee_id]);
+            // IMPORTANT: Don't search by the employee_id you sent!
+            // Search by email instead (email is unique and won't be changed by trigger)
+            $stmt2 = $this->db->prepare("SELECT * FROM users WHERE email = :email");
+            $stmt2->execute(['email' => $email]);
             $data = $stmt2->fetch(PDO::FETCH_ASSOC);
             
             if ($data === false) {
-                return new ApiResponse(false, null, 'Failed to retrieve created profile');
+                // If email doesn't work, try the most recent user
+                $stmt3 = $this->db->prepare("SELECT * FROM users ORDER BY created_at DESC LIMIT 1");
+                $stmt3->execute();
+                $data = $stmt3->fetch(PDO::FETCH_ASSOC);
             }
             
-            // Return plain text password to admin (not the hash)
+            if ($data === false) {
+                return new ApiResponse(false, null, 'Failed to retrieve created profile for email: ' . $email);
+            }
+            
+            // Return plain text password to admin
             $data['password'] = $plainPassword;
             
             return new ApiResponse(true, $data);
+            
         } catch (PDOException $error) {
+            error_log("PDOException: " . $error->getMessage());
             return new ApiResponse(false, null, $error->getMessage());
         }
     }
@@ -215,6 +221,28 @@ class ProfileDb implements ProfileModelInterface
             // CHANGED: profiles -> users
             $stmt = $this->db->prepare("UPDATE users SET is_active = 0 WHERE employee_id = :employee_id");
             $stmt->execute(['employee_id' => $employee_id]);
+            
+            if ($stmt->rowCount() === 0) {
+                return new ApiResponse(false, null, 'Profile not found');
+            }
+            
+            // Get the updated record - CHANGED: profiles -> users
+            $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
+            $stmt2->execute(['employee_id' => $employee_id]);
+            $data = $stmt2->fetch(PDO::FETCH_ASSOC);
+            
+            return new ApiResponse(true, $data, null, 'profile deleted successfully');
+        } catch (PDOException $error) {
+            return new ApiResponse(false, null, $error->getMessage());
+        }
+    }
+
+    public function softDeleteUserDb(string $employee_id, bool $is_active): ApiResponse
+    {
+        try {
+            // CHANGED: profiles -> users
+            $stmt = $this->db->prepare("UPDATE users SET is_active = :is_active WHERE employee_id = :employee_id");
+            $stmt->execute(['employee_id' => $employee_id, 'is_active' => $is_active]);
             
             if ($stmt->rowCount() === 0) {
                 return new ApiResponse(false, null, 'Profile not found');
