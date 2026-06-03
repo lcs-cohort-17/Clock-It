@@ -67,7 +67,7 @@ interface ProfileModelInterface {
      * @param string $employeeId Employee ID
      * @return ApiResponse MUST return ApiResponse with new plain text password
      */
-    public function resetPasswordDb(string $employee_id): ApiResponse;
+    // public function resetPasswordDb(string $employee_id): ApiResponse;
     
     /**
      * Update password (when user changes their own password)
@@ -78,4 +78,7 @@ interface ProfileModelInterface {
     public function updatePasswordDb(string $employee_id, string $hashedPassword): ApiResponse;
     public function getCurrentUserProfileDb(string $employee_id): ApiResponse;
     public function clearCacheDb(string $employee_id): ApiResponse;
+    public function getSessionTimeoutDb(): ApiResponse;
+    public function forgotPasswordDb(string $email): ApiResponse;
+    public function resetPasswordDb(string $token, string $newPassword): ApiResponse;
 }
