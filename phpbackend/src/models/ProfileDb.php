@@ -171,7 +171,43 @@ class ProfileDb implements ProfileModelInterface
             return new ApiResponse(false, null, $error->getMessage());
         }
     }
-    
+
+       // ─── GET CURRENT USER PROFILE (for logged-in user) ─────────────────
+    public function getCurrentUserProfileDb(string $employee_id): ApiResponse
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT user_id, first_name, last_name, employee_id, role, is_active, email, img, created_at FROM users WHERE employee_id = :employee_id");
+            $stmt->execute(['employee_id' => $employee_id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($data === false) {
+                return new ApiResponse(false, null, 'User profile not found');
+            }
+            
+            // Capitalize first name
+            if (isset($data['first_name']) && !empty($data['first_name'])) {
+                $data['first_name'] = $this->capitalizeFirstName($data['first_name']);
+            }
+            
+            // Build full profile image URL if img exists
+            if (isset($data['img']) && !empty($data['img'])) {
+                // Get base URL from environment or use default
+                $baseUrl = $_ENV['BASE_URL'] ?? 'http://localhost:8000';
+                $data['img'] = $baseUrl . '/uploads/' . $data['img'];
+            } else {
+                $data['img'] = null;
+            }
+            
+            // Remove sensitive fields
+            unset($data['password']);
+            
+            return new ApiResponse(true, $data);
+            
+        } catch (PDOException $error) {
+            return new ApiResponse(false, null, $error->getMessage());
+        }
+    }    
+
     // ─── UPDATE USER ───────────────────────────────────────────────
     
     public function adminUpdatingUserDb(string $employee_id, array $updates): ApiResponse

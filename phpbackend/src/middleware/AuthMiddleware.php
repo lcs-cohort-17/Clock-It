@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Middleware;
+namespace Middleware;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -195,31 +195,32 @@ class AuthMiddleware
      */
     private function decodeToken(array $request): array
     {
-        $authHeader = $request['headers']['authorization'] ?? null;
-
-        if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
+        // Try both common cases
+        $authHeader = $request['headers']['Authorization'] ?? 
+                    $request['headers']['authorization'] ?? 
+                    null;
+        
+        error_log("DEBUG: Looking for auth header, found: " . ($authHeader ? substr($authHeader, 0, 30) : 'null'));
+        
+        if (!$authHeader || !preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
             return ['error' => 'Access token required', 'status' => 401];
         }
 
-        $token = explode(' ', $authHeader)[1];
-
+        $token = $matches[1];
+        
         try {
             $decoded = JWT::decode($token, new Key($this->jwtSecret, 'HS256'));
-
+            
             return [
                 'user' => [
-                    'userId'      => $decoded->userId,
-                    'email'       => $decoded->email,
-                    'role'        => $decoded->role,
-                    'employee_id' => $decoded->employee_id,
+                    'userId'      => $decoded->user_id ?? $decoded->userId ?? null,
+                    'email'       => $decoded->email ?? null,
+                    'role'        => $decoded->role ?? null,
+                    'employee_id' => $decoded->employee_id ?? null,
                 ],
             ];
-
-        } catch (ExpiredException $e) {
-            return ['error' => 'Token has expired', 'status' => 403];
-        } catch (SignatureInvalidException $e) {
-            return ['error' => 'Invalid token', 'status' => 403];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
+            error_log("JWT Decode Error: " . $e->getMessage());
             return ['error' => 'Invalid token', 'status' => 403];
         }
     }

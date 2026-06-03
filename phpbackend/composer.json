@@ -11,7 +11,8 @@
             "Config\\": "src/config/",
             "Controllers\\": "src/controllers/",
             "Models\\": "src/models/",
-            "Types\\": "src/types/"
+            "Types\\": "src/types/",
+            "Middleware\\": "src/middleware/"
         }
     },
     "autoload-dev": {

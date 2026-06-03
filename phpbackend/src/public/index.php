@@ -1,10 +1,9 @@
 <?php
-
 // =============================================
 // ERROR HANDLING
 // =============================================
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Change to 1 in development
+ini_set('display_errors', 1); // Set to 1 for debugging
 
 // Global exception handler
 set_exception_handler(function ($exception) {
@@ -31,6 +30,13 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
 // =============================================
+// MANUAL AUTOLOAD FIX FOR MIDDLEWARE
+// =============================================
+if (!class_exists('Middleware\AuthMiddleware')) {
+    require_once __DIR__ . '/../middleware/AuthMiddleware.php';
+}
+
+// =============================================
 // CORS HEADERS
 // =============================================
 header('Access-Control-Allow-Origin: *');
@@ -45,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // =============================================
-// ROUTING - Use your own simple router
+// ROUTING
 // =============================================
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -59,8 +65,39 @@ error_log("[DEBUG] $method $path");
 // Get JSON input for POST/PATCH/PUT requests
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
+// Build request array for middleware
+$request = [
+    'headers' => getallheaders(),
+    'method' => $method,
+    'path' => $path,
+    'query' => $_GET,
+    'body' => $input
+];
+
 // =============================================
-// TEST ROUTE
+// DEBUG: Check headers (MOVED HERE - AFTER $request is defined!)
+// =============================================
+error_log("DEBUG: All headers: " . print_r(getallheaders(), true));
+error_log("DEBUG: Authorization header: " . ($request['headers']['Authorization'] ?? 'NOT FOUND'));
+error_log("DEBUG: authorization header: " . ($request['headers']['authorization'] ?? 'NOT FOUND'));
+
+// =============================================
+// PROFILE ROUTES
+// =============================================
+
+use App\Models\ProfileDb;
+use Controllers\ProfileController;
+use Middleware\AuthMiddleware;
+
+// Initialize JWT secret
+$jwtSecret = $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this';
+$authMiddleware = new AuthMiddleware($jwtSecret);
+
+$model = new ProfileDb();
+$controller = new ProfileController($model);
+
+// =============================================
+// TEST ROUTE (PUBLIC - no auth needed)
 // =============================================
 if ($method === 'GET' && $path === '/test') {
     echo json_encode(['message' => 'Test route works!']);
@@ -68,63 +105,8 @@ if ($method === 'GET' && $path === '/test') {
 }
 
 // =============================================
-// PROFILE ROUTES - Your existing routes
+// PUBLIC ROUTES (no token required)
 // =============================================
-
-// Load your controllers and routes
-use App\Models\ProfileDb;
-use Controllers\ProfileController;
-
-$model = new ProfileDb();
-$controller = new ProfileController($model);
-
-// GET all users
-if ($method === 'GET' && $path === '/admin/users') {
-    $controller->adminGettingAllUsers();
-    exit;
-}
-
-// GET user by employee_id
-if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
-    $controller->getProfileById($matches[1]);
-    exit;
-}
-
-// POST - Create user
-if ($method === 'POST' && $path === '/admin/users') {
-    $controller->adminCreatingUser($input);
-    exit;
-}
-// PATCH - Soft delete user (set is_active = 0)
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/deactivate$#', $path, $matches)) {
-    $controller->softDeleteUser($matches[1]);
-    exit;
-}
-
-// PATCH - Activate user (set is_active = 1)
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/activate$#', $path, $matches)) {
-    $controller->activateUser($matches[1]);
-    exit;
-}
-
-// PATCH - Update user (partial update)
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
-    // Check if this is a deactivate/activate request - if not, it's regular update
-    // The order matters! Put the more specific routes FIRST
-    $controller->adminUpdatingUser($matches[1], $input);
-    exit;
-}
-// // PATCH - Update user
-// if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
-//     $controller->adminUpdatingUser($matches[1], $input);
-//     exit;
-// }
-
-// DELETE - Soft delete user
-if ($method === 'DELETE' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
-    $controller->adminDeletingUser($matches[1]);
-    exit;
-}
 
 // POST - Login
 if ($method === 'POST' && $path === '/login') {
@@ -132,21 +114,134 @@ if ($method === 'POST' && $path === '/login') {
     exit;
 }
 
-// POST - Clear cache
-if ($method === 'POST' && $path === '/admin/users/clear-cache') {
-    $controller->clearCache($input);
+// =============================================
+// AUTHENTICATED ROUTES (require token)
+// =============================================
+
+// GET - Get current user's own profile
+if ($method === 'GET' && $path === '/user/profile') {
+    $authResult = $authMiddleware->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->getCurrentUserProfile($request);
     exit;
 }
 
-// PATCH - Update password
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/update-password$#', $path, $matches)) {
-    $controller->updatePassword($matches[1], $input);
+// GET all users (admin only)
+if ($method === 'GET' && $path === '/admin/users') {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->adminGettingAllUsers();
+    exit;
+}
+
+// PATCH - Soft delete user
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/deactivate$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->softDeleteUser($matches[1]);
+    exit;
+}
+
+// PATCH - Activate user
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/activate$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->activateUser($matches[1]);
+    exit;
+}
+
+// GET user by employee_id (admin only)
+if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->getProfileById($matches[1]);
+    exit;
+}
+
+// PATCH - Update user (admin only)
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->adminUpdatingUser($matches[1], $input);
+    exit;
+}
+
+// POST - Create user (admin only)
+if ($method === 'POST' && $path === '/admin/users') {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->adminCreatingUser($input);
     exit;
 }
 
 // PATCH - Reset password (admin)
 if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
     $controller->resetPassword($matches[1]);
+    exit;
+}
+
+// PATCH - Update own password (requires auth)
+if ($method === 'PATCH' && $path === '/user/update-password') {
+    $authResult = $authMiddleware->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $employee_id = $request['user']['employee_id'] ?? null;
+    if (!$employee_id) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'User not found']);
+        exit;
+    }
+    $controller->updatePassword($employee_id, $input);
+    exit;
+}
+
+// POST - Clear cache (requires auth)
+if ($method === 'POST' && $path === '/user/cache/clear') {
+    $authResult = $authMiddleware->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    // Pass empty body and the authenticated user
+    $controller->clearCache([], $request['user'] ?? null);
     exit;
 }
 
