@@ -47,6 +47,16 @@ function app_url(string $path = '/'): string
     return $basePath . '/' . ltrim($path, '/');
 }
 
+function route_url(string $path = '/'): string
+{
+    return app_url($path);
+}
+
+function asset_url(string $assetPath = '/'): string
+{
+    return app_url(ltrim($assetPath, '/'));
+}
+
 function view(string $view, array $data = []): void
 {
     global $basePath;
@@ -419,6 +429,19 @@ switch ($path) {
         view('admin/admin_settings', compact(
             'title',
             'user',
+            'isAdminDashboard'
+        ));
+        break;
+
+    case '/admin-dashboard/qr-generator':
+        $title = 'QR Generator';
+        $user = current_user_or($adminUser, 'admin');
+        $isAdminDashboard = true;
+
+        view('admin/qr_code_generator', compact(
+            'title',
+            'user',
+            'stats',
             'isAdminDashboard'
         ));
         break;
