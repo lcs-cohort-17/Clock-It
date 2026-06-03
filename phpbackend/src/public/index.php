@@ -88,13 +88,27 @@ error_log("DEBUG: authorization header: " . ($request['headers']['authorization'
 use App\Models\ProfileDb;
 use Controllers\ProfileController;
 use Middleware\AuthMiddleware;
+use Config\Database;  // ADD THIS!
 
-// Initialize JWT secret
+// Initialize JWT secret AND database connection for timeout checking
 $jwtSecret = $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this';
-$authMiddleware = new AuthMiddleware($jwtSecret);
+$db = Database::getInstance()->getConnection();  // Get database connection
+$authMiddleware = new AuthMiddleware($jwtSecret, $db);  // Pass db to middleware
 
 $model = new ProfileDb();
 $controller = new ProfileController($model);
+
+// POST - Forgot password (public)
+if ($method === 'POST' && $path === '/forgot-password') {
+    $controller->forgotPassword($input);
+    exit;
+}
+
+// POST - Reset password (public)
+if ($method === 'POST' && $path === '/reset-password') {
+    $controller->resetPasswordWithToken($input);
+    exit;
+}
 
 // =============================================
 // TEST ROUTE (PUBLIC - no auth needed)
