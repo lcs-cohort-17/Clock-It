@@ -1,5 +1,3 @@
-//acts as  app.listen() and Express's router does in your old Node setup — the entry point that catches everything.
-
 RewriteEngine On
 RewriteBase /
 
