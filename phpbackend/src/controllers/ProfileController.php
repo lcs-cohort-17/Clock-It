@@ -220,6 +220,39 @@ class ProfileController
         }
     }
 
+        // ─── SOFT DELETE (SET is_active = 0) ───────────────────────────────
+    public function softDeleteUser(string $employee_id): void
+    {
+        try {
+            $result = $this->profileModel->softDeleteUserDb($employee_id, false);
+
+            if (!$result->isSuccess()) {
+                $this->json(400, $result->toArray());
+                return;
+            }
+
+            $this->json(200, $result->toArray());
+        } catch (\Throwable $e) {
+            $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+        // ─── ACTIVATE USER (SET is_active = 1) ─────────────────────────────
+    public function activateUser(string $employee_id): void
+    {
+        try {
+            $result = $this->profileModel->softDeleteUserDb($employee_id, true);
+
+            if (!$result->isSuccess()) {
+                $this->json(400, $result->toArray());
+                return;
+            }
+
+            $this->json(200, $result->toArray());
+        } catch (\Throwable $e) {
+            $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     // ─── RESET PASSWORD ────────────────────────────────────────────
     public function resetPassword(string $employee_id): void
     {

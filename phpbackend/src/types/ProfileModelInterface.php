@@ -61,7 +61,7 @@ interface ProfileModelInterface {
      * @return ApiResponse MUST return ApiResponse with success message
      */
     public function adminDeletingUserDb(string $employee_id): ApiResponse;
-    
+    public function softDeleteUserDb(string $employee_id, bool $is_active): ApiResponse;
     /**
      * Reset password - generate new 8-char password
      * @param string $employeeId Employee ID
