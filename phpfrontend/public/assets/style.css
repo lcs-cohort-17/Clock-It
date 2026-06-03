@@ -1,0 +1,131 @@
+[x-cloak] {
+    display: none !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.fade-in { animation: fadeIn 0.3s ease-out; }
+.slide-in { animation: slideIn 0.3s ease-out; }
+.pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Card hover */
+.card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Stat card */
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.1);
+}
+
+/* Status badge */
+.status-badge {
+    transition: all 0.2s ease;
+}
+.status-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Table row hover */
+.table-row-hover {
+    transition: background-color 0.2s ease;
+}
+.table-row-hover:hover {
+    background-color: #f8fafc;
+}
+
+/* Sort headers */
+.sort-header {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.sort-header:hover {
+    background-color: #f1f5f9;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid rgba(59, 130, 246, 0.1);
+    border-radius: 50%;
+    border-top: 3px solid #3b82f6;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Hero gradient */
+.hero-gradient {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+/* Welcome badge */
+.welcome-badge {
+    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+}
+
+/* Logout button */
+.logout-btn {
+    transition: all 0.2s ease;
+}
+.logout-btn:hover {
+    background-color: #fee2e2;
+    border-color: #fecaca;
+}
+
+/* Print styles */
+@media print {
+    .no-print { display: none !important; }
+    body { background: white; padding: 20px; }
+    .card, .bg-white { box-shadow: none !important; border: 1px solid #ddd !important; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .responsive-table {
+        display: block;
+        overflow-x: auto;
+    }
+    .responsive-table table {
+        min-width: 600px;
+    }
+}
