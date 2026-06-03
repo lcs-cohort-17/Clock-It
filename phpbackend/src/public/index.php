@@ -1,5 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
+// =============================================
+// AUTOLOAD (MUST BE FIRST)
+// =============================================
+require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
+
 // =============================================
 // ERROR HANDLING
 // =============================================
@@ -9,32 +16,40 @@ ini_set('display_errors', 0);
 set_exception_handler(function ($exception) {
     error_log('UNCAUGHT EXCEPTION: ' . $exception->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Internal Server Error', 'message' => $exception->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Internal Server Error',
+        'message' => $exception->getMessage()
+    ]);
     exit;
 });
 
 // =============================================
-// SETUP
+// DOTENV BOOTSTRAP
 // =============================================
-require __DIR__ . '/../../vendor/autoload.php';
-
 use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(dirname(__DIR__, 2));
+$dotenv->load();
+
+// =============================================
+// USE STATEMENTS
+// =============================================
 use App\Models\ProfileDb;
 use App\Models\QrCodeDb;
 use App\Middleware\AuthMiddleware;
 use Controllers\ProfileController;
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
-$dotenv->load();
-
-// Initialize Services
+// =============================================
+// SERVICES
+// =============================================
 $auth = new AuthMiddleware($_ENV['JWT_SECRET']);
 $model = new ProfileDb();
 $qrModel = new QrCodeDb();
 $controller = new ProfileController($model);
 
 // =============================================
-// CORS HEADERS
+// CORS
 // =============================================
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -53,6 +68,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $path = preg_replace('#^/api#', '', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
+// --- routes unchanged below ---
 // [EXISTING PROFILE ROUTES]
 if ($method === 'GET' && $path === '/test') { echo json_encode(['message' => 'Test route works!']); exit; }
 if ($method === 'GET' && $path === '/admin/users') { $controller->adminGettingAllUsers(); exit; }
