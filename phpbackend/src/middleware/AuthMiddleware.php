@@ -195,7 +195,12 @@ class AuthMiddleware
      */
     private function decodeToken(array $request): array
     {
-        $authHeader = $request['headers']['authorization'] ?? null;
+        $headers = array_change_key_case(
+            $request['headers'] ?? [],
+            CASE_LOWER
+        );
+
+        $authHeader = $headers['authorization'] ?? null;
 
         if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
             return ['error' => 'Access token required', 'status' => 401];
@@ -214,7 +219,6 @@ class AuthMiddleware
                     'employee_id' => $decoded->employee_id,
                 ],
             ];
-
         } catch (ExpiredException $e) {
             return ['error' => 'Token has expired', 'status' => 403];
         } catch (SignatureInvalidException $e) {
