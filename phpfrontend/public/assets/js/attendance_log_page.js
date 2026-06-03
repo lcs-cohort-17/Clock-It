@@ -82,6 +82,9 @@
     var _utils = opts.utils || (
       typeof window !== 'undefined' ? window.AttendanceUtils : null
     );
+    var _exportUrl = opts.exportUrl || _data.exportUrl || (
+      typeof window !== 'undefined' ? '/api/admin/sheets/export' : ''
+    );
 
     return {
 
@@ -91,6 +94,10 @@
       // ── Clock events data + filters (Ticket 2 — R2.1) ──
       clockEvents:        _data.clockEvents.slice(),
       loading:            false,
+      exporting:          false,
+      exportError:        '',
+      exportSuccess:      '',
+      sheetUrl:           '',
       search:             '',
       staffFilter:        '',
       statusFilter:       '',
@@ -137,11 +144,59 @@
         (_download || triggerDownload)(csv, filename);
       },
 
-      exportClockEventsCSV: function (_download) {
-        var csv      = formatClockEventsCSV(this.filteredClockEvents);
-        var date     = new Date().toISOString().split('T')[0];
-        var filename = 'attendance_logs_' + date + '.csv';
-        (_download || triggerDownload)(csv, filename);
+      exportClockEventsCSV: async function (_download) {
+        if (_download) {
+          var csv      = formatClockEventsCSV(this.filteredClockEvents);
+          var date     = new Date().toISOString().split('T')[0];
+          var filename = 'attendance_logs_' + date + '.csv';
+          _download(csv, filename);
+          return;
+        }
+
+        this.exporting = true;
+        this.exportError = '';
+        this.exportSuccess = '';
+        this.sheetUrl = '';
+
+        try {
+          if (this.filteredClockEvents.length === 0) {
+            throw new Error('No attendance logs match the current filters.');
+          }
+
+          var response = await fetch(_exportUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_ids: this.filteredClockEvents.map(function (event) { return event.id; })
+            })
+          });
+          var responseText = await response.text();
+          var payload;
+
+          try {
+            payload = responseText ? JSON.parse(responseText) : {};
+          } catch (parseError) {
+            payload = {
+              success: false,
+              message: 'Backend returned a non-JSON response. Check the PHP server output for the export request.'
+            };
+          }
+
+          if (!response.ok || !payload.success) {
+            throw new Error(payload.message || 'Failed to export attendance logs.');
+          }
+
+          this.sheetUrl = payload.sheet_url || '';
+          this.exportSuccess = payload.message || 'Attendance logs exported to Google Sheets.';
+
+          if (this.sheetUrl && typeof window !== 'undefined') {
+            window.open(this.sheetUrl, '_blank', 'noopener');
+          }
+        } catch (error) {
+          this.exportError = error.message || 'Failed to export attendance logs.';
+        } finally {
+          this.exporting = false;
+        }
       },
 
       // ── Modal open (Ticket 1 — AC1.1) ───────────────────────

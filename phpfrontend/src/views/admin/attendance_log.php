@@ -22,10 +22,15 @@ use ClockIt\Data\AttendanceRepository;
 //             and GET /api/admin/attendance/audit — BE-06)
 // ─────────────────────────────────────────────────────────────
 
+require_once __DIR__ . '/../../../public/api/backend_proxy.php';
+
 // Pre-compute lists for PHP-rendered dropdown options
 $repository = new AttendanceRepository();
 
-$clockEvents = $repository->getClockEvents();
+$attendancePayload = clockit_backend_api_get('/api/admin/attendance');
+$clockEvents = is_array($attendancePayload['data'] ?? null)
+    ? $attendancePayload['data']
+    : $repository->getClockEvents();
 $auditTrail  = $repository->getAuditTrail();
 
 $staffList = array_values(array_unique(array_column($clockEvents, 'staff')));
@@ -46,7 +51,8 @@ sort($typeList);
             <script>
                 window.ATTENDANCE_DATA = {
                     clockEvents: <?= json_encode($clockEvents, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-                    auditTrail:  <?= json_encode($auditTrail,  JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+                    auditTrail:  <?= json_encode($auditTrail,  JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+                    exportUrl:   <?= json_encode(app_url('/index.php/api/admin/sheets/export')) ?>
                 };
             </script>
 
@@ -69,14 +75,20 @@ sort($typeList);
                         <p class="page-subtitle">Full clock-event history with override and audit trail.</p>
                     </div>
 
-                    <button class="export-btn" @click="activeTab === 'audit-trail' ? exportAuditCSV() : exportClockEventsCSV()" :aria-label="activeTab === 'audit-trail' ? 'Export audit trail as CSV' : 'Export attendance logs as CSV'">
+                    <button class="export-btn" @click="activeTab === 'audit-trail' ? exportAuditCSV() : exportClockEventsCSV()" :disabled="exporting" :aria-label="activeTab === 'audit-trail' ? 'Export audit trail as CSV' : 'Export attendance logs to Google Sheets'">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="7 10 12 15 17 10"/>
                             <line x1="12" y1="15" x2="12" y2="3"/>
                         </svg>
-                        <span x-text="activeTab === 'audit-trail' ? 'Export Audit Trail' : 'Export CSV'"></span>
+                        <span x-text="exporting ? 'Exporting...' : (activeTab === 'audit-trail' ? 'Export Audit Trail' : 'Export to Sheets')"></span>
                     </button>
+                </div>
+
+                <div class="alert alert-danger py-2" x-show="exportError" x-text="exportError" role="alert"></div>
+                <div class="alert alert-success py-2" x-show="exportSuccess" role="status">
+                    <span x-text="exportSuccess"></span>
+                    <a class="ms-2" x-show="sheetUrl" :href="sheetUrl" target="_blank" rel="noopener">Open sheet</a>
                 </div>
 
                 <!-- ── Tab toggle ────────────────────────────── -->

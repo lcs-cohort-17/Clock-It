@@ -110,34 +110,76 @@ class GoogleSheetsService
         }
 
         $sheetId = $this->getConfiguredSpreadsheetId();
+        $usedConfiguredSheet = !empty($sheetId);
 
         if (empty($sheetId)) {
             $sheetId = $this->createSpreadsheet('Attendance Export ' . date('Y-m-d H:i:s'));
+
+            if (!empty($sheetId) && class_exists('GoogleSheetsModel')) {
+                (new GoogleSheetsModel())->saveSheetId($sheetId);
+            }
         }
 
         if (empty($sheetId)) {
             throw new RuntimeException('Unable to access or create a Google Sheet.');
         }
 
-        $rows = [[
-            'Staff Name',
-            'Date',
-            'Clock In',
-            'Clock Out',
-            'Total Hours',
-        ]];
+        $isLogExport = array_key_exists('timestamp', $attendanceData[0] ?? [])
+            || array_key_exists('event_type', $attendanceData[0] ?? []);
 
-        foreach ($attendanceData as $record) {
-            $rows[] = [
-                $record['staff_name'] ?? '',
-                $record['date'] ?? '',
-                $record['clock_in'] ?? '',
-                $record['clock_out'] ?? '',
-                $record['total_hours'] ?? '',
-            ];
+        if ($isLogExport) {
+            $rows = [[
+                'Staff Name',
+                'Event Type',
+                'Timestamp',
+                'Device',
+                'Location',
+                'Sync Status',
+            ]];
+
+            foreach ($attendanceData as $record) {
+                $rows[] = [
+                    $record['staff_name'] ?? $record['staff'] ?? '',
+                    $record['type'] ?? $record['event_type'] ?? '',
+                    $record['timestamp'] ?? '',
+                    $record['device'] ?? '',
+                    $record['location'] ?? '',
+                    $record['sync'] ?? $record['sync_status'] ?? '',
+                ];
+            }
+        } else {
+            $rows = [[
+                'Staff Name',
+                'Date',
+                'Clock In',
+                'Clock Out',
+                'Total Hours',
+            ]];
+
+            foreach ($attendanceData as $record) {
+                $rows[] = [
+                    $record['staff_name'] ?? '',
+                    $record['date'] ?? '',
+                    $record['clock_in'] ?? '',
+                    $record['clock_out'] ?? '',
+                    $record['total_hours'] ?? '',
+                ];
+            }
         }
 
-        if (!$this->writeRows($sheetId, $rows)) {
+        $wroteRows = $this->writeRows($sheetId, $rows);
+
+        if (!$wroteRows && $usedConfiguredSheet) {
+            $sheetId = $this->createSpreadsheet('Attendance Export ' . date('Y-m-d H:i:s'));
+
+            if (!empty($sheetId) && class_exists('GoogleSheetsModel')) {
+                (new GoogleSheetsModel())->saveSheetId($sheetId);
+            }
+
+            $wroteRows = !empty($sheetId) && $this->writeRows($sheetId, $rows);
+        }
+
+        if (!$wroteRows) {
             throw new RuntimeException('Unable to write attendance data to Google Sheet.');
         }
 

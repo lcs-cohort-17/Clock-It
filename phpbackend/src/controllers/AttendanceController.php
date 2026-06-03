@@ -13,6 +13,30 @@ class AttendanceController
         $this->conn = $database->getConnection();
     }
 
+    public function index(): array
+    {
+        try {
+            return [
+                'status' => 200,
+                'headers' => ['content-type' => 'application/json'],
+                'body' => [
+                    'data' => $this->fetchAttendanceLogs([]),
+                ],
+            ];
+        } catch (Exception $e) {
+            error_log('[AttendanceController] Index error: ' . $e->getMessage());
+
+            return [
+                'status' => 500,
+                'headers' => ['content-type' => 'application/json'],
+                'body' => [
+                    'success' => false,
+                    'message' => 'Failed to load attendance logs.',
+                ],
+            ];
+        }
+    }
+
     // ── POST /api/admin/export/sheets ─────────────────────────
     public function exportToSheets(): array
     {
@@ -20,6 +44,7 @@ class AttendanceController
             $body      = json_decode(file_get_contents('php://input'), true) ?? [];
             $startDate = $body['start_date'] ?? null;
             $endDate   = $body['end_date']   ?? null;
+            $eventIds  = is_array($body['event_ids'] ?? null) ? $body['event_ids'] : [];
 
             if (($startDate !== null || $endDate !== null)
                 && (!$this->isValidDate($startDate) || !$this->isValidDate($endDate))
@@ -31,57 +56,17 @@ class AttendanceController
                 ];
             }
 
-            $conditions = ["s.status = 'completed'"];
-            $params     = [];
-
-            if ($startDate && $endDate) {
-                $conditions[] = 'DATE(s.clock_in_time) BETWEEN ? AND ?';
-                $params[]     = $startDate;
-                $params[]     = $endDate;
-            }
-
-            $where = implode(' AND ', $conditions);
-
-            $query = "
-            SELECT
-                u.first_name,
-                u.last_name,
-                DATE(s.clock_in_time)  AS work_date,
-                s.clock_in_time,
-                s.clock_out_time,
-                s.duration_minutes
-            FROM   sessions s
-            INNER  JOIN users u ON s.user_id = u.user_id
-            WHERE  {$where}
-            ORDER  BY s.clock_in_time DESC
-        ";
-
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute($params);
-
-            $attendanceData = [];
-
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $totalHours = $row['duration_minutes']
-                    ? round($row['duration_minutes'] / 60, 2)
-                    : 0;
-
-                $attendanceData[] = [
-                    'staff_name'  => trim($row['first_name'] . ' ' . $row['last_name']),
-                    'date'        => $row['work_date'],
-                    'clock_in'    => (new DateTime($row['clock_in_time']))->format('H:i:s'),
-                    'clock_out'   => $row['clock_out_time']
-                        ? (new DateTime($row['clock_out_time']))->format('H:i:s')
-                        : 'N/A',
-                    'total_hours' => $totalHours,
-                ];
-            }
+            $attendanceData = $this->fetchAttendanceLogs([
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'event_ids' => $eventIds,
+            ]);
 
             if (empty($attendanceData)) {
                 return [
                     'status'  => 200,
                     'headers' => ['content-type' => 'application/json'],
-                    'body'    => ['success' => false, 'message' => 'No completed sessions found for the selected date range.'],
+                    'body'    => ['success' => false, 'message' => 'No attendance logs found for the selected filters.'],
                 ];
             }
 
@@ -120,5 +105,88 @@ class AttendanceController
         if (!$date) return false;
         $d = DateTime::createFromFormat('Y-m-d', $date);
         return $d && $d->format('Y-m-d') === $date;
+    }
+
+    private function fetchAttendanceLogs(array $filters): array
+    {
+        $conditions = [];
+        $params = [];
+
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $conditions[] = 'DATE(al.event_time) BETWEEN ? AND ?';
+            $params[] = $filters['start_date'];
+            $params[] = $filters['end_date'];
+        }
+
+        $eventIds = array_values(array_filter(
+            $filters['event_ids'] ?? [],
+            fn($id) => is_scalar($id) && trim((string) $id) !== ''
+        ));
+
+        if (!empty($eventIds)) {
+            $conditions[] = 'al.id IN (' . implode(',', array_fill(0, count($eventIds), '?')) . ')';
+            foreach ($eventIds as $eventId) {
+                $params[] = $eventId;
+            }
+        }
+
+        $where = empty($conditions) ? '' : 'WHERE ' . implode(' AND ', $conditions);
+        $query = "
+            SELECT
+                al.id,
+                al.event_type,
+                al.event_time,
+                al.device_info,
+                al.location,
+                al.sync_status,
+                u.first_name,
+                u.last_name
+            FROM attendance_logs al
+            LEFT JOIN users u ON u.user_id = al.user_id
+            {$where}
+            ORDER BY al.event_time DESC
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+
+        $logs = [];
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $staffName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: 'Unknown Staff';
+
+            $logs[] = [
+                'id' => $row['id'],
+                'staff' => $staffName,
+                'staff_name' => $staffName,
+                'type' => $this->formatEventType($row['event_type'] ?? ''),
+                'event_type' => $row['event_type'] ?? '',
+                'timestamp' => $row['event_time'] ?? '',
+                'device' => $row['device_info'] ?? '',
+                'location' => $row['location'] ?? '',
+                'sync' => $this->formatSyncStatus($row['sync_status'] ?? ''),
+                'sync_status' => $row['sync_status'] ?? '',
+            ];
+        }
+
+        return $logs;
+    }
+
+    private function formatEventType(string $eventType): string
+    {
+        return match (strtolower($eventType)) {
+            'in', 'clock_in' => 'Clock In',
+            'out', 'clock_out' => 'Clock Out',
+            default => ucwords(str_replace('_', ' ', $eventType)),
+        };
+    }
+
+    private function formatSyncStatus(string $syncStatus): string
+    {
+        return match (strtolower($syncStatus)) {
+            'synced' => 'Synced',
+            'failed' => 'Failed',
+            default => 'Pending',
+        };
     }
 }

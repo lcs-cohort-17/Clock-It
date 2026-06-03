@@ -325,6 +325,20 @@ switch ($path) {
         ]);
         break;
 
+    case '/api/admin/sheets/export':
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            login_json_response(['message' => 'Method not allowed.'], 405);
+        }
+
+        require_once __DIR__ . '/api/backend_proxy.php';
+
+        $payload = login_request_data();
+        $response = clockit_backend_api_post('/api/admin/sheets/export', $payload);
+        $backendStatus = clockit_backend_response_status();
+
+        login_json_response($response, $backendStatus >= 400 ? $backendStatus : (!empty($response) ? 200 : 502));
+        break;
+
     case '/api/admin/data-retention/purge':
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
             login_json_response(['error' => 'Method not allowed.'], 405);

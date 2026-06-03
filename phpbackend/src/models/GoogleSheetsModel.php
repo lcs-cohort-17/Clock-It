@@ -94,17 +94,18 @@ class GoogleSheetsModel
     {
         if ($this->useDatabase && $this->connection) {
             try {
-                $query = "SELECT u.first_name,
-                                 u.last_name,
-                                 DATE(s.clock_in_time) AS work_date,
-                                 s.clock_in_time,
-                                 s.clock_out_time,
-                                 s.duration_minutes
-                          FROM sessions s
-                          INNER JOIN users u ON s.user_id = u.user_id
-                          WHERE s.status = 'completed'
-                            AND DATE(s.clock_in_time) BETWEEN :start_date AND :end_date
-                          ORDER BY s.clock_in_time DESC";
+                $query = "SELECT al.id,
+                                 al.event_type,
+                                 al.event_time,
+                                 al.device_info,
+                                 al.location,
+                                 al.sync_status,
+                                 u.first_name,
+                                 u.last_name
+                          FROM attendance_logs al
+                          LEFT JOIN users u ON u.user_id = al.user_id
+                          WHERE DATE(al.event_time) BETWEEN :start_date AND :end_date
+                          ORDER BY al.event_time DESC";
 
                 $stmt = $this->connection->prepare($query);
                 $stmt->execute([
@@ -115,18 +116,19 @@ class GoogleSheetsModel
                 $attendanceData = [];
 
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $totalHours = $row['duration_minutes']
-                        ? round($row['duration_minutes'] / 60, 2)
-                        : 0;
+                    $staffName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: 'Unknown Staff';
 
                     $attendanceData[] = [
-                        'staff_name'  => trim($row['first_name'] . ' ' . $row['last_name']),
-                        'date'        => $row['work_date'],
-                        'clock_in'    => (new DateTime($row['clock_in_time']))->format('H:i:s'),
-                        'clock_out'   => $row['clock_out_time']
-                            ? (new DateTime($row['clock_out_time']))->format('H:i:s')
-                            : 'N/A',
-                        'total_hours' => $totalHours,
+                        'id' => $row['id'],
+                        'staff_name' => $staffName,
+                        'staff' => $staffName,
+                        'type' => $this->formatEventType($row['event_type'] ?? ''),
+                        'event_type' => $row['event_type'] ?? '',
+                        'timestamp' => $row['event_time'] ?? '',
+                        'device' => $row['device_info'] ?? '',
+                        'location' => $row['location'] ?? '',
+                        'sync' => $this->formatSyncStatus($row['sync_status'] ?? ''),
+                        'sync_status' => $row['sync_status'] ?? '',
                     ];
                 }
 
@@ -218,6 +220,24 @@ class GoogleSheetsModel
         }
 
         return count($attendanceIds);
+    }
+
+    private function formatEventType(string $eventType): string
+    {
+        return match (strtolower($eventType)) {
+            'in', 'clock_in' => 'Clock In',
+            'out', 'clock_out' => 'Clock Out',
+            default => ucwords(str_replace('_', ' ', $eventType)),
+        };
+    }
+
+    private function formatSyncStatus(string $syncStatus): string
+    {
+        return match (strtolower($syncStatus)) {
+            'synced' => 'Synced',
+            'failed' => 'Failed',
+            default => 'Pending',
+        };
     }
 
     private function loadEnvironment(): void

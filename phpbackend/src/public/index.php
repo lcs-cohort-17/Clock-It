@@ -56,6 +56,20 @@ if (
     return;
 }
 
+if ($method === 'GET' && $path === '/api/admin/attendance') {
+    $controller = new AttendanceController();
+    $response = $controller->index();
+
+    http_response_code($response['status']);
+
+    foreach ($response['headers'] as $name => $value) {
+        header("{$name}: {$value}");
+    }
+
+    echo json_encode($response['body']);
+    return;
+}
+
 if ($method === 'GET' && $path === '/api/admin/sheets/status') {
     $controller = new GoogleSheetsController();
 

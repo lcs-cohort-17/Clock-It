@@ -49,20 +49,12 @@ class GoogleSheetsController
             throw new InvalidArgumentException('Date range required');
         }
 
-        $data    = $this->model->getAttendanceByDateRange(
+        $data = $this->model->getAttendanceByDateRange(
             $params['start_date'],
             $params['end_date']
         );
-        $sheetId = $this->service->createSpreadsheet('Attendance Export');
 
-        if (empty($sheetId)) {
-            throw new RuntimeException('Unable to create Google Sheet');
-        }
-
-        $this->model->saveSheetId($sheetId);
-        $this->service->writeAttendanceData($data);
-
-        return ['sheet_url' => $this->service->generateSheetUrl($sheetId)];
+        return ['sheet_url' => $this->service->exportAttendance($data)];
     }
 
     public function sync(): array
