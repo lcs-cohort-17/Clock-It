@@ -76,4 +76,6 @@ interface ProfileModelInterface {
      * @return ApiResponse MUST return ApiResponse with success
      */
     public function updatePasswordDb(string $employee_id, string $hashedPassword): ApiResponse;
+    public function getCurrentUserProfileDb(string $employee_id): ApiResponse;
+    public function clearCacheDb(string $employee_id): ApiResponse;
 }

@@ -156,7 +156,7 @@ class ProfileController
             }
 
             $token = $this->generateJwt([
-                'userId'      => $user['id'],
+                'user_id'      => $user['user_id'],
                 'email'       => $user['email'],
                 'role'        => $user['role'],
                 'employee_id' => $user['employee_id'],
@@ -180,6 +180,51 @@ class ProfileController
             ]);
         } catch (\Throwable $e) {
             $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+        // ─── GET CURRENT USER PROFILE (from JWT token) ────────────────────
+    public function getCurrentUserProfile(array $request): void
+    {
+        try {
+            // Get authenticated user from request (set by AuthMiddleware)
+            $user = $request['user'] ?? null;
+            
+            if (!$user) {
+                $this->json(401, [
+                    'success' => false,
+                    'error' => 'Unauthorized: Please login first'
+                ]);
+                return;
+            }
+            
+            $employee_id = $user['employee_id'] ?? null;
+            
+            if (!$employee_id) {
+                $this->json(401, [
+                    'success' => false,
+                    'error' => 'Invalid user data'
+                ]);
+                return;
+            }
+            
+            $result = $this->profileModel->getCurrentUserProfileDb($employee_id);
+            
+            if (!$result->isSuccess()) {
+                $this->json(404, $result->toArray());
+                return;
+            }
+            
+            $this->json(200, [
+                'success' => true,
+                'data' => $result->data
+            ]);
+            
+        } catch (\Throwable $e) {
+            $this->json(500, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
@@ -274,14 +319,15 @@ class ProfileController
     public function updatePassword(string $employee_id, array $body): void
     {
         try {
-            $oldPassword = $body['oldPassword'] ?? null;
-            $newPassword = $body['newPassword'] ?? null;
-            $email       = $body['email'] ?? null;
+            // Change to snake_case to match requirement
+            $oldPassword = $body['old_password'] ?? $body['oldPassword'] ?? null;  // Support both
+            $newPassword = $body['new_password'] ?? $body['newPassword'] ?? null;  // Support both
+            $email = $body['email'] ?? null;
 
             if (!$oldPassword || !$newPassword) {
                 $this->json(400, [
                     'success' => false, 
-                    'error' => 'Old password and new password are required'
+                    'error' => 'old_password and new_password are required'
                 ]);
                 return;
             }
@@ -330,29 +376,30 @@ class ProfileController
     }
 
     // ─── CLEAR CACHE ───────────────────────────────────────────────
-    public function clearCache(array $requestData): void
-    {
-        try {
-            $employee_id = $requestData['employee_id'] ?? null;
+        public function clearCache(array $requestData, ?array $user = null): void
+        {
+            try {
+                // Get employee_id from authenticated user
+                $employee_id = $user['employee_id'] ?? null;
 
-            if (!$employee_id) {
-                $this->json(401, [
-                    'success' => false, 
-                    'error' => 'User must be logged in to clear cache'
-                ]);
-                return;
+                if (!$employee_id) {
+                    $this->json(401, [
+                        'success' => false, 
+                        'error' => 'User must be logged in to clear cache'
+                    ]);
+                    return;
+                }
+
+                $result = $this->profileModel->clearCacheDb($employee_id);
+
+                if (!$result->isSuccess()) {
+                    $this->json(400, $result->toArray());
+                    return;
+                }
+
+                $this->json(200, $result->toArray());
+            } catch (\Throwable $e) {
+                $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
             }
-
-            $result = $this->profileModel->clearCacheDb($employee_id);
-
-            if (!$result->isSuccess()) {
-                $this->json(400, $result->toArray());
-                return;
-            }
-
-            $this->json(200, $result->toArray());
-        } catch (\Throwable $e) {
-            $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
         }
-    }
 }
