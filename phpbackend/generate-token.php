@@ -18,9 +18,9 @@ if (!$secret) {
 if ($argc !== 5) {
     echo ":x: Wrong number of arguments.\n\n";
     echo "Usage:\n";
-    echo "  php generate-token.php <userId> <email> <role> <employee_id>\n\n";
+    echo " php generate-token.php <userId> <email> <role> <employee_id>\n\n";
     echo "Example:\n";
-    echo "  php generate-token.php \"78cbf754-5d9b-11f1-896c-001e676e63e8\" \"tommy@lifechoices.com\" \"staff\" \"S-001\"\n";
+    echo " php generate-token.php \"78cbf754-5d9b-11f1-896c-001e676e63e8\" \"tommy@lifechoices.com\" \"staff\" \"S-001\"\n";
     exit(1);
 }
 
@@ -40,13 +40,13 @@ if (!in_array($role, ['admin', 'staff'])) {
 
 
 $header = base64url_encode(json_encode([
-'typ' => 'JWT',
-'alg' => 'HS256',
+    'typ' => 'JWT',
+    'alg' => 'HS256',
 ]));
 
 
 
-$now = time();
+$now= time();
 $expires = $now + (60 * 60 * 2); // 2 hours from now
 
 $payload = base64url_encode(json_encode([
@@ -54,9 +54,9 @@ $payload = base64url_encode(json_encode([
     'email' => $email,
     'role' => $role,
     'employee_id' => $employeeId,
-    'iat' => $now,
+    'iat'=> $now,
     'exp' => $expires,
-])  );
+]));
 
 
 
@@ -78,9 +78,9 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "\nDetails:\n";
 echo " userId: {$userId}\n";
 echo " email: {$email}\n";
-echo " role:{$role}\n";
+echo " role: {$role}\n";
 echo " employee_id: {$employeeId}\n";
-echo " issued:" . date('Y-m-d H:i:s', $now) . "\n";
+echo " issued: " . date('Y-m-d H:i:s', $now) . "\n";
 echo " expires: " . date('Y-m-d H:i:s', $expires) . "\n\n";
 
 

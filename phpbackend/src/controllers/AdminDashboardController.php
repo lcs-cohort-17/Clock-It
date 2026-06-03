@@ -102,23 +102,22 @@ class AdminDashboardController
     private function formatRecentActivityRecord(array $record): array
     {
         return [
-            'name' => $this->formatStaff($record),
-            // 'user_id' => $record['user_id'] ?? null,
-            'timestamp' => $record['event_time'] ?? null,
-            'action' => $record['event_type'] ?? null,
-            // 'sync_status' => $record['sync_status'] ?? null,
-            // 'device_info' => $record['device_info'] ?? null,
-            // 'staff' => $this->formatStaff($record),
+            'profile_id' => $record['profile_id'] ?? null,
+            'event_time' => $record['event_time'] ?? null,
+            'event_type' => $record['event_type'] ?? null,
+            'sync_status' => $record['sync_status'] ?? null,
+            'device_info' => $record['device_info'] ?? null,
+            'staff' => $this->formatStaff($record),
         ];
     }
 
     private function formatOnsiteRecord(array $record): array
     {
         return [
-            'name' => $this->formatStaff($record),
-            'role' => $record['users']['role'] ?? null,
-            'sign_in_time' => $record['event_time'] ?? null,
-            // 'location' => $record['location'] ?? null,
+            'profile_id' => $record['profile_id'] ?? null,
+            'event_time' => $record['event_time'] ?? null,
+            'location' => $record['location'] ?? null,
+            'staff' => $this->formatStaff($record),
         ];
     }
 

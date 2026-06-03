@@ -7,7 +7,7 @@ $publicDir = __DIR__ . '/src/public';
 $candidate = $publicDir . $path;
 
 if ($path !== '/' && file_exists($candidate) && !is_dir($candidate)) {
-return false;
+    return false;
 }
 
 require_once $publicDir . '/Index.php';

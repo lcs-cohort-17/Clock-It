@@ -1,33 +1,16 @@
-// main file to handle all the incoming requests and route them to the appropriate controllers
 <?php
 
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\Factory\AppFactory;
-use Dotenv\Dotenv;
-
 // =============================================
-// ERROR HANDLING (PHP equivalent)
+// ERROR HANDLING
 // =============================================
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Change to 1 in development
+ini_set('display_errors', 0);
 
-// Global exception handler
 set_exception_handler(function ($exception) {
     error_log('UNCAUGHT EXCEPTION: ' . $exception->getMessage());
-    error_log('Stack: ' . $exception->getTraceAsString());
-    
     http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Internal Server Error',
-        'message' => $exception->getMessage()
-    ]);
-});
-
-// Global error handler for warnings/notices (similar to unhandledRejection)
-set_error_handler(function ($severity, $message, $file, $line) {
-    error_log("ERROR [$severity]: $message in $file on line $line");
+    echo json_encode(['success' => false, 'error' => 'Internal Server Error', 'message' => $exception->getMessage()]);
+    exit;
 });
 
 // =============================================
@@ -35,85 +18,94 @@ set_error_handler(function ($severity, $message, $file, $line) {
 // =============================================
 require __DIR__ . '/../../vendor/autoload.php';
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
+use Dotenv\Dotenv;
+use App\Models\ProfileDb;
+use App\Models\QrCodeDb;
+use App\Middleware\AuthMiddleware;
+use Controllers\ProfileController;
+
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
-$app = AppFactory::create();
-
-// CORS
-// Use this instead. It does NOT require any external "CorsMiddleware" class.
-$app->add(function ($request, $handler) {
-    $response = $handler->handle($request);
-    return $response
-        ->withHeader('Access-Control-Allow-Origin', '*')
-        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
-        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-});
-
-// Important: Add this to handle the "OPTIONS" pre-flight requests!
-$app->options('/{routes:.+}', function ($request, $response, $args) {
-    return $response;
-});
-
-// Parse JSON body
-$app->addBodyParsingMiddleware();
+// Initialize Services
+$auth = new AuthMiddleware($_ENV['JWT_SECRET']);
+$model = new ProfileDb();
+$qrModel = new QrCodeDb();
+$controller = new ProfileController($model);
 
 // =============================================
-// HARDCODED AUTH MIDDLEWARE (like in your Node code)
+// CORS HEADERS
 // =============================================
-$app->add(function (Request $request, $handler) {
-    $request = $request->withAttribute('auth', [
-        'userId' => '07cd9434-1b18-4d96-b029-0595b26d067c',
-        'role'   => 'employee',
-        'token'  => 'mock-token'
-    ]);
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+// =============================================
+// ROUTING
+// =============================================
+$method = $_SERVER['REQUEST_METHOD'];
+$path = preg_replace('#^/api#', '', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+$input = json_decode(file_get_contents('php://input'), true) ?? [];
+
+// [EXISTING PROFILE ROUTES]
+if ($method === 'GET' && $path === '/test') { echo json_encode(['message' => 'Test route works!']); exit; }
+if ($method === 'GET' && $path === '/admin/users') { $controller->adminGettingAllUsers(); exit; }
+if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) { $controller->getProfileById($matches[1]); exit; }
+if ($method === 'POST' && $path === '/admin/users') { $controller->adminCreatingUser($input); exit; }
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) { $controller->adminUpdatingUser($matches[1], $input); exit; }
+if ($method === 'DELETE' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) { $controller->adminDeletingUser($matches[1]); exit; }
+if ($method === 'POST' && $path === '/login') { $controller->loginProfile($input); exit; }
+if ($method === 'POST' && $path === '/admin/users/clear-cache') { $controller->clearCache($input); exit; }
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/update-password$#', $path, $matches)) { $controller->updatePassword($matches[1], $input); exit; }
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) { $controller->resetPassword($matches[1]); exit; }
+
+// =============================================
+// QR CODE ROUTES (NEW)
+// =============================================
+
+// Generate QR (Admin)
+if ($method === 'POST' && $path === '/admin/qr/generate') {
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $guard = $auth->requireAdmin(['headers' => ['authorization' => $authHeader]]);
     
-    return $handler->handle($request);
-});
+    if ($guard !== null) {
+        http_response_code($guard['status']);
+        echo json_encode($guard['body']);
+        exit;
+    }
+
+    $token = bin2hex(random_bytes(16));
+    $type = $input['type'] ?? 'clock_in';
+    $userId = 'admin_user'; // Replace with logic from your token if needed
+
+    $qrModel->createToken($token, $type, $userId);
+    http_response_code(201);
+    echo json_encode(['success' => true, 'token' => $token]);
+    exit;
+}
+
+// Validate QR (Public)
+if ($method === 'POST' && $path === '/scan/validate') {
+    $token = $input['token'] ?? '';
+    $data = $qrModel->validateAndUseToken($token);
+
+    if ($data) {
+        echo json_encode(['valid' => true, 'type' => $data['type']]);
+    } else {
+        http_response_code(400);
+        echo json_encode(['valid' => false, 'error' => 'Invalid, expired, or used token']);
+    }
+    exit;
+}
 
 // =============================================
-// DEBUG LOGGING MIDDLEWARE
+// 404 NOT FOUND
 // =============================================
-$app->add(function (Request $request, $handler) {
-    $method = $request->getMethod();
-    $uri = $request->getUri()->getPath();
-    error_log("[DEBUG] $method $uri");
-    
-    return $handler->handle($request);
-});
-
-// =============================================
-// ROUTES
-// =============================================
-
-// Test route
-$app->get('/test', function (Request $request, Response $response) {
-    $response->getBody()->write(json_encode([
-        'message' => 'Test route works!'
-    ]));
-    return $response->withHeader('Content-Type', 'application/json');
-});
-
-// Mount your route groups
-$app->group('/api/admin/dashboard', function ($group) {
-    // Include your admin routes here
-    require __DIR__ . '/../routes/AdminDashboardRoutes.php';
-});
-// Other route groups (google, attendance, profiles) are not mounted here
-// to avoid requiring files that are not present in this PHP backend copy.
-
-// 404 Not Found Handler
-$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function (Request $request, Response $response) {
-    $response->getBody()->write(json_encode([
-        'success' => false,
-        'error' => 'Route not found: ' . $request->getMethod() . ' ' . $request->getUri()->getPath()
-    ]));
-    return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
-});
-
-// =============================================
-// RUN SERVER
-// =============================================
-$app->run();
-
-echo "Server running on http://localhost:4321\n"; // Only shows in CLI
+http_response_code(404);
+echo json_encode(['success' => false, 'error' => 'Route not found: ' . $method . ' ' . $path]);
