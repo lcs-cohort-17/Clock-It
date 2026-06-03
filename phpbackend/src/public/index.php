@@ -10,6 +10,7 @@ require_once __DIR__ . '/../models/AdminDashboardDb.php';
 require_once __DIR__ . '/../controllers/AdminDashboardController.php';
 require_once __DIR__ . '/../routes/AdminDashboardRoutes.php';
 require_once __DIR__ . '/../config/Database.php';
+use Config\Database;
 
 
 

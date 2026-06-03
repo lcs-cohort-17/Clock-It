@@ -9,7 +9,7 @@ $actions = [
     ['label' => 'Attendance Logs', 'href' => app_url('/admin-dashboard/attendance'), 'variant' => 'light'],
     ['label' => 'Settings', 'href' => app_url('/admin-dashboard/settings'), 'variant' => 'light'],
 ];
-$sheetsConnected = false;
+$sheetsConnected = $dashboardData['google_sheets_connected'] ?? false;
 
 ob_start();
 
@@ -64,7 +64,21 @@ ob_start();
                     </div>
                     <div class="d-flex align-items-center gap-3">
                         <span class="text-muted small"><?= $sheetsConnected ? 'Connected' : 'Not connected' ?></span>
-                        <button type="button" class="btn btn-outline-secondary" @click="connectSheets()">Connect</button>
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary"
+                            @click="connectSheets()"
+                            x-show="!sheetsConnected">
+                            Connect
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            @click="disconnectSheets()"
+                            x-show="sheetsConnected">
+                            Disconnect
+                        </button>
                     </div>
                 </div>
             </section>
