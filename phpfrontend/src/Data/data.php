@@ -51,43 +51,28 @@ function getCheckOutTime($status, $workingHours) {
 }
 
 // Generate mock attendance data
-function generateMockAttendanceData() {
-    global $EMPLOYEES;
-    $mockAttendanceData = [];
+$mockAttendanceData = [];
+
+for ($i = 0; $i < 65; $i++) {
+    $employee = $EMPLOYEES[$i % count($EMPLOYEES)];
+    $status = getRandomStatus();
+    $workingHours = getWorkingHours($status);
     
-    for ($i = 0; $i < 85; $i++) {
-        $employee = $EMPLOYEES[$i % count($EMPLOYEES)];
-        $status = getRandomStatus();
-        $workingHours = getWorkingHours($status);
-        
-        $mockAttendanceData[] = [
-            'id' => 'ATT-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
-            'employeeName' => $employee['name'],
-            'employeeId' => $employee['id'],
-            'date' => getRandomDate(90),
-            'checkInTime' => getCheckInTime($status),
-            'checkOutTime' => getCheckOutTime($status, $workingHours),
-            'status' => $status,
-            'workingHours' => $workingHours,
-            'department' => $employee['dept']
-        ];
-    }
-    
-    // Sort by date (most recent first)
-    usort($mockAttendanceData, function($a, $b) {
-        return strtotime($b['date']) - strtotime($a['date']);
-    });
-    
-    return $mockAttendanceData;
+    $mockAttendanceData[] = [
+        'id' => 'ATT-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
+        'employeeName' => $employee['name'],
+        'employeeId' => $employee['id'],
+        'date' => getRandomDate(90),
+        'checkInTime' => getCheckInTime($status),
+        'checkOutTime' => getCheckOutTime($status, $workingHours),
+        'status' => $status,
+        'workingHours' => $workingHours,
+        'department' => $employee['dept']
+    ];
 }
 
-// Cache the data to avoid regenerating on every request
-$mockAttendanceData = generateMockAttendanceData();
-
-// Function to get employee-specific attendance data
-function getEmployeeAttendanceData($employeeId, $mockAttendanceData) {
-    return array_values(array_filter($mockAttendanceData, function($record) use ($employeeId) {
-        return $record['employeeId'] === $employeeId;
-    }));
-}
+// Sort by date (most recent first)
+usort($mockAttendanceData, function($a, $b) {
+    return strtotime($b['date']) - strtotime($a['date']);
+});
 ?>

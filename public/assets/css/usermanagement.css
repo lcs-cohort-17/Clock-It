@@ -406,14 +406,15 @@ table td {
 }
 
 .profile-page-header h1 {
-    color: var(--text);
-    font-size: 2rem;
+    color: var(--app-text);
+    font-size: var(--staff-page-title-size);
     font-weight: 800;
+    line-height: 1.15;
 }
 
 .profile-card {
     padding: 28px;
-    border-radius: 18px;
+    border-radius: 8px;
 }
 
 .profile-identity {
@@ -453,9 +454,10 @@ table td {
 }
 
 .profile-name {
-    color: var(--text);
-    font-size: 1.35rem;
+    color: var(--app-text);
+    font-size: var(--staff-section-title-size);
     font-weight: 800;
+    line-height: 1.2;
 }
 
 .profile-role-badge {
@@ -463,8 +465,8 @@ table td {
     padding: 4px 10px;
     border-radius: 999px;
     background: var(--surface-soft);
-    color: var(--text);
-    font-size: .75rem;
+    color: var(--app-text);
+    font-size: var(--staff-label-size);
     font-weight: 700;
 }
 
@@ -473,7 +475,7 @@ table td {
     border: 0;
     background: transparent;
     color: var(--mid-blue);
-    font-size: .82rem;
+    font-size: var(--staff-body-size);
     font-weight: 700;
 }
 
@@ -544,15 +546,16 @@ table td {
 .profile-detail small {
     display: block;
     margin-bottom: 4px;
-    color: var(--muted);
-    font-size: .72rem;
+    color: var(--app-muted);
+    font-size: var(--staff-label-size);
     font-weight: 700;
     letter-spacing: .05em;
     text-transform: uppercase;
 }
 
 .profile-detail span {
-    color: var(--text);
+    color: var(--app-text);
+    font-size: var(--staff-body-size);
     font-weight: 600;
     overflow-wrap: anywhere;
 }
@@ -577,8 +580,10 @@ table td {
 }
 
 .profile-section-heading h2 {
-    color: var(--text);
+    color: var(--app-text);
+    font-size: var(--staff-section-title-size);
     font-weight: 800;
+    line-height: 1.2;
 }
 
 .password-form {
@@ -614,7 +619,8 @@ table td {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: var(--text);
+    color: var(--app-text);
+    font-size: var(--staff-body-size);
     font-weight: 700;
     text-decoration: none;
     transition: border-color .2s ease, transform .2s ease;
@@ -649,14 +655,16 @@ table td {
     width: min(100%, 480px);
     padding: 22px;
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 8px;
     background: var(--surface);
     box-shadow: 0 22px 60px rgba(0, 0, 0, .28);
 }
 
 .profile-crop-modal h2 {
-    color: var(--text);
+    color: var(--app-text);
+    font-size: var(--staff-section-title-size);
     font-weight: 800;
+    line-height: 1.2;
 }
 
 .profile-crop-canvas {

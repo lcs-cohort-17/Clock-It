@@ -8,15 +8,17 @@ return [
         'password' => 'admin123',
         'role' => 'admin',
         'employeeId' => 'EMP004',
+        'department' => 'Finance',
         'microsoftEmail' => 'taaraa@clockit.com',
     ],
     [
         'id' => '2',
-        'name' => 'Shaheed Staff',
+        'name' => 'Shaheed Karlie',
         'email' => 'shaheed@clockit.com',
         'password' => 'staff123',
         'role' => 'staff',
         'employeeId' => 'EMP001',
+        'department' => 'Engineering',
         'microsoftEmail' => 'shaheed@clockit.com',
     ],
 ];

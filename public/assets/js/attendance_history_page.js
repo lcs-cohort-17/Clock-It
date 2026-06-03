@@ -17,22 +17,49 @@
       totalPages: 1,
       calendarDate: new Date(),
       calendarDays: [],
+      currentEmployeeId: null,
       columns: [
-        { field: 'employeeName', label: 'Employee' },
-        { field: 'department', label: 'Department' },
         { field: 'date', label: 'Date' },
-        { field: 'checkInTime', label: 'Check in' },
-        { field: 'checkOutTime', label: 'Check out' },
+        { field: 'checkInTime', label: 'Check In' },
+        { field: 'checkOutTime', label: 'Check Out' },
         { field: 'workingHours', label: 'Hours' },
         { field: 'status', label: 'Status' }
       ],
 
-      init: function () {
-        this.allData = (window.ATTENDANCE_DATA.history || []).slice();
+      init: async function () {
+        this.currentEmployeeId = window.ATTENDANCE_DATA.currentEmployeeId || null;
+
+        if (!this.currentEmployeeId) {
+          this.allData = [];
+        } else {
+          var allHistory = window.ATTENDANCE_DATA.history || [];
+          var apiHistory = await this.fetchAttendanceHistory();
+          this.allData = (apiHistory || allHistory).filter(function(record) {
+            return record.employeeId === this.currentEmployeeId;
+          }.bind(this));
+        }
+
         this.applyFilters();
         this.$watch('viewMode', function (value) {
           localStorage.setItem('attendanceHistoryView', value);
         });
+      },
+
+      fetchAttendanceHistory: async function () {
+        if (!window.ATTENDANCE_DATA.apiUrl) {
+          return null;
+        }
+
+        try {
+          var response = await fetch(window.ATTENDANCE_DATA.apiUrl);
+          if (!response.ok) {
+            return null;
+          }
+          var records = await response.json();
+          return Array.isArray(records) ? records : null;
+        } catch (_) {
+          return null;
+        }
       },
 
       applyFilters: function () {
@@ -43,11 +70,10 @@
         this.filteredData = this.allData.filter(function (record) {
           var recordDate = new Date(record.date + 'T00:00:00');
           var matchesSearch = !term || [
-            record.employeeName,
-            record.employeeId,
-            record.department
+            record.date,
+            record.status
           ].some(function (value) {
-            return value.toLowerCase().includes(term);
+            return String(value || '').toLowerCase().includes(term);
           });
           var matchesStatus = this.statusFilter === 'All' || record.status === this.statusFilter;
           var matchesTime = this.timeFilter === 'all' ||
@@ -97,10 +123,9 @@
       },
 
       refreshPage: function () {
-        this.totalPages = Math.max(1, Math.ceil(this.filteredData.length / this.perPage));
-        this.currentPage = Math.min(this.currentPage, this.totalPages);
-        var start = (this.currentPage - 1) * this.perPage;
-        this.pageRows = this.filteredData.slice(start, start + this.perPage);
+        this.totalPages = 1;
+        this.currentPage = 1;
+        this.pageRows = this.filteredData.slice();
       },
 
       setPage: function (page) {
@@ -179,6 +204,11 @@
         });
       },
 
+      formatHours: function (hours) {
+        var value = Number(hours);
+        return value > 0 ? value.toFixed(1) + 'h' : '--';
+      },
+
       startOfWeek: function (date) {
         var result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
         result.setDate(result.getDate() - result.getDay());
@@ -193,17 +223,46 @@
         return this.calendarDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
       },
 
+      get employeeName() {
+        var user = window.ATTENDANCE_DATA.currentUser || {};
+        return (this.allData[0] && this.allData[0].employeeName) || user.name || 'Staff Member';
+      },
+
+      get employeeDepartment() {
+        var user = window.ATTENDANCE_DATA.currentUser || {};
+        return (this.allData[0] && this.allData[0].department)
+          ? this.allData[0].department + ' Department'
+          : (user.department ? user.department + ' Department' : 'Department');
+      },
+
+      get employeeInitials() {
+        return this.employeeName
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(function (part) { return part.charAt(0).toUpperCase(); })
+          .join('') || 'SM';
+      },
+
       get metrics() {
         var hours = this.filteredData.filter(function (record) { return Number(record.workingHours) > 0; });
         var average = hours.length
           ? hours.reduce(function (total, record) { return total + Number(record.workingHours); }, 0) / hours.length
           : 0;
+        var total = this.filteredData.length || 0;
+        var percent = function (count) {
+          return total ? Math.round((count / total) * 100) + '%' : '0%';
+        };
+        var present = this.filteredData.filter(function (record) { return record.status === 'Present'; }).length;
+        var late = this.filteredData.filter(function (record) { return record.status === 'Late'; }).length;
+        var absent = this.filteredData.filter(function (record) { return record.status === 'Absent'; }).length;
+
         return [
-          { label: 'Total records', value: this.filteredData.length },
-          { label: 'Present', value: this.filteredData.filter(function (record) { return record.status === 'Present'; }).length },
-          { label: 'Late', value: this.filteredData.filter(function (record) { return record.status === 'Late'; }).length },
-          { label: 'Absent', value: this.filteredData.filter(function (record) { return record.status === 'Absent'; }).length },
-          { label: 'Avg hours', value: average.toFixed(1) + 'h' }
+          { label: 'Total Days', value: total, detail: '', className: 'metric-total' },
+          { label: 'Present', value: present, detail: percent(present), className: 'metric-present' },
+          { label: 'Late', value: late, detail: percent(late), className: 'metric-late' },
+          { label: 'Absent', value: absent, detail: percent(absent), className: 'metric-absent' },
+          { label: 'Avg Hours', value: average.toFixed(1), detail: '', className: 'metric-hours' }
         ];
       }
     };

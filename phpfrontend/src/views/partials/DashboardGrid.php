@@ -12,11 +12,11 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
         <div class="d-flex flex-column flex-md-row justify-content-between gap-4">
             <div>
                 <p class="staff-eyebrow mb-2">Good morning, <?= e($firstName) ?></p>
-                <h1 class="staff-status-title mb-2"><?= e($statusText) ?></h1>
+                <h1 class="staff-status-title staff-page-title mb-2"><?= e($statusText) ?></h1>
                 <span class="staff-location-badge">
                     You are currently <?= e($locationStatus) ?>
                 </span>
-                <p class="text-muted mt-3 mb-0">No QR scan recorded yet.</p>
+                <p class="staff-page-subtitle mt-3 mb-0">No QR scan recorded yet.</p>
             </div>
 
             <time class="staff-time" datetime="<?= e($currentTime) ?>">
@@ -32,7 +32,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
     </div>
 
     <section class="page-card p-4 mt-4">
-        <h2 class="h5 fw-bold mb-3">
+        <h2 class="staff-section-title mb-3">
             <i class="bi bi-geo-alt me-2" aria-hidden="true"></i>
             Today's activity
         </h2>

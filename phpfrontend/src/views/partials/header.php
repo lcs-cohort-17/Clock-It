@@ -1,20 +1,17 @@
 <header class="app-header border-bottom p-3">
-
     <div class="d-flex justify-content-between align-items-center gap-3">
-
         <button
             type="button"
             class="sidebar-toggle"
             data-sidebar-toggle
             aria-controls="sidebar"
             aria-expanded="false"
-            aria-label="Open navigation"
+            aria-label="Toggle navigation"
         >
             <i class="bi bi-list" aria-hidden="true"></i>
         </button>
 
         <div class="d-flex justify-content-end align-items-center gap-2 gap-sm-3">
-
             <button
                 type="button"
                 class="theme-toggle"
@@ -33,8 +30,6 @@
             <span class="badge bg-secondary">
                 <?= $isAdminDashboard ? 'Admin' : 'Staff' ?>
             </span>
-
         </div>
     </div>
-
 </header>

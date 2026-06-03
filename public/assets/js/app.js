@@ -2,29 +2,87 @@
 document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.getElementById('sidebar');
   const toggle = document.querySelector('[data-sidebar-toggle]');
-  const close = document.querySelector('[data-sidebar-close]');
+  const closeButtons = document.querySelectorAll('[data-sidebar-close]');
+  const desktopQuery = window.matchMedia('(min-width: 992px)');
 
-  function setSidebarOpen(isOpen) {
+  if (!sidebar) {
+    return;
+  }
+
+  function isDesktop() {
+    return desktopQuery.matches;
+  }
+
+  function syncToggle(isExpanded) {
+    toggle?.setAttribute('aria-expanded', String(isExpanded));
+    toggle?.setAttribute('aria-label', isExpanded ? 'Close navigation' : 'Open navigation');
+  }
+
+  function setDesktopCollapsed(isCollapsed) {
+    sidebar.classList.toggle('sidebar-collapsed', isCollapsed);
+    document.body.classList.toggle('sidebar-collapsed', isCollapsed);
+    document.body.classList.remove('sidebar-open');
+    localStorage.setItem('sidebarCollapsed', String(isCollapsed));
+    syncToggle(!isCollapsed);
+  }
+
+  function setMobileOpen(isOpen) {
+    sidebar.classList.remove('sidebar-collapsed');
+    document.body.classList.remove('sidebar-collapsed');
     document.body.classList.toggle('sidebar-open', isOpen);
-    toggle?.setAttribute('aria-expanded', String(isOpen));
-    toggle?.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+    syncToggle(isOpen);
+  }
+
+  function openSidebar() {
+    if (isDesktop()) {
+      setDesktopCollapsed(false);
+      return;
+    }
+
+    setMobileOpen(true);
+  }
+
+  function closeSidebar() {
+    if (isDesktop()) {
+      setDesktopCollapsed(true);
+      return;
+    }
+
+    setMobileOpen(false);
+  }
+
+  function initializeSidebar() {
+    if (isDesktop()) {
+      setDesktopCollapsed(localStorage.getItem('sidebarCollapsed') === 'true');
+      return;
+    }
+
+    setMobileOpen(false);
   }
 
   toggle?.addEventListener('click', () => {
-    setSidebarOpen(!document.body.classList.contains('sidebar-open'));
+    if (isDesktop()) {
+      setDesktopCollapsed(!sidebar.classList.contains('sidebar-collapsed'));
+      return;
+    }
+
+    setMobileOpen(!document.body.classList.contains('sidebar-open'));
   });
 
-  close?.addEventListener('click', () => setSidebarOpen(false));
+  closeButtons.forEach((close) => {
+    close.addEventListener('click', closeSidebar);
+  });
 
   sidebar?.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => setSidebarOpen(false));
+    link.addEventListener('click', () => {
+      if (!isDesktop()) {
+        setMobileOpen(false);
+      }
+    });
   });
 
-  window.addEventListener('resize', () => {
-    if (window.innerWidth >= 992) {
-      setSidebarOpen(false);
-    }
-  });
+  desktopQuery.addEventListener('change', initializeSidebar);
+  initializeSidebar();
 });
 
 

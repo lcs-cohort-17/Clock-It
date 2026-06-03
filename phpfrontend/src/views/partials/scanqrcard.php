@@ -19,8 +19,8 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
       <div class="container">
         <div class="row justify-content-center">
           <div class="col-12 col-xl-10">
-            <h1 class="display-5 fw-bold scan-title mb-2">Scan QR Code</h1>
-            <p class="fs-4 scan-lead mb-3">Point your camera at the workplace QR code to clock in or out.</p>
+            <h1 class="scan-title mb-2">Scan QR Code</h1>
+            <p class="scan-lead mb-3">Point your camera at the workplace QR code to clock in or out.</p>
             <div class="mt-3">
 <?php endif; ?>
 
@@ -37,8 +37,8 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
         </svg>
       </div>
 
-      <h2 x-text="config.ui.readyTitle" class="h1 fw-bold scan-title mt-4 mb-3"></h2>
-      <p x-text="config.ui.readyDescription" class="fs-5 scan-muted mb-4"></p>
+      <h2 x-text="config.ui.readyTitle" class="staff-section-title scan-title mt-4 mb-3"></h2>
+      <p x-text="config.ui.readyDescription" class="scan-muted mb-4"></p>
 
       <button
         type="button"
@@ -50,7 +50,7 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
       <hr class="my-4">
 
       <div class="text-center">
-        <p x-text="config.ui.demoHint" class="fs-5 scan-muted"></p>
+        <p x-text="config.ui.demoHint" class="scan-muted"></p>
         <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
           <button
             type="button"

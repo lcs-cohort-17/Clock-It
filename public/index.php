@@ -146,6 +146,21 @@ function dashboard_path_for(array $user): string
         : '/staff-dashboard';
 }
 
+function current_user_or(array $fallback, ?string $role = null): array
+{
+    $currentUser = $_SESSION['current_user'] ?? null;
+
+    if (!is_array($currentUser)) {
+        return $fallback;
+    }
+
+    if ($role !== null && strtolower((string) ($currentUser['role'] ?? '')) !== strtolower($role)) {
+        return $fallback;
+    }
+
+    return $currentUser;
+}
+
 function admin_settings_file(): string
 {
     return dirname(__DIR__) . '/phpfrontend/storage/settings_mock.json';
@@ -353,7 +368,7 @@ switch ($path) {
     require_once dirname(__DIR__) . '/phpfrontend/src/controllers/UserController.php';
 
     $title = 'User Management';
-    $user = $adminUser;
+    $user = current_user_or($adminUser, 'admin');
     $isAdminDashboard = true;
 
     view('admin/usermanagement', compact(
@@ -372,7 +387,7 @@ switch ($path) {
 
     case '/admin-dashboard':
         $title = 'Admin Dashboard';
-        $user = $adminUser;
+        $user = current_user_or($adminUser, 'admin');
         $isAdminDashboard = true;
 
         view('admin/admin-dashboard', compact(
@@ -385,7 +400,7 @@ switch ($path) {
 
     case '/admin-dashboard/attendance':
         $title = 'Attendance Logs';
-        $user = $adminUser;
+        $user = current_user_or($adminUser, 'admin');
         $isAdminDashboard = true;
 
         view('admin/attendance_log', compact(
@@ -398,7 +413,7 @@ switch ($path) {
 
     case '/admin-dashboard/settings':
         $title = 'Admin Settings';
-        $user = $adminUser;
+        $user = current_user_or($adminUser, 'admin');
         $isAdminDashboard = true;
 
         view('admin/admin_settings', compact(
@@ -426,7 +441,7 @@ switch ($path) {
 
     case '/staff-dashboard':
         $title = 'Staff Dashboard';
-        $user = $staffUser;
+        $user = current_user_or($staffUser, 'staff');
         $isAdminDashboard = false;
 
         view('staff/staff-dashboard', compact(
@@ -438,7 +453,7 @@ switch ($path) {
 
     case '/scan-qr':
         $title = 'Scan QR';
-        $user = $staffUser;
+        $user = current_user_or($staffUser, 'staff');
         $isAdminDashboard = false;
 
         view('staff/scanqrpage', compact(
@@ -450,7 +465,7 @@ switch ($path) {
 
     case '/history':
         $title = 'Attendance History';
-        $user = $staffUser;
+        $user = current_user_or($staffUser, 'staff');
         $isAdminDashboard = false;
 
         view('staff/AttendanceHistory', compact(
@@ -462,7 +477,7 @@ switch ($path) {
 
     case '/profile':
         $title = 'Profile';
-        $user = $staffUser;
+        $user = current_user_or($staffUser, 'staff');
         $isAdminDashboard = false;
 
         view('staff/profile', compact(

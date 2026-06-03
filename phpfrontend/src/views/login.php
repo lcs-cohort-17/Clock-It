@@ -43,11 +43,13 @@ $staffRoute = app_url('/staff-dashboard');
     </script>
     <link rel="icon" href="<?= e(app_url('/favicon.svg')) ?>" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/login.css')) ?>">
     <script>
         window.clockItMockUsers = <?= $mockUsersJson ?: '[]' ?>;
         window.clockItDeviceAssigned = <?= json_encode($deviceAssigned ?? 'staff') ?>;
     </script>
+    <script defer src="<?= e(app_url('/assets/js/theme.js')) ?>"></script>
     <script defer src="<?= e(app_url('/assets/js/login.js')) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -65,6 +67,21 @@ $staffRoute = app_url('/staff-dashboard');
         x-data="clockitLogin()"
         x-init="init()"
     >
+        <button
+            type="button"
+            class="login-theme-toggle"
+            data-theme-toggle
+            aria-label="Switch to dark mode"
+            aria-pressed="false"
+            title="Switch to dark mode"
+        >
+            <i class="bi bi-sun-fill" aria-hidden="true"></i>
+            <span class="login-theme-toggle-track" aria-hidden="true">
+                <span class="login-theme-toggle-thumb"></span>
+            </span>
+            <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+        </button>
+
         <main class="login-page">
             <section class="promo-column" aria-label="Clock It product highlights">
                 <?php include __DIR__ . '/partials/auth/PromoSection.php'; ?>

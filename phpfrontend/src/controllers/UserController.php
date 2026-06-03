@@ -10,6 +10,16 @@ if (!isset($_SESSION['users'])) {
 
 $users = &$_SESSION['users'];
 
+$hasLegacyDemoIds = array_filter($users, static function (array $user): bool {
+    $employeeId = (string) ($user['employeeId'] ?? '');
+    return str_starts_with($employeeId, 'S-') || str_starts_with($employeeId, 'A-');
+});
+
+if ($hasLegacyDemoIds !== []) {
+    $_SESSION['users'] = require __DIR__ . '/../data/MockUsers.php';
+    $users = &$_SESSION['users'];
+}
+
 
 
 /* -----------------------------

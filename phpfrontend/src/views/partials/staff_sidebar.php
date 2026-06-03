@@ -14,10 +14,20 @@ function staffNavLinkClass(string $route, string $currentPath): string
 }
 ?>
 
-<aside id="sidebar" class="bg-dark text-white vh-100 p-3 d-flex flex-column" style="width:280px;">
-    <div class="mb-4">
-        <h2 class="fw-bold mb-1">Clock It</h2>
-        <small class="text-light">Staff Portal</small>
+<aside id="sidebar" class="bg-dark text-white vh-100 p-3 d-flex flex-column">
+    <div class="mb-4 sidebar-header">
+        <div class="sidebar-brand">
+            <h2 class="fw-bold mb-1 sidebar-brand-text">Clock It</h2>
+            <small class="text-light sidebar-text">Staff Portal</small>
+        </div>
+        <button
+            type="button"
+            class="sidebar-close"
+            data-sidebar-close
+            aria-label="Close navigation"
+        >
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
     </div>
 
     <ul class="nav flex-column gap-2">
@@ -25,7 +35,7 @@ function staffNavLinkClass(string $route, string $currentPath): string
             <a href="<?= e(app_url('/staff-dashboard')) ?>"
                class="<?= staffNavLinkClass('/staff-dashboard', $currentPath) ?>">
                 <i class="bi bi-grid me-2" aria-hidden="true"></i>
-                Dashboard
+                <span class="sidebar-text">Dashboard</span>
             </a>
         </li>
 
@@ -33,7 +43,7 @@ function staffNavLinkClass(string $route, string $currentPath): string
             <a href="<?= e(app_url('/scan-qr')) ?>"
                class="<?= staffNavLinkClass('/scan-qr', $currentPath) ?>">
                 <i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>
-                Scan QR
+                <span class="sidebar-text">Scan QR</span>
             </a>
         </li>
 
@@ -41,7 +51,7 @@ function staffNavLinkClass(string $route, string $currentPath): string
             <a href="<?= e(app_url('/history')) ?>"
                class="<?= staffNavLinkClass('/history', $currentPath) ?>">
                 <i class="bi bi-clock-history me-2" aria-hidden="true"></i>
-                History
+                <span class="sidebar-text">History</span>
             </a>
         </li>
 
@@ -49,7 +59,7 @@ function staffNavLinkClass(string $route, string $currentPath): string
             <a href="<?= e(app_url('/profile')) ?>"
                class="<?= staffNavLinkClass('/profile', $currentPath) ?>">
                 <i class="bi bi-person me-2" aria-hidden="true"></i>
-                Profile
+                <span class="sidebar-text">Profile</span>
             </a>
         </li>
     </ul>
@@ -62,14 +72,14 @@ function staffNavLinkClass(string $route, string $currentPath): string
                     array_slice(explode(' ', $user['name']), 0, 2)
                 ))) ?>
             </div>
-            <div class="min-width-0">
+            <div class="min-width-0 sidebar-user-info">
                 <h6 class="mb-1 text-truncate"><?= e($user['name']) ?></h6>
                 <small class="d-block text-truncate"><?= e($user['email']) ?></small>
             </div>
         </div>
         <a href="<?= e(app_url('/logout')) ?>" class="btn btn-outline-light w-100 mt-3">
             <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
-            Sign Out
+            <span class="sidebar-text">Sign Out</span>
         </a>
     </div>
 </aside>

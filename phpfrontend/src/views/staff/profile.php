@@ -2,23 +2,36 @@
 
 declare(strict_types=1);
 
-$defaultName = (string) ($user['name'] ?? 'Sarah Mthembu');
+require_once __DIR__ . '/../includes/functions.php';
+
+$currentUser = is_array($user ?? null) ? $user : current_user();
+$currentEmployeeId = (string) ($currentUser['employeeId'] ?? '');
+
+if ($currentEmployeeId === '') {
+    redirect_to('/login');
+}
+
+$profileSessionKey = 'profile_details_' . $currentEmployeeId;
+$photoSessionKey = 'user_photo_' . $currentEmployeeId;
+$passwordSessionKey = 'password_hash_' . $currentEmployeeId;
+
+$defaultName = (string) ($currentUser['name'] ?? 'Staff User');
 $defaultNameParts = preg_split('/\s+/', trim($defaultName), 2) ?: [];
 $profileDefaults = [
     'firstName' => $defaultNameParts[0] ?? '',
     'surname' => $defaultNameParts[1] ?? '',
-    'email' => (string) ($user['email'] ?? 'sarah@clockit.app'),
+    'email' => (string) ($currentUser['email'] ?? ''),
 ];
-$savedProfile = is_array($_SESSION['profile_details'] ?? null) ? $_SESSION['profile_details'] : [];
+$savedProfile = is_array($_SESSION[$profileSessionKey] ?? null) ? $_SESSION[$profileSessionKey] : [];
 $profileDetails = array_merge($profileDefaults, $savedProfile);
 $profileUser = [
     'name' => trim($profileDetails['firstName'] . ' ' . $profileDetails['surname']),
     'firstName' => $profileDetails['firstName'],
     'surname' => $profileDetails['surname'],
     'email' => $profileDetails['email'],
-    'employeeId' => $user['employeeId'] ?? 'S-101',
-    'role' => ucfirst((string) ($user['role'] ?? 'staff')),
-    'photo' => $_SESSION['user_photo'] ?? '',
+    'employeeId' => $currentEmployeeId,
+    'role' => ucfirst((string) ($currentUser['role'] ?? 'staff')),
+    'photo' => $_SESSION[$photoSessionKey] ?? '',
 ];
 
 function profile_initials(string $name): string
@@ -56,13 +69,13 @@ function profile_remove_uploaded_photo(string $photo): void
     }
 }
 
-if (!isset($_SESSION['password_hash'])) {
-    $_SESSION['password_hash'] = password_hash('password123', PASSWORD_DEFAULT);
+if (!isset($_SESSION[$passwordSessionKey])) {
+    $_SESSION[$passwordSessionKey] = password_hash('password123', PASSWORD_DEFAULT);
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'] ?? '') === 'clear_cache') {
-    profile_remove_uploaded_photo((string) ($_SESSION['user_photo'] ?? ''));
-    unset($_SESSION['profile_details'], $_SESSION['user_photo']);
+    profile_remove_uploaded_photo((string) ($_SESSION[$photoSessionKey] ?? ''));
+    unset($_SESSION[$profileSessionKey], $_SESSION[$photoSessionKey]);
     login_json_response(['success' => true]);
 }
 
@@ -95,8 +108,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_FILES['profile_p
             $filename = 'profile_' . bin2hex(random_bytes(8)) . '.' . $allowedMimeTypes[$mimeType];
 
             if (move_uploaded_file((string) $file['tmp_name'], $uploadDir . $filename)) {
-                profile_remove_uploaded_photo((string) ($_SESSION['user_photo'] ?? ''));
-                $_SESSION['user_photo'] = app_url('/uploads/profiles/' . $filename);
+                profile_remove_uploaded_photo((string) ($_SESSION[$photoSessionKey] ?? ''));
+                $_SESSION[$photoSessionKey] = app_url('/uploads/profiles/' . $filename);
                 $_SESSION['flash_success'] = 'Profile photo updated successfully.';
             } else {
                 $_SESSION['flash_error'] = 'Failed to upload photo. Please try again.';
@@ -131,7 +144,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'
         profile_redirect();
     }
 
-    $_SESSION['profile_details'] = compact('firstName', 'surname', 'email');
+    $_SESSION[$profileSessionKey] = compact('firstName', 'surname', 'email');
     $_SESSION['flash_success'] = 'Profile details updated successfully.';
     profile_redirect();
 }
@@ -142,7 +155,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'
     $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
     $fieldErrors = [];
 
-    if (!password_verify($currentPassword, (string) $_SESSION['password_hash'])) {
+    if (!password_verify($currentPassword, (string) $_SESSION[$passwordSessionKey])) {
         $fieldErrors['current_password'] = 'Incorrect current password.';
     }
 
@@ -160,7 +173,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'
         profile_redirect();
     }
 
-    $_SESSION['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
+    $_SESSION[$passwordSessionKey] = password_hash($newPassword, PASSWORD_DEFAULT);
     $_SESSION['flash_success'] = 'Password has been updated.';
     profile_redirect();
 }
@@ -183,8 +196,8 @@ ob_start();
             <section class="container-fluid p-4 p-lg-5 profile-page">
                 <div class="profile-page-inner" x-data="profileApp()">
                     <div class="profile-page-header mb-4">
-                        <h1 class="staff-history-title mb-1">Profile</h1>
-                        <p class="text-muted mb-0">Manage your account, security, and local app data.</p>
+                        <h1 class="staff-history-title staff-page-title mb-1">Profile</h1>
+                        <p class="staff-page-subtitle mb-0">Manage your account, security, and local app data.</p>
                     </div>
 
                     <div class="page-card profile-card mb-4">
@@ -211,7 +224,7 @@ ob_start();
                         </div>
 
                         <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-                            <h3 class="h6 fw-bold mb-0">Personal details</h3>
+                            <h3 class="staff-card-title mb-0">Personal details</h3>
                             <button type="button" class="btn btn-sm btn-outline-primary" @click="editingDetails = !editingDetails">
                                 <i class="bi bi-pencil me-1" aria-hidden="true"></i>
                                 <span x-text="editingDetails ? 'Cancel' : 'Edit'"></span>
@@ -261,8 +274,8 @@ ob_start();
                         <div class="profile-section-heading">
                             <i class="bi bi-shield-lock" aria-hidden="true"></i>
                             <div>
-                                <h2 class="h5 mb-1">Change password</h2>
-                                <p class="text-muted mb-0">Update your password securely.</p>
+                                <h2 class="staff-section-title mb-1">Change password</h2>
+                                <p class="staff-section-subtitle mb-0">Update your password securely.</p>
                             </div>
                         </div>
 
@@ -283,7 +296,7 @@ ob_start();
                                     <input id="new-password" :type="showNew ? 'text' : 'password'" name="new_password" class="form-control" x-model="newPassword" minlength="8" required>
                                     <button class="btn btn-outline-secondary" type="button" @click="showNew = !showNew" aria-label="Show or hide new password"><i :class="showNew ? 'bi bi-eye-slash' : 'bi bi-eye'"></i></button>
                                 </div>
-                                <small class="text-muted">Minimum 8 characters.</small>
+                                <small class="staff-section-subtitle">Minimum 8 characters.</small>
                                 <div class="progress mt-2" aria-label="Password strength"><div class="progress-bar" :class="passwordStrengthClass()" :style="{ width: passwordStrength() + '%' }"></div></div>
                                 <small :class="passwordStrengthTextClass()" x-text="passwordStrengthLabel()"></small>
                                 <?php if (!empty($fieldErrors['new_password'])): ?><div><small class="text-danger"><?= e($fieldErrors['new_password']) ?></small></div><?php endif; ?>
@@ -307,8 +320,8 @@ ob_start();
                         <div class="profile-section-heading">
                             <i class="bi bi-life-preserver" aria-hidden="true"></i>
                             <div>
-                                <h2 class="h5 mb-1">Support &amp; data</h2>
-                                <p class="text-muted mb-0">Get help or manage local app data.</p>
+                                <h2 class="staff-section-title mb-1">Support &amp; data</h2>
+                                <p class="staff-section-subtitle mb-0">Get help or manage local app data.</p>
                             </div>
                         </div>
                         <div class="profile-support-grid mt-4">
@@ -325,8 +338,8 @@ ob_start();
                         <section class="profile-crop-modal" role="dialog" aria-modal="true" aria-labelledby="crop-title">
                             <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
                                 <div>
-                                    <h2 class="h5 mb-1" id="crop-title">Crop profile photo</h2>
-                                    <p class="text-muted small mb-0">Preview and adjust the square crop before saving.</p>
+                                    <h2 class="staff-section-title mb-1" id="crop-title">Crop profile photo</h2>
+                                    <p class="staff-section-subtitle mb-0">Preview and adjust the square crop before saving.</p>
                                 </div>
                                 <button type="button" class="btn-close" @click="closeCropper()" aria-label="Close"></button>
                             </div>

@@ -82,6 +82,8 @@ ob_start(); ?>
                    name="q"
                    value="<?= e($query) ?>"
                    placeholder="Search by name, email, or employee ID"
+                   autocomplete="off"
+                   data-user-search
                    class="form-control search-input ps-5">
 
         </div>
