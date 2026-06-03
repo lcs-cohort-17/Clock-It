@@ -1,6 +1,8 @@
+//acts as  app.listen() and Express's router does in your old Node setup — the entry point that catches everything.
+
 RewriteEngine On
 RewriteBase /
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ src/public/LeaveIndex.php [QSA,L]
+RewriteRule ^ Index.php [QSA,L]

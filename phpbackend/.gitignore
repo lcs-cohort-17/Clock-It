@@ -4,5 +4,4 @@ vendor/
 .phpunit.result.cache
 phpunit.xml/
 php-server.err.log
-.htaccess
 php-server.out.log 
