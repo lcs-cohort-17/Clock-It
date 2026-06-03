@@ -3,6 +3,14 @@
 // When opened directly, this file renders a full standalone page.
 // When included from scanqrpage.php, it renders only the card fragment.
 
+if (!function_exists('app_asset_url')) {
+    function app_asset_url(string $path = ''): string
+    {
+        $base = rtrim(dirname(str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+        return ($base === '' ? '' : $base) . '/' . ltrim($path, '/');
+    }
+}
+
 $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
 ?>
 
@@ -14,10 +22,16 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Scan QR Code</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="<?= htmlspecialchars(app_asset_url('assets/css/app.css'), ENT_QUOTES) ?>">
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.4/build/html5-qrcode.min.js"></script>
-    <script defer src="/assets/js/app.js"></script>
+    <script>
+      window.scanQrDummyAttendanceData = [
+        { code: "CLOCK_IN", attendanceStatus: "Clocked In" },
+        { code: "CLOCK_OUT", attendanceStatus: "Clocked Out" }
+      ];
+    </script>
+    <script defer src="<?= htmlspecialchars(app_asset_url('assets/js/app.js'), ENT_QUOTES) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </head>
   <body class="scan-page-body">
@@ -49,7 +63,8 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
 
       <button
         type="button"
-        @click="startScanner"
+        @click="startScan()"
+        onclick="startScan()"
         class="btn scan-open-btn btn-lg px-4 mb-3"
         x-text="config.ui.openCameraLabel"
       ></button>
