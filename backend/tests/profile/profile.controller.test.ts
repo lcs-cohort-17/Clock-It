@@ -4,10 +4,17 @@ import express from 'express'
 
 // ─── MOCK MODEL — ONE vi.mock ONLY ───────────────────────────
 vi.mock('../../src/models/profileDb.js', () => ({
+<<<<<<< HEAD
   getProfilesDb: vi.fn(),
   createProfileDb: vi.fn(),
   updateProfileDb: vi.fn(),
   deleteProfileDb: vi.fn(),
+=======
+  adminGettingAllUsersDb: vi.fn(),
+  adminCreatingUserDb: vi.fn(),
+  adminUpdatingUserDb: vi.fn(),
+  adminDeletingUserDb: vi.fn(),
+>>>>>>> origin/SizaMpafa/SM-team/testing
   resetPasswordDb: vi.fn(),
   loginProfileDb: vi.fn(),
   getProfileByIdDb: vi.fn(),
@@ -31,10 +38,17 @@ vi.mock('jsonwebtoken', () => ({
 
 import {
   getProfileByIdDb,
+<<<<<<< HEAD
   getProfilesDb,
   updateProfileDb,
   deleteProfileDb,
   createProfileDb,
+=======
+  adminGettingAllUsersDb,
+  adminUpdatingUserDb,
+  adminDeletingUserDb,
+  adminCreatingUserDb,
+>>>>>>> origin/SizaMpafa/SM-team/testing
   resetPasswordDb,
   loginProfileDb,
   updatePasswordDb
@@ -43,10 +57,17 @@ import {
 import bcrypt from 'bcrypt'
 
 import {
+<<<<<<< HEAD
   getProfilesCon,
   updateProfileCon,
   deleteProfileCon,
   createProfileCon,
+=======
+  adminGettingAllUsersCon,
+  adminUpdatingUserCon,
+  adminDeletingUserCon,
+  adminCreatingUserCon,
+>>>>>>> origin/SizaMpafa/SM-team/testing
   resetPasswordCon,
   loginProfileCon,
   getProfileByIdCon,
@@ -69,6 +90,7 @@ app.use((req: any, res, next) => {
 })
 
 // Order matters — specific routes before param routes
+<<<<<<< HEAD
 app.get('/profiles', getProfilesCon)
 app.post('/profiles/login', loginProfileCon)
 app.post('/profiles', createProfileCon)
@@ -76,6 +98,15 @@ app.patch('/profiles/:employee_id/reset-password', resetPasswordCon)
 app.patch('/profiles/:employee_id/update-password', updatePasswordCon)
 app.patch('/profiles/:employee_id', updateProfileCon)
 app.delete('/profiles/:employee_id', deleteProfileCon)
+=======
+app.get('/profiles', adminGettingAllUsersCon)
+app.post('/profiles/login', loginProfileCon)
+app.post('/profiles', adminCreatingUserCon)
+app.patch('/profiles/:employee_id/reset-password', resetPasswordCon)
+app.patch('/profiles/:employee_id/update-password', updatePasswordCon)
+app.patch('/profiles/:employee_id', adminUpdatingUserCon)
+app.delete('/profiles/:employee_id', adminDeletingUserCon)
+>>>>>>> origin/SizaMpafa/SM-team/testing
 app.get('/profiles/:employee_id', getProfileByIdCon)
 
 beforeEach(() => {
@@ -84,10 +115,17 @@ beforeEach(() => {
 })
 
 // ─── GET ALL ─────────────────────────────────────────────────
+<<<<<<< HEAD
 describe('getProfilesCon', () => {
 
   it('should return 200 with all profiles', async () => {
     vi.mocked(getProfilesDb).mockResolvedValueOnce({
+=======
+describe('adminGettingAllUsersCon', () => {
+
+  it('should return 200 with all profiles', async () => {
+    vi.mocked(adminGettingAllUsersDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: true,
       data: [
         { id: '14271887-48ea-48c8-9890-6cb196afa0Gc', first_name: 'Joshua', last_name: 'Jacobs', employee_id: 'S-005', role: 'staff', is_active: true, email: 'jodam@gmail.com', password: 'hashed' },
@@ -103,7 +141,11 @@ describe('getProfilesCon', () => {
   })
 
   it('should return 400 when model fails', async () => {
+<<<<<<< HEAD
     vi.mocked(getProfilesDb).mockResolvedValueOnce({
+=======
+    vi.mocked(adminGettingAllUsersDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: false,
       error: 'Database error'
     })
@@ -115,7 +157,11 @@ describe('getProfilesCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
+<<<<<<< HEAD
     vi.mocked(getProfilesDb).mockRejectedValueOnce(new Error('Crash'))
+=======
+    vi.mocked(adminGettingAllUsersDb).mockRejectedValueOnce(new Error('Crash'))
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
     const response = await request(app).get('/profiles')
 
@@ -124,10 +170,17 @@ describe('getProfilesCon', () => {
 })
 
 // ─── CREATE ──────────────────────────────────────────────────
+<<<<<<< HEAD
 describe('createProfileCon', () => {
 
   it('should return 201 with new profile and plain text password to admin', async () => {
     vi.mocked(createProfileDb).mockResolvedValueOnce({
+=======
+describe('adminCreatingUserCon', () => {
+
+  it('should return 201 with new profile and plain text password to admin', async () => {
+    vi.mocked(adminCreatingUserDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: true,
       data: {
         id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
@@ -161,7 +214,11 @@ describe('createProfileCon', () => {
   })
 
   it('should return 201 when admin creates another admin', async () => {
+<<<<<<< HEAD
     vi.mocked(createProfileDb).mockResolvedValueOnce({
+=======
+    vi.mocked(adminCreatingUserDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: true,
       data: {
         id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
@@ -202,7 +259,11 @@ describe('createProfileCon', () => {
   })
 
   it('should return 400 when model returns error', async () => {
+<<<<<<< HEAD
     vi.mocked(createProfileDb).mockResolvedValueOnce({
+=======
+    vi.mocked(adminCreatingUserDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: false,
       error: 'Staff employee_id must start with S-'
     })
@@ -222,7 +283,11 @@ describe('createProfileCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
+<<<<<<< HEAD
     vi.mocked(createProfileDb).mockRejectedValueOnce(new Error('Crash'))
+=======
+    vi.mocked(adminCreatingUserDb).mockRejectedValueOnce(new Error('Crash'))
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
     const response = await request(app)
       .post('/profiles')
@@ -375,10 +440,17 @@ describe('loginProfileCon', () => {
 })
 
 // ─── UPDATE ──────────────────────────────────────────────────
+<<<<<<< HEAD
 describe('updateProfileCon', () => {
 
   it('should return 200 on successful update', async () => {
     vi.mocked(updateProfileDb).mockResolvedValueOnce({
+=======
+describe('adminUpdatingUserCon', () => {
+
+  it('should return 200 on successful update', async () => {
+    vi.mocked(adminUpdatingUserDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: true,
       data: {
         id: '18741887-48ea-48c8-9890-6cb196afa0Gc',
@@ -401,7 +473,11 @@ describe('updateProfileCon', () => {
   })
 
   it('should return 400 when model fails', async () => {
+<<<<<<< HEAD
     vi.mocked(updateProfileDb).mockResolvedValueOnce({
+=======
+    vi.mocked(adminUpdatingUserDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: false,
       error: 'Update failed'
     })
@@ -415,7 +491,11 @@ describe('updateProfileCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
+<<<<<<< HEAD
     vi.mocked(updateProfileDb).mockRejectedValueOnce(new Error('Crash'))
+=======
+    vi.mocked(adminUpdatingUserDb).mockRejectedValueOnce(new Error('Crash'))
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
     const response = await request(app)
       .patch('/profiles/S-007')
@@ -426,10 +506,17 @@ describe('updateProfileCon', () => {
 })
 
 // ─── DELETE ──────────────────────────────────────────────────
+<<<<<<< HEAD
 describe('deleteProfileCon', () => {
 
   it('should return 200 on successful soft delete', async () => {
     vi.mocked(deleteProfileDb).mockResolvedValueOnce({
+=======
+describe('adminDeletingUserCon', () => {
+
+  it('should return 200 on successful soft delete', async () => {
+    vi.mocked(adminDeletingUserDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: true,
       message: 'profile deleted successfully'
     })
@@ -442,7 +529,11 @@ describe('deleteProfileCon', () => {
   })
 
   it('should return 400 when model fails', async () => {
+<<<<<<< HEAD
     vi.mocked(deleteProfileDb).mockResolvedValueOnce({
+=======
+    vi.mocked(adminDeletingUserDb).mockResolvedValueOnce({
+>>>>>>> origin/SizaMpafa/SM-team/testing
       success: false,
       error: 'Delete failed'
     })
@@ -454,7 +545,11 @@ describe('deleteProfileCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
+<<<<<<< HEAD
     vi.mocked(deleteProfileDb).mockRejectedValueOnce(new Error('Crash'))
+=======
+    vi.mocked(adminDeletingUserDb).mockRejectedValueOnce(new Error('Crash'))
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
     const response = await request(app).delete('/profiles/S-007')
 

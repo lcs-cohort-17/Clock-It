@@ -4,6 +4,7 @@ import express from 'express'
 
 // ─── MOCK CONTROLLERS ────────────────────────────────────────
 vi.mock('../../src/controllers/profileController.js', () => ({
+<<<<<<< HEAD
   getProfilesCon: vi.fn((req, res) => {
     res.status(200).json({ success: true, message: 'getProfilesCon hit' })
   }),
@@ -15,6 +16,19 @@ vi.mock('../../src/controllers/profileController.js', () => ({
   }),
   deleteProfileCon: vi.fn((req, res) => {
     res.status(200).json({ success: true, message: 'deleteProfileCon hit' })
+=======
+  adminGettingAllUsersCon: vi.fn((req, res) => {
+    res.status(200).json({ success: true, message: 'adminGettingAllUsersCon hit' })
+  }),
+  adminCreatingUserCon: vi.fn((req, res) => {
+    res.status(201).json({ success: true, message: 'adminCreatingUserCon hit' })
+  }),
+  adminUpdatingUserCon: vi.fn((req, res) => {
+    res.status(200).json({ success: true, message: 'adminUpdatingUserCon hit' })
+  }),
+  adminDeletingUserCon: vi.fn((req, res) => {
+    res.status(200).json({ success: true, message: 'adminDeletingUserCon hit' })
+>>>>>>> origin/SizaMpafa/SM-team/testing
   }),
   loginProfileCon: vi.fn((req, res) => {
     res.status(200).json({
@@ -56,9 +70,15 @@ vi.mock('../../src/middleware/authMiddleware.js', () => ({
 import profileRoutes from '../../src/routes/profileRoutes.js'
 
 import {
+<<<<<<< HEAD
   getProfilesCon,
   updateProfileCon,
   deleteProfileCon,
+=======
+  adminGettingAllUsersCon,
+  adminUpdatingUserCon,
+  adminDeletingUserCon,
+>>>>>>> origin/SizaMpafa/SM-team/testing
   getProfileByIdCon
 } from '../../src/controllers/profileController.js'
 
@@ -74,14 +94,22 @@ beforeEach(() => {
 // ─── GET ALL ─────────────────────────────────────────────────
 describe('GET /profiles', () => {
 
+<<<<<<< HEAD
   it('should call getProfilesCon when authenticated', async () => {
+=======
+  it('should call adminGettingAllUsersCon when authenticated', async () => {
+>>>>>>> origin/SizaMpafa/SM-team/testing
     const response = await request(app)
       .get('/profiles')
       .set('Authorization', 'Bearer faketoken')
 
     expect(response.status).toBe(200)
     expect(response.body.success).toBe(true)
+<<<<<<< HEAD
     expect(getProfilesCon).toHaveBeenCalledTimes(1)
+=======
+    expect(adminGettingAllUsersCon).toHaveBeenCalledTimes(1)
+>>>>>>> origin/SizaMpafa/SM-team/testing
   })
 
   it('should return 401 when no token is provided', async () => {
@@ -213,7 +241,11 @@ describe('GET /profiles/:employee_id', () => {
 // ─── PATCH ───────────────────────────────────────────────────
 describe('PATCH /profiles/:employee_id', () => {
 
+<<<<<<< HEAD
   it('should call updateProfileCon when authenticated', async () => {
+=======
+  it('should call adminUpdatingUserCon when authenticated', async () => {
+>>>>>>> origin/SizaMpafa/SM-team/testing
     const response = await request(app)
       .patch('/profiles/S-007')
       .set('Authorization', 'Bearer faketoken')
@@ -221,7 +253,11 @@ describe('PATCH /profiles/:employee_id', () => {
 
     expect(response.status).toBe(200)
     expect(response.body.success).toBe(true)
+<<<<<<< HEAD
     expect(updateProfileCon).toHaveBeenCalledTimes(1)
+=======
+    expect(adminUpdatingUserCon).toHaveBeenCalledTimes(1)
+>>>>>>> origin/SizaMpafa/SM-team/testing
   })
 
   it('should return 401 when no token is provided', async () => {
@@ -237,14 +273,22 @@ describe('PATCH /profiles/:employee_id', () => {
 // ─── DELETE ──────────────────────────────────────────────────
 describe('DELETE /profiles/:employee_id', () => {
 
+<<<<<<< HEAD
   it('should call deleteProfileCon when authenticated', async () => {
+=======
+  it('should call adminDeletingUserCon when authenticated', async () => {
+>>>>>>> origin/SizaMpafa/SM-team/testing
     const response = await request(app)
       .delete('/profiles/S-007')
       .set('Authorization', 'Bearer faketoken')
 
     expect(response.status).toBe(200)
     expect(response.body.success).toBe(true)
+<<<<<<< HEAD
     expect(deleteProfileCon).toHaveBeenCalledTimes(1)
+=======
+    expect(adminDeletingUserCon).toHaveBeenCalledTimes(1)
+>>>>>>> origin/SizaMpafa/SM-team/testing
   })
 
   it('should return 401 when no token is provided', async () => {

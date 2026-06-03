@@ -44,10 +44,17 @@ app.use((req, res, next) => {
 // Test route
 app.get('/test', (req, res) => res.json({ message: 'Test route works!' }))
 
+<<<<<<< HEAD
 app.use('/api/admin', buildAdminDashboardRouter(supabase))
 app.use('/api/google', googleRoutes)
 app.use('/api/leaves', attendanceRoutes)
 app.use('/profiles', profileRoutes)
+=======
+app.use('/api/leaves', attendanceRoutes)
+app.use('/profiles', profileRoutes)
+app.use('/api/admin/dashboard', buildAdminDashboardRouter(supabase))
+app.use('/api/google', googleRoutes)
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
 app.use((req, res) => {
   res.status(404).json({ 

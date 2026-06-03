@@ -27,5 +27,11 @@ export function buildAdminDashboardRouter(supabase: SupabaseClient) {
     res.status(404).json({ error: "Not found" });
   });
 
+<<<<<<< HEAD
   return router;
 }
+=======
+  return router
+}
+
+>>>>>>> origin/SizaMpafa/SM-team/testing

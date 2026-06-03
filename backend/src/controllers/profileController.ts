@@ -2,20 +2,35 @@ import type { Request, Response } from 'express'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import {
+<<<<<<< HEAD
   getProfilesDb,
   getProfileByIdDb,
   updateProfileDb,
   deleteProfileDb,
   loginProfileDb,
   createProfileDb,
+=======
+  adminGettingAllUsersDb,
+  getProfileByIdDb,
+  adminUpdatingUserDb,
+  adminDeletingUserDb,
+  loginProfileDb,
+  adminCreatingUserDb,
+>>>>>>> origin/SizaMpafa/SM-team/testing
   updatePasswordDb,
   resetPasswordDb,
 } from '../models/profileDb.js'
 
 // ─── GET ALL ─────────────────────────────────────────────────
+<<<<<<< HEAD
 export const getProfilesCon = async (req: Request, res: Response) => {
   try {
     const result = await getProfilesDb()
+=======
+export const adminGettingAllUsersCon = async (req: Request, res: Response) => {
+  try {
+    const result = await adminGettingAllUsersDb()
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
     if (!result.success) {
       return res.status(400).json(result)
@@ -61,7 +76,11 @@ export const getProfileByIdCon = async (req: Request, res: Response) => {
 // ─── CREATE ──────────────────────────────────────────────────
 // Admin creates staff or other admin
 // Password is auto-generated — plain text returned to admin (ticket 031)
+<<<<<<< HEAD
 export const createProfileCon = async (req: Request, res: Response) => {
+=======
+export const adminCreatingUserCon = async (req: Request, res: Response) => {
+>>>>>>> origin/SizaMpafa/SM-team/testing
   try {
     const { first_name, last_name, employee_id, role, email } = req.body
 
@@ -72,7 +91,11 @@ export const createProfileCon = async (req: Request, res: Response) => {
       })
     }
 
+<<<<<<< HEAD
     const result = await createProfileDb(
+=======
+    const result = await adminCreatingUserDb(
+>>>>>>> origin/SizaMpafa/SM-team/testing
       first_name,
       last_name,
       employee_id,
@@ -171,12 +194,20 @@ export const loginProfileCon = async (req: Request, res: Response) => {
 }
 
 // ─── UPDATE ──────────────────────────────────────────────────
+<<<<<<< HEAD
 export const updateProfileCon = async (req: Request, res: Response) => {
+=======
+export const adminUpdatingUserCon = async (req: Request, res: Response) => {
+>>>>>>> origin/SizaMpafa/SM-team/testing
   try {
     const  employee_id  = req.params.employee_id as string
     const updates = req.body
 
+<<<<<<< HEAD
     const result = await updateProfileDb(employee_id, updates)
+=======
+    const result = await adminUpdatingUserDb(employee_id, updates)
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
     if (!result.success) {
       return res.status(400).json(result)
@@ -189,11 +220,19 @@ export const updateProfileCon = async (req: Request, res: Response) => {
 }
 
 // ─── DELETE (SOFT) ───────────────────────────────────────────
+<<<<<<< HEAD
 export const deleteProfileCon = async (req: Request, res: Response) => {
   try {
     const  employee_id  = req.params.employee_id as string
 
     const result = await deleteProfileDb(employee_id)
+=======
+export const adminDeletingUserCon = async (req: Request, res: Response) => {
+  try {
+    const  employee_id  = req.params.employee_id as string
+
+    const result = await adminDeletingUserDb(employee_id)
+>>>>>>> origin/SizaMpafa/SM-team/testing
 
     if (!result.success) {
       return res.status(400).json(result)
