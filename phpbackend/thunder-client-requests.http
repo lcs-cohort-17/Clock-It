@@ -1,0 +1,23 @@
+### GET current settings
+GET http://localhost:8000/api/admin/settings
+Authorization: Bearer test-admin
+
+### PUT update settings
+PUT http://localhost:8000/api/admin/settings
+Content-Type: application/json
+Authorization: Bearer test-admin
+
+{
+  "session_timeout_minutes": 45,
+  "data_retention_days": 120
+}
+
+### POST purge attendance
+POST http://localhost:8000/api/admin/data-retention/purge
+Content-Type: application/json
+Authorization: Bearer test-admin
+
+{
+  "confirm": true,
+  "days": 30
+}

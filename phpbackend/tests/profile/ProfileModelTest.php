@@ -8,7 +8,6 @@ use PDO;
 use PDOException; 
 use PDOStatement;
 use App\Models\ProfileDb;
-
 class ProfileModelTest extends TestCase
 {
     private $mockDb;
@@ -21,7 +20,7 @@ class ProfileModelTest extends TestCase
         // Create a mock PDO
         $this->mockDb = $this->createMock(PDO::class);
         
-        // Create the model with the mock database
+        // Create the real model with the mocked PDO connection
         $this->model = new ProfileDb($this->mockDb);
     }
 
