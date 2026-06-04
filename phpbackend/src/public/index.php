@@ -3,7 +3,7 @@
 // ERROR HANDLING
 // =============================================
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // Set to 1 for debugging
+ini_set('display_errors', 1);
 
 set_exception_handler(function ($exception) {
     error_log('UNCAUGHT EXCEPTION: ' . $exception->getMessage());
@@ -27,19 +27,19 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
 // =============================================
-// MANUAL AUTOLOAD FIX FOR MIDDLEWARE
+// AUTOLOAD
 // =============================================
 if (!class_exists('Middleware\AuthMiddleware')) {
     require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 }
 
 // =============================================
-// CORS HEADERS
+// HEADERS
 // =============================================
+header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Content-Type: application/json');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -47,179 +47,163 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // =============================================
-// ROUTING
+// REQUEST
 // =============================================
-
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $path = preg_replace('#^/api#', '', $path);
 
-error_log("[DEBUG] $method $path");
-
-$input = json_decode(file_get_contents('php://input'), true) ?? [];
+$input = json_decode(file_get_contents("php://input"), true) ?? [];
 
 $request = [
     'headers' => getallheaders(),
     'method' => $method,
     'path' => $path,
-    'query' => $_GET,
     'body' => $input
 ];
 
 // =============================================
-// DEBUG HEADERS
+// DB + AUTH
 // =============================================
-error_log("DEBUG: Authorization header: " . ($request['headers']['Authorization'] ?? 'NOT FOUND'));
-
-// =============================================
-// PROFILE ROUTES
-// =============================================
-
-use App\Models\ProfileDb;
-use Controllers\ProfileController;
-use Middleware\AuthMiddleware;
 use Config\Database;
+use Middleware\AuthMiddleware;
 
-$jwtSecret = $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this';
 $db = Database::getInstance()->getConnection();
+$auth = new AuthMiddleware($_ENV['JWT_SECRET'] ?? 'secret', $db);
 
-$authMiddleware = new AuthMiddleware($jwtSecret, $db);
+// =============================================
+// ROUTE: ATTENDANCE CLOCK (NEW TICKET)
+// =============================================
+if ($method === 'POST' && $path === '/attendance/clock') {
 
-$model = new ProfileDb();
-$controller = new ProfileController($model);
-
-// =====================================================
-// QR CODE MODEL (ADDED/MIHLE)
-// =====================================================
-use App\Models\QrCodeDb;
-$qrModel = new QrCodeDb();
-
-
-// POST - Forgot password (public)
-if ($method === 'POST' && $path === '/forgot-password') {
-    $controller->forgotPassword($input);
-    exit;
-}
-
-// POST - Reset password (public)
-if ($method === 'POST' && $path === '/reset-password') {
-    $controller->resetPasswordWithToken($input);
-    exit;
-}
-
-// TEST
-if ($method === 'GET' && $path === '/test') {
-    echo json_encode(['message' => 'Test route works!']);
-    exit;
-}
-
-// LOGIN
-if ($method === 'POST' && $path === '/login') {
-    $controller->loginProfile($input);
-    exit;
-}
-
-// =====================================================
-// AUTH ROUTES
-// =====================================================
-
-if ($method === 'GET' && $path === '/user/profile') {
-    $authResult = $authMiddleware->requireLogin($request);
-    if ($authResult) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->getCurrentUserProfile($request);
-    exit;
-}
-
-// =====================================================
-// ADMIN ROUTES
-// =====================================================
-
-if ($method === 'GET' && $path === '/admin/users') {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->adminGettingAllUsers();
-    exit;
-}
-
-// =====================================================
-// QR CODE ROUTES (ADDED/MIHLE)
-// =====================================================
-
-// ADMIN: generate QR token (clock_in / clock_out)
-if ($method === 'POST' && $path === '/admin/qr/generate') {
-
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
+    // 1. AUTH CHECK
+    $authCheck = $auth->requireLogin($request);
+    if ($authCheck !== null) {
+        http_response_code($authCheck['status']);
+        echo json_encode($authCheck['body']);
         exit;
     }
 
-    $userId = $request['user']['user_id'] ?? null;
+    $user = $request['user'];
+    $userId = $user['user_id'] ?? null;
 
     if (!$userId) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Invalid admin user']);
+        echo json_encode(['success' => false, 'error' => 'Invalid user']);
         exit;
     }
 
-    $token = bin2hex(random_bytes(16)); // 32 chars
-    $type = $input['type'] ?? 'clock_in';
+    $qrToken = $input['qr_token'] ?? null;
+    $device = $input['device_info'] ?? null;
+    $location = $input['location'] ?? null;
 
-    $qrModel->createToken($token, $type, $userId);
-
-    echo json_encode([
-        'success' => true,
-        'token' => $token,
-        'type' => $type,
-        'expires_in' => 60
-    ]);
-    exit;
-}
-
-// PUBLIC: validate QR token
-if ($method === 'POST' && $path === '/api/scan/validate') {
-
-    $token = $input['qr_token'] ?? null;
-
-    if (!$token) {
+    if (!$qrToken) {
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'QR token required']);
         exit;
     }
 
-    $qr = $qrModel->validateAndUseToken($token);
+    try {
 
-    if (!$qr) {
-        http_response_code(410);
+        // 2. VALIDATE QR
+        $stmt = $db->prepare("
+            SELECT * FROM qr_codes
+            WHERE token = ?
+              AND used_at IS NULL
+              AND expires_at > NOW()
+        ");
+        $stmt->execute([$qrToken]);
+        $qr = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$qr) {
+            http_response_code(410);
+            echo json_encode(['success' => false, 'error' => 'QR code expired or already used']);
+            exit;
+        }
+
+        // 3. CHECK USER ACTIVE
+        $stmt = $db->prepare("SELECT is_active FROM users WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $isActive = $stmt->fetchColumn();
+
+        if (!$isActive) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'User inactive']);
+            exit;
+        }
+
+        // 4. LAST ATTENDANCE CHECK
+        $stmt = $db->prepare("
+            SELECT event_type
+            FROM attendance_logs
+            WHERE user_id = ?
+            AND DATE(event_time) = CURDATE()
+            ORDER BY event_time DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        $last = $stmt->fetchColumn();
+
+        $newType = ($last === 'in') ? 'out' : 'in';
+
+        if ($last === $newType) {
+            http_response_code(409);
+            echo json_encode(['success' => false, 'error' => 'Duplicate clock action']);
+            exit;
+        }
+
+        // 5. TRANSACTION
+        $db->beginTransaction();
+
+        // INSERT ATTENDANCE
+        $stmt = $db->prepare("
+            INSERT INTO attendance_logs
+            (user_id, event_type, event_time, check_in_method, sync_status, location, device_info, qr_code_id, created_at)
+            VALUES (?, ?, NOW(), 'qr', 1, ?, ?, ?, NOW())
+        ");
+
+        $stmt->execute([
+            $userId,
+            $newType,
+            $location,
+            $device,
+            $qr['id']
+        ]);
+
+        // MARK QR USED
+        $stmt = $db->prepare("
+            UPDATE qr_codes
+            SET used_at = NOW()
+            WHERE id = ?
+        ");
+        $stmt->execute([$qr['id']]);
+
+        $db->commit();
+
+        echo json_encode([
+            'success' => true,
+            'message' => "Clock {$newType} successful"
+        ]);
+        exit;
+
+    } catch (Throwable $e) {
+        $db->rollBack();
+
+        http_response_code(500);
         echo json_encode([
             'success' => false,
-            'error' => 'QR code expired or already used'
+            'error' => $e->getMessage()
         ]);
         exit;
     }
-
-    echo json_encode([
-        'success' => true,
-        'type' => $qr['type']
-    ]);
-    exit;
 }
 
-// =====================================================
+// =============================================
 // 404
-// =====================================================
+// =============================================
 http_response_code(404);
 echo json_encode([
     'success' => false,
-    'error' => 'Route not found: ' . $method . ' ' . $path
+    'error' => 'Route not found'
 ]);
 exit;
