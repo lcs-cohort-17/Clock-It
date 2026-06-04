@@ -11,148 +11,125 @@ class AdminDashboardModel
         $this->db = $db;
     }
 
+    // =========================================================
+    // TODAY RANGE
+    // =========================================================
     private function getTodayRange(): array
     {
-        $start = strtotime(gmdate('Y-m-d 00:00:00'));
-        $end = $start + 86400;
-
         return [
-            'start' => gmdate('Y-m-d H:i:s', $start),
-            'end' => gmdate('Y-m-d H:i:s', $end),
+            'start' => date('Y-m-d 00:00:00'),
+            'end'   => date('Y-m-d 23:59:59'),
         ];
     }
 
+    // =========================================================
+    // STATS CARD
+    // =========================================================
     public function fetchStats(): array
     {
-        $errors = [];
         $today = $this->getTodayRange();
 
-        $active = $this->tryFetchCount(
-            "SELECT COUNT(*) AS count FROM sessions 
-            WHERE clock_out_time IS NULL
-             AND clock_in_time >= '{$today['start']}'
-             AND clock_in_time < '{$today['end']}'",
-            $errors
-        );
+        // currently onsite = last action is IN and no OUT after
+        $stmt = $this->db->prepare("
+            SELECT COUNT(DISTINCT al1.user_id)
+            FROM attendance_logs al1
+            WHERE al1.event_type = 'in'
+            AND al1.event_time BETWEEN :start AND :end
+            AND NOT EXISTS (
+                SELECT 1
+                FROM attendance_logs al2
+                WHERE al2.user_id = al1.user_id
+                AND al2.event_type = 'out'
+                AND al2.event_time > al1.event_time
+                AND al2.event_time BETWEEN :start AND :end
+            )
+        ");
+        $stmt->execute($today);
+        $currentlyOnsite = (int)$stmt->fetchColumn();
 
-        $clockIns = $this->tryFetchCount(
-            "SELECT COUNT(*) AS count
-             FROM attendance_logs
-             WHERE event_type = 'in'
-               AND event_time >= '{$today['start']}'
-               AND event_time < '{$today['end']}'",
-            $errors
-        );
+        // total clock-ins today
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*)
+            FROM attendance_logs
+            WHERE event_type = 'in'
+            AND event_time BETWEEN :start AND :end
+        ");
+        $stmt->execute($today);
+        $totalClockedInToday = (int)$stmt->fetchColumn();
 
-        $events = $this->tryFetchCount(
-            "SELECT COUNT(*) AS count
-             FROM attendance_logs
-             WHERE event_time >= '{$today['start']}'
-               AND event_time < '{$today['end']}'",
-            $errors
-        );
-
-        if (!empty($errors)) {
-            throw new RuntimeException(implode(' | ', $errors));
-        }
+        // total events today
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*)
+            FROM attendance_logs
+            WHERE event_time BETWEEN :start AND :end
+        ");
+        $stmt->execute($today);
+        $totalEventsToday = (int)$stmt->fetchColumn();
 
         return [
-            'currentlyOnsite' =>  $active,
-            'totalClockedInToday' =>  $clockIns,
-            'pendingSync' =>  0,
-            'totalEventsToday' =>  $events,
+            'currentlyOnsite' => $currentlyOnsite,
+            'totalClockedInToday' => $totalClockedInToday,
+            'pendingSync' => 0,
+            'totalEventsToday' => $totalEventsToday,
         ];
     }
 
-    public function fetchRecentActivity(int $page, int $limit): array
-{
-    $page = max(1, $page);
-    $limit = max(1, $limit);
-    $offset = ($page - 1) * $limit;
-
-        $sql = "
+    // =========================================================
+    // RECENT ACTIVITY (LAST 10)
+    // =========================================================
+    public function fetchRecentActivity(int $limit = 10): array
+    {
+        $stmt = $this->db->prepare("
             SELECT
-            al.user_id,
-            al.event_time,
-            al.event_type,
-            u.first_name,
-            u.last_name,
-            u.role
-        FROM attendance_logs al
-        LEFT JOIN users u ON u.id = al.user_id
-        ORDER BY al.event_time DESC
-        LIMIT {$limit} OFFSET {$offset}";
+                al.user_id,
+                al.event_type,
+                al.event_time,
+                u.first_name,
+                u.last_name,
+                u.role
+            FROM attendance_logs al
+            LEFT JOIN users u ON u.id = al.user_id
+            ORDER BY al.event_time DESC
+            LIMIT :limit
+        ");
 
-        return $this->fetchRows($sql);
-}
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
 
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-
-public function fetchCurrentlyOnsite(): array
+    // =========================================================
+    // ONSITE STAFF LIST
+    // =========================================================
+    public function fetchCurrentlyOnsite(): array
     {
         $today = $this->getTodayRange();
 
-        // Fixed: Only get staff who have an active session today
-        $sql = "SELECT
-                    s.user_id,
-                    s.clock_in_time AS event_time,
-                    u.first_name,
-                    u.last_name,
-                    u.role
-                FROM sessions s
-                LEFT JOIN users u ON u.id = s.user_id
-                WHERE s.clock_out_time IS NULL
-                  AND s.clock_in_time >= '{$today['start']}'
-                ORDER BY s.clock_in_time DESC";
+        $stmt = $this->db->prepare("
+            SELECT
+                al1.user_id,
+                al1.event_time AS sign_in_time,
+                u.first_name,
+                u.last_name,
+                u.role
+            FROM attendance_logs al1
+            JOIN users u ON u.id = al1.user_id
+            WHERE al1.event_type = 'in'
+            AND al1.event_time BETWEEN :start AND :end
+            AND NOT EXISTS (
+                SELECT 1
+                FROM attendance_logs al2
+                WHERE al2.user_id = al1.user_id
+                AND al2.event_type = 'out'
+                AND al2.event_time > al1.event_time
+                AND al2.event_time BETWEEN :start AND :end
+            )
+            ORDER BY al1.event_time DESC
+        ");
 
-        return $this->fetchRows($sql);
-    }
-    
+        $stmt->execute($today);
 
-    private function tryFetchCount(string $sql, array &$errors): int
-    {
-        try {
-            return $this->fetchCount($sql);
-        } catch (Throwable $e) {
-            $errors[] = $e->getMessage();
-            return 0;
-        }
-    }
-
-    private function fetchCount(string $sql): int
-    {
-        $stmt = $this->db->query($sql);
-
-        if ($stmt === false) {
-            throw new RuntimeException('Database query failed');
-        }
-
-        return (int) $stmt->fetchColumn();
-    }
-
-    private function fetchRows(string $sql): array
-    {
-        $stmt = $this->db->query($sql);
-
-        if ($stmt === false) {
-            throw new RuntimeException('Database query failed');
-        }
-
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        return array_map(function (array $row): array {
-            $firstName = $row['first_name'] ?? null;
-            $lastName = $row['last_name'] ?? null;
-            $role = $row['role'] ?? null;
-            unset($row['first_name'], $row['last_name'], $row['role']);
-
-            $row['users'] = [
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-                'role' => $role,
-            ];
-
-            return $row;
-        }, $rows ?: []);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

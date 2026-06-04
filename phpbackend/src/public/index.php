@@ -41,7 +41,6 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 header('Content-Type: application/json');
 
-// Handle preflight OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -53,16 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-// Remove /api prefix if present
 $path = preg_replace('#^/api#', '', $path);
 
 error_log("[DEBUG] $method $path");
 
-// Get JSON input for POST/PATCH/PUT requests
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
-// Build request array for middleware
 $request = [
     'headers' => getallheaders(),
     'method' => $method,
@@ -72,11 +67,9 @@ $request = [
 ];
 
 // =============================================
-// DEBUG: Check headers (MOVED HERE - AFTER $request is defined!)
+// DEBUG HEADERS
 // =============================================
-error_log("DEBUG: All headers: " . print_r(getallheaders(), true));
 error_log("DEBUG: Authorization header: " . ($request['headers']['Authorization'] ?? 'NOT FOUND'));
-error_log("DEBUG: authorization header: " . ($request['headers']['authorization'] ?? 'NOT FOUND'));
 
 // =============================================
 // PROFILE ROUTES
@@ -85,15 +78,22 @@ error_log("DEBUG: authorization header: " . ($request['headers']['authorization'
 use App\Models\ProfileDb;
 use Controllers\ProfileController;
 use Middleware\AuthMiddleware;
-use Config\Database;  // ADD THIS!
+use Config\Database;
 
-// Initialize JWT secret AND database connection for timeout checking
 $jwtSecret = $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this';
-$db = Database::getInstance()->getConnection();  // Get database connection
-$authMiddleware = new AuthMiddleware($jwtSecret, $db);  // Pass db to middleware
+$db = Database::getInstance()->getConnection();
+
+$authMiddleware = new AuthMiddleware($jwtSecret, $db);
 
 $model = new ProfileDb();
 $controller = new ProfileController($model);
+
+// =====================================================
+// QR CODE MODEL (ADDED/MIHLE)
+// =====================================================
+use App\Models\QrCodeDb;
+$qrModel = new QrCodeDb();
+
 
 // POST - Forgot password (public)
 if ($method === 'POST' && $path === '/forgot-password') {
@@ -107,32 +107,25 @@ if ($method === 'POST' && $path === '/reset-password') {
     exit;
 }
 
-// =============================================
-// TEST ROUTE (PUBLIC - no auth needed)
-// =============================================
+// TEST
 if ($method === 'GET' && $path === '/test') {
     echo json_encode(['message' => 'Test route works!']);
     exit;
 }
 
-// =============================================
-// PUBLIC ROUTES (no token required)
-// =============================================
-
-// POST - Login
+// LOGIN
 if ($method === 'POST' && $path === '/login') {
     $controller->loginProfile($input);
     exit;
 }
 
-// =============================================
-// AUTHENTICATED ROUTES (require token)
-// =============================================
+// =====================================================
+// AUTH ROUTES
+// =====================================================
 
-// GET - Get current user's own profile
 if ($method === 'GET' && $path === '/user/profile') {
     $authResult = $authMiddleware->requireLogin($request);
-    if ($authResult !== null) {
+    if ($authResult) {
         http_response_code($authResult['status']);
         echo json_encode($authResult['body']);
         exit;
@@ -141,10 +134,13 @@ if ($method === 'GET' && $path === '/user/profile') {
     exit;
 }
 
-// GET all users (admin only)
+// =====================================================
+// ADMIN ROUTES
+// =====================================================
+
 if ($method === 'GET' && $path === '/admin/users') {
     $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
+    if ($authResult) {
         http_response_code($authResult['status']);
         echo json_encode($authResult['body']);
         exit;
@@ -153,112 +149,74 @@ if ($method === 'GET' && $path === '/admin/users') {
     exit;
 }
 
-// PATCH - Soft delete user
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/deactivate$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->softDeleteUser($matches[1]);
-    exit;
-}
+// =====================================================
+// QR CODE ROUTES (ADDED/MIHLE)
+// =====================================================
 
-// PATCH - Activate user
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/activate$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->activateUser($matches[1]);
-    exit;
-}
+// ADMIN: generate QR token (clock_in / clock_out)
+if ($method === 'POST' && $path === '/admin/qr/generate') {
 
-// GET user by employee_id (admin only)
-if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
     $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
+    if ($authResult) {
         http_response_code($authResult['status']);
         echo json_encode($authResult['body']);
         exit;
     }
-    $controller->getProfileById($matches[1]);
-    exit;
-}
 
-// PATCH - Update user (admin only)
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->adminUpdatingUser($matches[1], $input);
-    exit;
-}
+    $userId = $request['user']['user_id'] ?? null;
 
-// POST - Create user (admin only)
-if ($method === 'POST' && $path === '/admin/users') {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->adminCreatingUser($input);
-    exit;
-}
-
-// PATCH - Reset password (admin)
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->resetPassword($matches[1]);
-    exit;
-}
-
-// PATCH - Update own password (requires auth)
-if ($method === 'PATCH' && $path === '/user/update-password') {
-    $authResult = $authMiddleware->requireLogin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $employee_id = $request['user']['employee_id'] ?? null;
-    if (!$employee_id) {
+    if (!$userId) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'User not found']);
+        echo json_encode(['success' => false, 'error' => 'Invalid admin user']);
         exit;
     }
-    $controller->updatePassword($employee_id, $input);
+
+    $token = bin2hex(random_bytes(16)); // 32 chars
+    $type = $input['type'] ?? 'clock_in';
+
+    $qrModel->createToken($token, $type, $userId);
+
+    echo json_encode([
+        'success' => true,
+        'token' => $token,
+        'type' => $type,
+        'expires_in' => 60
+    ]);
     exit;
 }
 
-// POST - Clear cache (requires auth)
-if ($method === 'POST' && $path === '/user/cache/clear') {
-    $authResult = $authMiddleware->requireLogin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
+// PUBLIC: validate QR token
+if ($method === 'POST' && $path === '/api/scan/validate') {
+
+    $token = $input['qr_token'] ?? null;
+
+    if (!$token) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'QR token required']);
         exit;
     }
-    // Pass empty body and the authenticated user
-    $controller->clearCache([], $request['user'] ?? null);
+
+    $qr = $qrModel->validateAndUseToken($token);
+
+    if (!$qr) {
+        http_response_code(410);
+        echo json_encode([
+            'success' => false,
+            'error' => 'QR code expired or already used'
+        ]);
+        exit;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'type' => $qr['type']
+    ]);
     exit;
 }
 
-// =============================================
-// 404 NOT FOUND
-// =============================================
+// =====================================================
+// 404
+// =====================================================
 http_response_code(404);
 echo json_encode([
     'success' => false,

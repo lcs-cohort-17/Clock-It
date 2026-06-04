@@ -5,77 +5,43 @@ declare(strict_types=1);
 class AdminDashboardController
 {
     private AdminDashboardModel $model;
-    private int $cacheTtlMs;
-    private ?array $cache = null;
-    private int $cacheExpiresAtMs = 0;
-    private \Closure $clock;
 
-    public function __construct(
-        AdminDashboardModel $model,
-        int $cacheTtlMs = 5_000,
-        ?callable $clock = null
-    ) {
+    public function __construct(AdminDashboardModel $model)
+    {
         $this->model = $model;
-        $this->cacheTtlMs = $cacheTtlMs;
-        $this->clock = $clock !== null
-            ? \Closure::fromCallable($clock)
-            : static fn (): int => (int) floor(microtime(true) * 1_000);
     }
 
+    // =========================================================
+    // STATS CARD
+    // =========================================================
     public function stats(): array
     {
-        $now = ($this->clock)();
-
-        if ($this->cache !== null && $now < $this->cacheExpiresAtMs) {
-            return [
-                'status' => 200,
-                'body' => $this->cache,
-            ];
-        }
-
         try {
-            $body = $this->model->fetchStats();
-            $this->cache = $body;
-            $this->cacheExpiresAtMs = $now + $this->cacheTtlMs;
-
-            return [
-                'status' => 200,
-                'body' => $body,
-            ];
-        } catch (\Throwable $exception) {
-            $this->cache = null;
-            $this->cacheExpiresAtMs = 0;
-
-            return [
-                'status' => 500,
-                'body' => ['error' => $exception->getMessage()],
-            ];
-        }
-    }
-
-    public function recentActivity(int $page = 1, int $limit = 10): array
-    {
-        try {
-            $records = $this->model->fetchRecentActivity($page, $limit);
+            $data = $this->model->fetchStats();
 
             return [
                 'status' => 200,
                 'body' => [
-                    'status' => 'success',
-                    'data' => array_map([$this, 'formatRecentActivityRecord'], $records),
+                    'currentlyOnsite' => $data['currentlyOnsite'] ?? 0,
+                    'totalClockedInToday' => $data['totalClockedInToday'] ?? 0,
+                    'pendingSync' => 0,
+                    'totalEventsToday' => $data['totalEventsToday'] ?? 0,
                 ],
             ];
-        } catch (\Throwable $exception) {
+        } catch (\Throwable $e) {
             return [
                 'status' => 500,
                 'body' => [
-                    'status' => 'error',
-                    'message' => 'Failed to fetch recent activity',
+                    'success' => false,
+                    'error' => $e->getMessage()
                 ],
             ];
         }
     }
 
+    // =========================================================
+    // ONSITE STAFF
+    // =========================================================
     public function onsite(): array
     {
         try {
@@ -84,55 +50,54 @@ class AdminDashboardController
             return [
                 'status' => 200,
                 'body' => [
-                    'status' => 'success',
-                    'data' => array_map([$this, 'formatOnsiteRecord'], $records),
+                    'data' => array_map(function ($r) {
+                        return [
+                            'name' => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
+                            'role' => $r['role'] ?? null,
+                            'sign_in_time' => $r['sign_in_time'] ?? null,
+                        ];
+                    }, $records),
                 ],
             ];
-        } catch (\Throwable $exception) {
+        } catch (\Throwable $e) {
             return [
                 'status' => 500,
                 'body' => [
-                    'status' => 'error',
-                    'message' => 'Failed to fetch currently onsite staff',
+                    'success' => false,
+                    'error' => 'Failed to fetch onsite staff'
                 ],
             ];
         }
     }
 
-    private function formatRecentActivityRecord(array $record): array
+    // =========================================================
+    // RECENT ACTIVITY (LAST 10)
+    // =========================================================
+    public function recentActivity(): array
     {
-        return [
-            'profile_id' => $record['profile_id'] ?? null,
-            'event_time' => $record['event_time'] ?? null,
-            'event_type' => $record['event_type'] ?? null,
-            'sync_status' => $record['sync_status'] ?? null,
-            'device_info' => $record['device_info'] ?? null,
-            'staff' => $this->formatStaff($record),
-        ];
-    }
+        try {
+            $records = $this->model->fetchRecentActivity(10);
 
-    private function formatOnsiteRecord(array $record): array
-    {
-        return [
-            'profile_id' => $record['profile_id'] ?? null,
-            'event_time' => $record['event_time'] ?? null,
-            'location' => $record['location'] ?? null,
-            'staff' => $this->formatStaff($record),
-        ];
-    }
-
-    private function formatStaff(array $record): string
-    {
-        $user = $record['users'] ?? [];
-
-        if (is_array($user) && array_is_list($user)) {
-            $user = $user[0] ?? [];
+            return [
+                'status' => 200,
+                'body' => [
+                    'data' => array_map(function ($r) {
+                        return [
+                            'name' => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
+                            'action' => $r['event_type'] ?? null,
+                            'timestamp' => $r['event_time'] ?? null,
+                        ];
+                    }, $records),
+                ],
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'status' => 500,
+                'body' => [
+                    'success' => false,
+                    'error' => 'Failed to fetch recent activity'
+                ],
+            ];
         }
-
-        if (!is_array($user)) {
-            return '';
-        }
-
-        return trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
     }
 }

@@ -50,15 +50,13 @@ $now= time();
 $expires = $now + (60 * 60 * 2); // 2 hours from now
 
 $payload = base64url_encode(json_encode([
-    'userId' => $userId,
-    'email' => $email,
-    'role' => $role,
-    'employee_id' => $employeeId,
-    'iat'=> $now,
-    'exp' => $expires,
+    'user_id'      => $userId,
+    'email'        => $email,
+    'role'         => $role,
+    'employee_id'  => $employeeId,
+    'iat'          => $now,
+    'exp'          => $expires,
 ]));
-
-
 
 $signature = base64url_encode(
     hash_hmac('sha256', "{$header}.{$payload}", $secret, true)
