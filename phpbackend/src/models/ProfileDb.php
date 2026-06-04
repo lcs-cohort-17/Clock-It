@@ -98,7 +98,7 @@ class ProfileDb implements ProfileModelInterface
         
         // Generate plain text password and hash it
         $plainPassword = $this->generatePassword();
-        echo "Generated password: $plainPassword\n"; // Debugging line - remove in production
+        // echo "Generated password: $plainPassword\n"; // Debugging line - remove in production
         $hashedPassword = password_hash($plainPassword, PASSWORD_BCRYPT);
         
         try {
@@ -297,33 +297,33 @@ class ProfileDb implements ProfileModelInterface
     
     // ─── RESET PASSWORD (Admin) ────────────────────────────────────
     
-    // public function resetPasswordDb(string $employee_id): ApiResponse
-    // {
-    //     try {
-    //         $newPassword = $this->generatePassword();
-    //         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+    public function adminResetPasswordDb(string $employee_id): ApiResponse
+    {
+        try {
+            $newPassword = $this->generatePassword();
+            $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
-    //         // CHANGED: profiles -> users
-    //         $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE employee_id = :employee_id");
-    //         $stmt->execute(['password' => $hashedPassword, 'employee_id' => $employee_id]);
+            // CHANGED: profiles -> users
+            $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE employee_id = :employee_id");
+            $stmt->execute(['password' => $hashedPassword, 'employee_id' => $employee_id]);
             
-    //         if ($stmt->rowCount() === 0) {
-    //             return new ApiResponse(false, null, 'Profile not found');
-    //         }
+            if ($stmt->rowCount() === 0) {
+                return new ApiResponse(false, null, 'Profile not found');
+            }
             
-    //         // Get updated record - CHANGED: profiles -> users
-    //         $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
-    //         $stmt2->execute(['employee_id' => $employee_id]);
-    //         $data = $stmt2->fetch(PDO::FETCH_ASSOC);
+            // Get updated record - CHANGED: profiles -> users
+            $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
+            $stmt2->execute(['employee_id' => $employee_id]);
+            $data = $stmt2->fetch(PDO::FETCH_ASSOC);
             
-    //         // Return plain text password (not hashed)
-    //         $data['password'] = $newPassword;
+            // Return plain text password (not hashed)
+            $data['password'] = $newPassword;
             
-    //         return new ApiResponse(true, $data);
-    //     } catch (PDOException $error) {
-    //         return new ApiResponse(false, null, $error->getMessage());
-    //     }
-    // }
+            return new ApiResponse(true, $data);
+        } catch (PDOException $error) {
+            return new ApiResponse(false, null, $error->getMessage());
+        }
+    }
     
     // ─── UPDATE OWN PASSWORD (Staff) ───────────────────────────────
     

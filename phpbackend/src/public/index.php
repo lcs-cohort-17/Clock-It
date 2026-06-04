@@ -110,6 +110,18 @@ if ($method === 'POST' && $path === '/reset-password') {
     exit;
 }
 
+// PATCH - Admin reset password (admin only)
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->adminResetPassword($matches[1]);
+    exit;
+}
+
 // =============================================
 // TEST ROUTE (PUBLIC - no auth needed)
 // =============================================

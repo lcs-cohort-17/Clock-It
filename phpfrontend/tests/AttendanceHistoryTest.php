@@ -239,7 +239,7 @@ final class AttendanceHistoryTest extends TestCase
 
     public function testJavaScriptHasPagination(): void
     {
-        $js = file_get_contents($js = file_get_contents($this->jsFile);
+        $js = file_get_contents($js = file_get_contents($this->jsFile));
         
         $this->assertTrue(
             str_contains($js, 'page') || str_contains($js, 'pagination'),

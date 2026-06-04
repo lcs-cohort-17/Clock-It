@@ -43,7 +43,6 @@ if (str_starts_with($path, '/index.php/')) {
 function app_url(string $path = '/'): string
 {
     global $basePath;
-
     return $basePath . '/' . ltrim($path, '/');
 }
 
@@ -60,11 +59,11 @@ function asset_url(string $assetPath = '/'): string
 function view(string $view, array $data = []): void
 {
     global $basePath;
-
     $data = ['basePath' => $basePath] + $data;
     extract($data);
 
-    require dirname(__DIR__) . '/src/views/' . $view . '.php';
+    // FIXED PATH
+    require __DIR__ . '/../src/views/' . $view . '.php';
 }
 
 function redirect_to(string $path): never
@@ -102,7 +101,12 @@ $stats = [
     'totalEvents' => 42,
 ];
 
+<<<<<<< HEAD
 $loginUsers = require dirname(__DIR__) . '/src/Data/LoginMockUsers.php';
+=======
+// FIXED PATH
+$loginUsers = require __DIR__ . '/../src/data/LoginMockUsers.php';
+>>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {
@@ -217,11 +221,7 @@ switch ($path) {
 
     case '/login':
         $title = 'Login | Clock-It';
-
-        view('login', compact(
-            'title',
-            'loginUsers'
-        ));
+        view('login', compact('title', 'loginUsers'));
         break;
 
     case '/logout':
@@ -241,7 +241,6 @@ switch ($path) {
         }
 
         session_destroy();
-
         redirect_to('/login');
         break;
 
@@ -389,22 +388,51 @@ switch ($path) {
     |--------------------------------------------------------------------------
     */
 
+<<<<<<< HEAD
    case '/admin-dashboard/users':
 
     require_once dirname(__DIR__) . '/src/helpers/user-helper.php';
     require_once dirname(__DIR__) . '/src/controllers/UserController.php';
 
+=======
+    case '/admin-dashboard/users':
+    require_once __DIR__ . '/../src/helpers/user-helper.php';
+    // ❌ REMOVE THIS LINE: require_once __DIR__ . '/../src/controllers/UserController.php';
+    
+>>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
     $title = 'User Management';
-    $user = current_user_or($adminUser, 'admin');
+    $user = get_logged_in_user();
     $isAdminDashboard = true;
+    
+    // Fetch real users from API
+    $apiUsers = fetch_users_from_api();
+    $allUsers = array_map('transform_user', $apiUsers);
+    
+    // Search filtering
+    $query = $_GET['q'] ?? '';
+    if ($query !== '') {
+        $queryLower = strtolower($query);
+        $filtered = array_filter($allUsers, function($u) use ($queryLower) {
+            return str_contains(strtolower($u['name']), $queryLower)
+                || str_contains(strtolower($u['email']), $queryLower)
+                || str_contains(strtolower($u['employeeId']), $queryLower);
+        });
+    } else {
+        $filtered = $allUsers;
+    }
 
     view('admin/usermanagement', compact(
         'title',
         'user',
         'stats',
         'isAdminDashboard',
+<<<<<<< HEAD
         'users',
         'filtered'
+=======
+        'filtered',
+        'query'
+>>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
     ));
     break;
 
@@ -451,6 +479,7 @@ switch ($path) {
         ));
         break;
 
+<<<<<<< HEAD
     case '/admin-dashboard/qr-generator':
         $title = 'QR Generator';
         $user = current_user_or($adminUser, 'admin');
@@ -474,6 +503,8 @@ switch ($path) {
     //     ));
     //     break;
 
+=======
+>>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
     /*
     |--------------------------------------------------------------------------
     | STAFF
@@ -536,9 +567,7 @@ switch ($path) {
 
     default:
         http_response_code(404);
-
         $title = '404 Not Found';
-
         view('404', compact('title'));
         break;
 }

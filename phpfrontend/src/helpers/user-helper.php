@@ -1,49 +1,81 @@
 <?php
 
-function initials($name)
+function fetch_users_from_api(): array
 {
-    $parts = explode(" ", trim($name));
+    $token = $_SESSION['auth_token'] ?? null;
+    
+    if (!$token) {
+        return [];
+    }
+    
+    $apiUrl = 'http://localhost:8000/api/admin/users';
+    
+    $ch = curl_init($apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $token,
+        'Accept: application/json'
+    ]);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode !== 200) {
+        return [];
+    }
+    
+    $data = json_decode($response, true);
+    
+    return $data['data'] ?? [];
+}
 
-    $initials = "";
+function transform_user(array $apiUser): array
+{
+    return [
+        'id' => $apiUser['user_id'] ?? '',
+        'name' => trim(($apiUser['first_name'] ?? '') . ' ' . ($apiUser['last_name'] ?? '')),
+        'email' => $apiUser['email'] ?? '',
+        'employeeId' => $apiUser['employee_id'] ?? '',
+        'role' => ucfirst($apiUser['role'] ?? 'staff'),
+        'status' => ($apiUser['is_active'] ?? 1) == 1 ? 'Active' : 'Inactive',
+    ];
+}
 
+function initials(string $name): string
+{
+    $parts = explode(' ', $name);
+    $initials = '';
     foreach ($parts as $part) {
-        $initials .= strtoupper($part[0]);
+        if (!empty($part)) {
+            $initials .= strtoupper($part[0]);
+        }
     }
-
-    return substr($initials, 0, 2);
+    return $initials ?: '?';
 }
 
-function generateEmployeeId($role, $users)
+// RENAMED: was get_current_user(), now get_logged_in_user()
+function get_logged_in_user(): array
 {
-    $prefix = $role === "Admin" ? "A" : "S";
-
-    $existing = array_filter(
-        $users,
-        fn($user) => $user['role'] === $role
-    );
-
-    $baseNumber = $role === "Admin"
-        ? 1
-        : 101;
-
-    return $prefix . "-" . str_pad(
-        $baseNumber + count($existing),
-        3,
-        "0",
-        STR_PAD_LEFT
-    );
-}
-
-function generatePassword($length = 10)
-{
-    $chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    $password = "";
-
-    for ($i = 0; $i < $length; $i++) {
-        $password .= $chars[rand(0, strlen($chars) - 1)];
+    // First try session
+    $sessionUser = $_SESSION['current_user'] ?? null;
+    
+    if ($sessionUser && is_array($sessionUser)) {
+        return [
+            'name' => trim(($sessionUser['first_name'] ?? '') . ' ' . ($sessionUser['last_name'] ?? '')),
+            'email' => $sessionUser['email'] ?? '',
+            'role' => $sessionUser['role'] ?? 'staff',
+            'employee_id' => $sessionUser['employee_id'] ?? '',
+        ];
     }
-
-    return $password;
+    
+    // Try to get from API using token from localStorage is not possible in PHP
+    // Just return a placeholder - the sidebar will be updated by Alpine later
+    
+    return [
+        'name' => 'Admin User',
+        'email' => 'admin@clockit.com',
+        'role' => 'admin',
+        'employee_id' => '',
+    ];
 }
