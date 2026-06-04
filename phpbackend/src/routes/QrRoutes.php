@@ -1,13 +1,13 @@
 <?php
 
-// Enable error display for debugging
+
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Clean the URI (remove query strings)
+
 $requestUri = strtok($requestUri, '?');
 
 if ($requestUri === '/api/attendance/clock' && $method === 'POST') {

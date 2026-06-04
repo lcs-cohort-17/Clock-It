@@ -9,7 +9,7 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 session_start();
 
-// Dev Login for Testing
+
 if ($requestUri === '/api/dev-login' && $method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?: [];
     $userId = $input['user_id'] ?? null;
@@ -25,7 +25,7 @@ if ($requestUri === '/api/dev-login' && $method === 'POST') {
     return;
 }
 
-// Main Clock Endpoint
+
 if ($requestUri === '/api/attendance/clock' && $method === 'POST') {
     require_once __DIR__ . '/../controllers/AttendanceController.php';
     $controller = new AttendanceController();
