@@ -8,11 +8,12 @@ $page = max(1, (int) ($_GET['page'] ?? 1));
 
 $pageSize = 5;
 
-$totalPages = 1;
+$filteredUsers = array_values($filtered ?? $users ?? []);
+$totalPages = max(1, (int) ceil(count($filteredUsers) / $pageSize));
 
 $page = min($page, $totalPages);
 
-$pageData = array_values($users ?? $filtered);
+$pageData = array_slice($filteredUsers, ($page - 1) * $pageSize, $pageSize);
 
 ob_start(); ?>
 <div class="app-shell">
@@ -44,6 +45,8 @@ ob_start(); ?>
         </div>
 
         <button class="btn btn-main"
+                type="button"
+                data-open-user-modal="add"
                 @click="showAddModal = true">
 
             + Add User
@@ -53,7 +56,7 @@ ob_start(); ?>
     </div>
 
     <?php if (isset($_SESSION['flash_success'])): ?>
-        <div class="alert alert-success d-flex align-items-center gap-2" role="status">
+        <div class="alert alert-success d-flex align-items-center gap-2" role="status" data-auto-dismiss-alert>
             <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
             <?= e($_SESSION['flash_success']) ?>
         </div>
@@ -179,6 +182,13 @@ ob_start(); ?>
                           class="btn btn-light btn-icon"
                           title="Edit user"
                           aria-label="Edit <?= e($u['name']) ?>"
+                          data-open-user-modal="edit"
+                          data-edit-user='<?= e(json_encode([
+                              'id' => $u['id'],
+                              'name' => $u['name'],
+                              'email' => $u['email'],
+                              'role' => $u['role'],
+                          ], JSON_THROW_ON_ERROR | JSON_HEX_APOS)) ?>'
 
                                 @click='openEditModal(<?= e(json_encode([
                                     'id' => $u['id'],
@@ -188,6 +198,20 @@ ob_start(); ?>
                                 ], JSON_THROW_ON_ERROR | JSON_HEX_APOS)) ?>)'>
 
                             <i class="bi bi-pencil" aria-hidden="true"></i>
+
+                        </button>
+
+                        <!-- COPY INVITE -->
+
+                        <button
+                          type="button"
+                          class="btn btn-light btn-icon"
+                          title="Copy invite details"
+                          aria-label="Copy invite details for <?= e($u['name']) ?>"
+                          data-copy-user
+                          data-copy-value="<?= e($u['name'] . ' | ' . $u['email'] . ' | ' . $u['employeeId']) ?>">
+
+                            <i class="bi bi-clipboard" aria-hidden="true"></i>
 
                         </button>
 
@@ -255,7 +279,7 @@ ob_start(); ?>
 
         <div class="text-muted">
 
-            Showing <span data-user-results><?= count($pageData) ?></span> of <?= count($pageData) ?> employees
+            Showing <span data-user-results><?= count($pageData) ?></span> of <?= count($filteredUsers) ?> employees
 
         </div>
 
@@ -284,6 +308,7 @@ ob_start(); ?>
     <!-- ADD MODAL -->
 
     <div class="modal-overlay"
+         data-user-modal="add"
          x-show="showAddModal"
          x-cloak>
 
@@ -294,6 +319,8 @@ ob_start(); ?>
                 <h3>Add User</h3>
 
                 <button class="btn-close"
+                        type="button"
+                        data-close-user-modal
                         @click="showAddModal = false">
                 </button>
 
@@ -348,6 +375,7 @@ ob_start(); ?>
 
                     <button type="button"
                             class="btn btn-outline-secondary"
+                            data-close-user-modal
                             @click="showAddModal = false">
 
                         Cancel
@@ -372,6 +400,7 @@ ob_start(); ?>
     <!-- EDIT MODAL -->
 
     <div class="modal-overlay"
+         data-user-modal="edit"
          x-show="showEditModal"
          x-cloak>
 
@@ -382,6 +411,8 @@ ob_start(); ?>
                 <h3>Edit User</h3>
 
                 <button class="btn-close"
+                        type="button"
+                        data-close-user-modal
                         @click="showEditModal = false">
                 </button>
 
@@ -442,6 +473,7 @@ ob_start(); ?>
                     <button
     type="button"
     class="btn btn-outline-secondary"
+    data-close-user-modal
     @click="showEditModal = false">
 
                         Cancel

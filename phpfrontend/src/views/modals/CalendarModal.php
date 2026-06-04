@@ -1,4 +1,4 @@
-<div x-show="showCalendar" x-cloak class="staff-dashboard-modal" @click.self="showCalendar = false">
+<div x-show="showCalendar" x-cloak class="staff-dashboard-modal" data-staff-modal="calendar" @click.self="showCalendar = false">
 
 <div class="staff-dashboard-modal-card">
 

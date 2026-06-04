@@ -15,6 +15,14 @@ if (is_string($loggedInEmployeeId) && $loggedInEmployeeId !== '') {
     ));
 }
 
+if ($attendanceHistory === []) {
+    $loggedInEmployeeId = 'EMP001';
+    $attendanceHistory = array_values(array_filter(
+        $mockAttendanceData,
+        static fn (array $record): bool => ($record['employeeId'] ?? null) === 'EMP001'
+    ));
+}
+
 ob_start();
 ?>
 

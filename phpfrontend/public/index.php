@@ -64,7 +64,7 @@ function view(string $view, array $data = []): void
     $data = ['basePath' => $basePath] + $data;
     extract($data);
 
-    require __DIR__ . '/../phpfrontend/src/views/' . $view . '.php';
+    require dirname(__DIR__) . '/src/views/' . $view . '.php';
 }
 
 function redirect_to(string $path): never
@@ -83,7 +83,7 @@ $staffUser = [
     'id' => 'staff-001',
     'name' => 'Sarah Mthembu',
     'email' => 'sarah@clockit.app',
-    'employeeId' => 'S-101',
+    'employeeId' => 'EMP001',
     'role' => 'staff',
 ];
 
@@ -102,7 +102,7 @@ $stats = [
     'totalEvents' => 42,
 ];
 
-$loginUsers = require dirname(__DIR__) . '/phpfrontend/src/data/LoginMockUsers.php';
+$loginUsers = require dirname(__DIR__) . '/src/Data/LoginMockUsers.php';
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {
@@ -173,7 +173,7 @@ function current_user_or(array $fallback, ?string $role = null): array
 
 function admin_settings_file(): string
 {
-    return dirname(__DIR__) . '/phpfrontend/storage/settings_mock.json';
+    return dirname(__DIR__) . '/storage/settings_mock.json';
 }
 
 function admin_settings_read(): array
@@ -370,7 +370,7 @@ switch ($path) {
 
         $settings = admin_settings_read();
         $retentionDays = (int) ($settings['data_retention_days'] ?? 90);
-        $purgeLog = dirname(__DIR__) . '/phpfrontend/storage/purge_log.txt';
+        $purgeLog = dirname(__DIR__) . '/storage/purge_log.txt';
         file_put_contents(
             $purgeLog,
             date('Y-m-d H:i:s') . " - Purged records older than {$retentionDays} days\n",
@@ -391,8 +391,8 @@ switch ($path) {
 
    case '/admin-dashboard/users':
 
-    require_once dirname(__DIR__) . '/phpfrontend/src/helpers/user-helper.php';
-    require_once dirname(__DIR__) . '/phpfrontend/src/controllers/UserController.php';
+    require_once dirname(__DIR__) . '/src/helpers/user-helper.php';
+    require_once dirname(__DIR__) . '/src/controllers/UserController.php';
 
     $title = 'User Management';
     $user = current_user_or($adminUser, 'admin');

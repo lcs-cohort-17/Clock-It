@@ -12,14 +12,17 @@ ob_start();
         <?php require __DIR__ . '/../partials/header.php'; ?>
 
         <main class="content">
-            <section class="container-fluid p-4 p-lg-5">
-                <div class="page-card p-4 p-lg-5">
-                    <h1 class="staff-history-title staff-page-title mb-2">Scan QR</h1>
-                    <p class="staff-page-subtitle mb-4">Scan your site QR code to clock in or out.</p>
+            <section class="scan-page container-fluid p-4 p-lg-5">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-12 col-xl-10">
+                            <h1 class="scan-title mb-2">Scan QR Code</h1>
+                            <p class="scan-lead mb-3">Point your camera at the workplace QR code to clock in or out.</p>
 
-                    <div class="staff-empty-state">
-                        <i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>
-                        QR scanner workspace
+                            <div class="mt-3">
+                                <?php require __DIR__ . '/../partials/scanqrcard.php'; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

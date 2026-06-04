@@ -17,7 +17,9 @@
                 class="app-back-button"
                 aria-label="Go back"
                 title="Go back"
-                onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '<?= e(app_url($isAdminDashboard ? '/admin-dashboard' : '/staff-dashboard')) ?>'; }"
+                data-app-back
+                data-dashboard-url="<?= e(app_url($isAdminDashboard ? '/admin-dashboard' : '/staff-dashboard')) ?>"
+                data-dashboard-path="<?= e($isAdminDashboard ? '/admin-dashboard' : '/staff-dashboard') ?>"
             >
                 <i class="bi bi-arrow-left" aria-hidden="true"></i>
             </button>

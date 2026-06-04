@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title ?? 'Clock-It') ?></title>
     <script>
+        window.clockItBasePath = <?= json_encode($basePath ?? '') ?>;
         (() => {
             const savedTheme = localStorage.getItem('theme');
             const theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');

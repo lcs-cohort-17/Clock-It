@@ -41,7 +41,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
 
     <div class="row g-4 mt-1">
         <div class="col-12 col-md-4">
-            <button type="button" class="staff-action-card page-card text-start w-100" @click="openCalendar()">
+            <button type="button" class="staff-action-card page-card text-start w-100" data-open-staff-modal="calendar" @click="openCalendar()">
                 <i class="bi bi-calendar3" aria-hidden="true"></i>
                 <h2>Calendar</h2>
                 <p>View your schedule</p>
@@ -49,7 +49,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
         </div>
 
         <div class="col-12 col-md-4">
-            <button type="button" class="staff-action-card page-card text-start w-100" @click="openLeaveRequest()">
+            <button type="button" class="staff-action-card page-card text-start w-100" data-open-staff-modal="leave" @click="openLeaveRequest()">
                 <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
                 <h2>Leave Requests</h2>
                 <p>Submit a new request</p>

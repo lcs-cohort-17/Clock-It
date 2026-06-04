@@ -4,8 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['users'])) {
-    $_SESSION['users'] = require __DIR__ . '/../data/MockUsers.php';
+if (!isset($_SESSION['users']) || !is_array($_SESSION['users']) || $_SESSION['users'] === []) {
+    $_SESSION['users'] = require __DIR__ . '/../Data/MockUsers.php';
 }
 
 $users = &$_SESSION['users'];
@@ -16,7 +16,7 @@ $hasLegacyDemoIds = array_filter($users, static function (array $user): bool {
 });
 
 if ($hasLegacyDemoIds !== []) {
-    $_SESSION['users'] = require __DIR__ . '/../data/MockUsers.php';
+    $_SESSION['users'] = require __DIR__ . '/../Data/MockUsers.php';
     $users = &$_SESSION['users'];
 }
 
@@ -118,6 +118,8 @@ if (isset($_POST['reset_password'])) {
             $_SESSION['generated_password'] = $newPassword;
         }
     }
+
+    $_SESSION['flash_success'] = 'A temporary password has been generated.';
 
     redirect_to('/admin-dashboard/users');
 }

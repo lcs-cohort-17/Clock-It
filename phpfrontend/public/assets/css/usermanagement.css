@@ -187,6 +187,19 @@ table td {
     background: rgba(200,0,0,0.04);
 }
 
+[data-auto-dismiss-alert] {
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.user-alert-hiding {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+.user-copy-done {
+    color: #1F8E4D !important;
+}
+
 .btn-outline-secondary:hover,
 .btn-outline-secondary:focus {
     background: #F7FAFB;
