@@ -15,6 +15,7 @@ if (!function_exists('e')) {
     }
 }
 
+// We don't need mock users anymore, but keep for now to not break things
 $mockUsers = $loginUsers ?? require __DIR__ . '/../data/LoginMockUsers.php';
 $mockUsersJson = json_encode(
     $mockUsers,
@@ -45,14 +46,24 @@ $staffRoute = app_url('/staff-dashboard');
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= e(app_url('/assets/css/login.css')) ?>">
+    
+    <!-- ============================================ -->
+    <!-- ADD THESE: Our new scripts -->
+    <!-- ============================================ -->
+    <script src="<?= e(app_url('/assets/js/config.js')) ?>"></script>
+    <script src="<?= e(app_url('/assets/js/api.js')) ?>"></script>
+    
     <script>
+        // Keep mock users for backward compatibility
         window.clockItMockUsers = <?= $mockUsersJson ?: '[]' ?>;
         window.clockItDeviceAssigned = <?= json_encode($deviceAssigned ?? 'staff') ?>;
     </script>
+    
     <script defer src="<?= e(app_url('/assets/js/theme.js')) ?>"></script>
     <script defer src="<?= e(app_url('/assets/js/login.js')) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="<?= e(app_url('/assets/js/store.js')) ?>"></script>
 </head>
 <body>
     <div
@@ -67,6 +78,7 @@ $staffRoute = app_url('/staff-dashboard');
         x-data="clockitLogin()"
         x-init="init()"
     >
+        <!-- Rest of your existing login page HTML -->
         <button
             type="button"
             class="login-theme-toggle"
