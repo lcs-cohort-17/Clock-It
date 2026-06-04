@@ -1,22 +1,32 @@
 <?php
 
 //creates json web tokens for testing
-$env = parse_ini_file(__DIR__ . '/.env');
-foreach ($env as $key => $value) {
-    $_ENV[$key] = $value;
+require __DIR__ . '/vendor/autoload.php';
+
+use Dotenv\Dotenv;
+
+/**
+ * PATH FIX: Resolves the exact .env path context.
+ * If this script sits in your main project root directory alongside index.php, use __DIR__.
+ * If this script sits in a sub-folder (like /bin or /scripts), keep the fallback directory depth.
+ */
+$envPath = __DIR__;
+if (!file_exists($envPath . '/.env') && file_exists(__DIR__ . '/../.. .env')) {
+    $envPath = __DIR__ . '/../..';
 }
+
+$dotenv = Dotenv::createImmutable($envPath);
+$dotenv->load();
 
 $secret = $_ENV['JWT_SECRET'] ?? null;
 
 if (!$secret) {
-    echo ":x: JWT_SECRET not found in .env\n";
+    echo "❌ JWT_SECRET not found in .env\n";
     exit(1);
 }
 
-
-
 if ($argc !== 5) {
-    echo ":x: Wrong number of arguments.\n\n";
+    echo "❌ Wrong number of arguments.\n\n";
     echo "Usage:\n";
     echo " php generate-token.php <userId> <email> <role> <employee_id>\n\n";
     echo "Example:\n";
@@ -33,20 +43,16 @@ $employeeId = $argv[4];
 // Validate role — must match what your auth middleware expects
 // ---
 if (!in_array($role, ['admin', 'staff'])) {
-    echo ":x: Invalid role '{$role}'. Must be 'admin' or 'staff'.\n";
+    echo "❌ Invalid role '{$role}'. Must be 'admin' or 'staff'.\n";
     exit(1);
 }
-
-
 
 $header = base64url_encode(json_encode([
     'typ' => 'JWT',
     'alg' => 'HS256',
 ]));
 
-
-
-$now= time();
+$now = time();
 $expires = $now + (60 * 60 * 2); // 2 hours from now
 
 $payload = base64url_encode(json_encode([
@@ -69,19 +75,17 @@ $token = "{$header}.{$payload}.{$signature}";
 // OUTPUT
 // Prints the token with the Bearer prefix ready to paste into Thunder Client
 // ---
-echo "\n:white_check_mark: Token generated successfully\n";
+echo "\n✅ Token generated successfully\n";
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
 echo "Bearer {$token}\n";
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
 echo "\nDetails:\n";
-echo " userId: {$userId}\n";
+echo " user_id: {$userId}\n";
 echo " email: {$email}\n";
 echo " role: {$role}\n";
 echo " employee_id: {$employeeId}\n";
 echo " issued: " . date('Y-m-d H:i:s', $now) . "\n";
 echo " expires: " . date('Y-m-d H:i:s', $expires) . "\n\n";
-
-
 
 function base64url_encode(string $data): string {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');

@@ -17,14 +17,35 @@ set_exception_handler(function ($exception) {
 });
 
 // =============================================
-// DOTENV BOOTSTRAP
+// DOTENV BOOTSTRAP (Unified Path Handling)
 // =============================================
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Dotenv\Dotenv;
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
+// Explicitly resolve the real path to prevent working directory misalignment
+$envDir = realpath(__DIR__ . '/../..');
+if (!$envDir || !file_exists($envDir . '/.env')) {
+    $envDir = __DIR__ . '/../..'; // Fallback to raw relative definition if realpath resolution fails
+}
+
+$dotenv = Dotenv::createImmutable($envDir);
 $dotenv->load();
+
+// Read key cleanly from loaded configuration sources
+$jwtSecret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?? null;
+
+// Break early if the key fails to load to prevent fallback signature checking bugs
+if (!$jwtSecret) {
+    error_log('CRITICAL: JWT_SECRET environment variable is not defined.');
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Internal Server Error',
+        'message' => 'Configuration mismatch: Missing security properties.'
+    ]);
+    exit;
+}
 
 // =============================================
 // AUTOLOAD
@@ -69,14 +90,15 @@ use Config\Database;
 use Middleware\AuthMiddleware;
 
 $db = Database::getInstance()->getConnection();
-$auth = new AuthMiddleware($_ENV['JWT_SECRET'] ?? 'secret', $db);
+$auth = new AuthMiddleware($jwtSecret, $db);
 
 // =============================================
-// ROUTE: ATTENDANCE CLOCK (NEW TICKET)
+// ROUTE: ATTENDANCE CLOCK (MC)
 // =============================================
 if ($method === 'POST' && $path === '/attendance/clock') {
 
     // 1. AUTH CHECK
+    // Pass the $request reference explicitly down into your auth system handler
     $authCheck = $auth->requireLogin($request);
     if ($authCheck !== null) {
         http_response_code($authCheck['status']);
@@ -84,12 +106,13 @@ if ($method === 'POST' && $path === '/attendance/clock') {
         exit;
     }
 
-    $user = $request['user'];
+    // Capture the payload array variables mutation populated by requireLogin()
+    $user = $request['user'] ?? null;
     $userId = $user['user_id'] ?? null;
 
     if (!$userId) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Invalid user']);
+        echo json_encode(['success' => false, 'error' => 'Invalid user metadata claims']);
         exit;
     }
 
@@ -112,6 +135,7 @@ if ($method === 'POST' && $path === '/attendance/clock') {
               AND used_at IS NULL
               AND expires_at > NOW()
         ");
+        
         $stmt->execute([$qrToken]);
         $qr = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -187,7 +211,9 @@ if ($method === 'POST' && $path === '/attendance/clock') {
         exit;
 
     } catch (Throwable $e) {
-        $db->rollBack();
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
 
         http_response_code(500);
         echo json_encode([

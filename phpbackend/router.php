@@ -43,4 +43,4 @@ if (
 // ==================================================
 // 2. FALLBACK → FRONT CONTROLLER
 // ==================================================
-require_once $publicDir . '/Index.php';
+require_once $publicDir . '/index.php';

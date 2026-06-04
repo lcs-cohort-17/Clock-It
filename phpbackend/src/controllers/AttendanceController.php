@@ -43,21 +43,26 @@ class AttendanceController
                 return $this->response(401, "User not found");
             }
 
-            if ($isActive === 0) {
+            if ((int)$isActive === 0) {
                 return $this->response(403, "User is inactive");
             }
 
             // ----------------------------------------
-            // 2. VALIDATE QR
+            // 2. VALIDATE QR TOKEN
             // ----------------------------------------
-            $qr = $this->model->getValidQr($qrToken);
+            $qr = $this->model->getQrByToken($qrToken);
 
             if (!$qr) {
-                return $this->response(410, "QR code expired or already used");
+                return $this->response(410, "QR code invalid, used or expired");
+            }
+
+            // 60 SECOND RULE (ticket requirement)
+            if (strtotime($qr['created_at']) < time() - 60) {
+                return $this->response(410, "QR code expired");
             }
 
             // ----------------------------------------
-            // 3. GET LAST EVENT
+            // 3. GET LAST ATTENDANCE (TODAY ONLY)
             // ----------------------------------------
             $last = $this->model->getLastEvent($userId);
 
@@ -74,7 +79,7 @@ class AttendanceController
             }
 
             // ----------------------------------------
-            // 4. TRANSACTION SAFETY
+            // 4. TRANSACTION
             // ----------------------------------------
             $this->model->db->beginTransaction();
 

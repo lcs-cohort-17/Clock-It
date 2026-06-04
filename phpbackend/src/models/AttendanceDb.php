@@ -3,11 +3,10 @@
 namespace App\Models;
 
 use PDO;
-use Exception;
 
 class AttendanceDb
 {
-    private PDO $db;
+    public PDO $db;
 
     public function __construct(PDO $db)
     {
@@ -15,7 +14,7 @@ class AttendanceDb
     }
 
     // ----------------------------------------
-    // GET USER ACTIVE STATUS
+    // USER STATUS
     // ----------------------------------------
     public function getUserStatus(string $userId): ?int
     {
@@ -32,9 +31,9 @@ class AttendanceDb
     }
 
     // ----------------------------------------
-    // GET VALID QR CODE
+    // GET QR (UPDATED - STRICT VALIDATION SPLIT)
     // ----------------------------------------
-    public function getValidQr(string $token): ?array
+    public function getQrByToken(string $token): ?array
     {
         $stmt = $this->db->prepare("
             SELECT *
@@ -51,7 +50,7 @@ class AttendanceDb
     }
 
     // ----------------------------------------
-    // GET LAST ATTENDANCE EVENT
+    // LAST EVENT (TODAY ONLY - FIXED)
     // ----------------------------------------
     public function getLastEvent(string $userId): ?array
     {
@@ -59,6 +58,7 @@ class AttendanceDb
             SELECT event_type
             FROM attendance_logs
             WHERE user_id = ?
+              AND DATE(event_time) = CURDATE()
             ORDER BY event_time DESC
             LIMIT 1
         ");
@@ -104,7 +104,7 @@ class AttendanceDb
     }
 
     // ----------------------------------------
-    // MARK QR AS USED
+    // MARK QR USED
     // ----------------------------------------
     public function markQrUsed(int $qrId): void
     {
