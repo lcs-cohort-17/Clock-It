@@ -213,12 +213,13 @@ sort($typeList);
                                         <th scope="col">Device</th>
                                         <th scope="col">Location</th>
                                         <th scope="col">Sync</th>
+                                        <th scope="col">Actions</th>
                                     </tr>
-                                </thead> <th scope="col">Actions</th>
+                                </thead> 
                                 <tbody>
                                     <template x-if="filteredClockEvents.length === 0">
                                         <tr>
-                                            <td colspan="6" class="no-records">No records.</td>
+                                            <td colspan="7" class="no-records">No records.</td>
                                         </tr>
                                     </template>
 

@@ -489,52 +489,96 @@ function route_create_attendance(): never
 function route_update_attendance(string $id): never
 {
     $body = request_body();
+
     $stmt = db()->prepare('SELECT * FROM attendance_logs WHERE id = :id LIMIT 1');
     $stmt->execute([':id' => $id]);
+
     if (!$stmt->fetch()) {
-        json_response(['success' => false, 'message' => 'Attendance log not found.'], 404);
+        json_response([
+            'success' => false,
+            'message' => 'Attendance log not found.',
+        ], 404);
     }
 
     $updates = [];
     $params = [':id' => $id];
+    $changedDataFields = false;
 
     if (isset($body['event_type']) || isset($body['type'])) {
         $updates[] = 'event_type = :event_type';
         $params[':event_type'] = normalize_event_type((string) ($body['event_type'] ?? $body['type']));
+        $changedDataFields = true;
     }
+
     if (isset($body['event_time']) || isset($body['timestamp'])) {
         $updates[] = 'event_time = :event_time';
         $params[':event_time'] = (string) ($body['event_time'] ?? $body['timestamp']);
+        $changedDataFields = true;
     }
+
     if (isset($body['location'])) {
         $updates[] = 'location = :location';
         $params[':location'] = (string) $body['location'];
+        $changedDataFields = true;
     }
+
     if (isset($body['device_info']) || isset($body['device'])) {
         $updates[] = 'device_info = :device_info';
         $params[':device_info'] = (string) ($body['device_info'] ?? $body['device']);
+        $changedDataFields = true;
     }
-    if (isset($body['sync_status'])) {
-        $updates[] = 'sync_status = :sync_status';
-        $params[':sync_status'] = in_array($body['sync_status'], ['synced', 'pending', 'failed'], true) ? $body['sync_status'] : 'pending';
-    }
-    if (isset($body['user_id']) || isset($body['employee_id']) || isset($body['employeeId']) || isset($body['email']) || isset($body['staff_name']) || isset($body['staff'])) {
+
+    if (
+        isset($body['user_id']) ||
+        isset($body['employee_id']) ||
+        isset($body['employeeId']) ||
+        isset($body['email']) ||
+        isset($body['staff_name']) ||
+        isset($body['staff'])
+    ) {
         $user = resolve_attendance_user($body);
+
         if (!$user) {
-            json_response(['success' => false, 'message' => 'Replacement user not found.'], 400);
+            json_response([
+                'success' => false,
+                'message' => 'Replacement user not found.',
+            ], 400);
         }
+
         $updates[] = 'user_id = :user_id';
         $params[':user_id'] = $user['user_id'];
+        $changedDataFields = true;
+    }
+
+    if (isset($body['sync_status'])) {
+        $updates[] = 'sync_status = :sync_status';
+        $params[':sync_status'] = in_array($body['sync_status'], ['synced', 'pending', 'failed'], true)
+            ? $body['sync_status']
+            : 'pending';
+    } elseif ($changedDataFields) {
+        /*
+         * Any frontend edit means the database is now newer than Google Sheets.
+         * Mark it pending so it can be exported/pushed again.
+         */
+        $updates[] = 'sync_status = :sync_status';
+        $params[':sync_status'] = 'pending';
     }
 
     if (!$updates) {
-        json_response(['success' => false, 'message' => 'No valid attendance fields supplied.'], 400);
+        json_response([
+            'success' => false,
+            'message' => 'No valid attendance fields supplied.',
+        ], 400);
     }
 
     $sql = 'UPDATE attendance_logs SET ' . implode(', ', $updates) . ' WHERE id = :id';
     db()->prepare($sql)->execute($params);
 
-    json_response(['success' => true, 'message' => 'Attendance log updated.', 'data' => fetch_attendance(['event_ids' => [$id]])[0] ?? null]);
+    json_response([
+        'success' => true,
+        'message' => 'Attendance log updated.',
+        'data' => fetch_attendance(['event_ids' => [$id]])[0] ?? null,
+    ]);
 }
 
 function route_delete_attendance(string $id): never
@@ -663,103 +707,293 @@ function row_value(array $row, array $map, array $keys, string $default = ''): s
     return $default;
 }
 
+function sheet_sync_status(string $value): string
+{
+    $value = strtolower(trim($value));
+    return in_array($value, ['synced', 'pending', 'failed'], true) ? $value : 'synced';
+}
+
+function sheet_id_is_safe(string $id): bool
+{
+    return (bool) preg_match('/^[a-f0-9-]{36}$/i', trim($id));
+}
+
+function normalize_sheet_datetime(string $value): string
+{
+    $value = trim($value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    // Keep normal MySQL DATETIME values as-is.
+    if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/', $value)) {
+        return strlen($value) === 16 ? $value . ':00' : $value;
+    }
+
+    // Convert ISO values like 2026-06-04T08:03:49 into MySQL DATETIME.
+    if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/', $value)) {
+        $timestamp = strtotime($value);
+        return $timestamp ? date('Y-m-d H:i:s', $timestamp) : $value;
+    }
+
+    // Convert common Google Sheets date strings if PHP can parse them.
+    $timestamp = strtotime($value);
+    return $timestamp ? date('Y-m-d H:i:s', $timestamp) : $value;
+}
+
 function import_rows_to_db(array $rows): array
 {
     if (count($rows) < 2) {
-        return ['imported' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => []];
+        return [
+            'imported' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'errors' => [],
+        ];
     }
 
     $map = header_map($rows[0]);
+
     $imported = 0;
     $updated = 0;
     $skipped = 0;
     $errors = [];
 
     for ($i = 1; $i < count($rows); $i++) {
+        $rowNumber = $i + 1;
         $row = $rows[$i];
+
         if (!array_filter($row, static fn($cell) => trim((string) $cell) !== '')) {
             continue;
         }
 
+        $sheetLogId = row_value($row, $map, ['log_id', 'id', 'attendance_id', 'record_id']);
         $employeeId = row_value($row, $map, ['employee_id', 'employeeid', 'employee']);
         $email = strtolower(row_value($row, $map, ['email', 'email_address']));
         $staffName = row_value($row, $map, ['staff_name', 'name', 'full_name']);
         $eventType = normalize_event_type(row_value($row, $map, ['event_type', 'type', 'action'], 'in'));
-        $eventTime = row_value($row, $map, ['event_time', 'timestamp', 'time', 'date_time']);
+        $eventTime = normalize_sheet_datetime(row_value($row, $map, ['event_time', 'timestamp', 'time', 'date_time']));
         $location = row_value($row, $map, ['location'], 'Main Entrance');
         $device = row_value($row, $map, ['device', 'device_info']);
-        $syncStatus = row_value($row, $map, ['sync_status', 'sync'], 'synced');
+        $syncStatus = sheet_sync_status(row_value($row, $map, ['sync_status', 'sync'], 'synced'));
 
         if ($eventTime === '') {
             $skipped++;
-            $errors[] = 'Row ' . ($i + 1) . ': missing event time.';
+            $errors[] = "Row {$rowNumber}: missing event time.";
             continue;
         }
 
+        /*
+         * 1. Best match: Log ID from exported Google Sheet.
+         * This prevents duplicates when Event Time is edited in Google Sheets.
+         */
+        $existingById = null;
+
+        if ($sheetLogId !== '') {
+            $stmt = db()->prepare('SELECT * FROM attendance_logs WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => $sheetLogId]);
+            $existingById = $stmt->fetch() ?: null;
+        }
+
+        /*
+         * Resolve user only when possible.
+         * If Log ID exists, we can update the log even if user columns are missing.
+         */
         $user = null;
+
         if ($employeeId !== '') {
             $user = find_user_identifier($employeeId);
         }
+
         if (!$user && $email !== '') {
             $stmt = db()->prepare('SELECT * FROM users WHERE LOWER(email) = :email LIMIT 1');
             $stmt->execute([':email' => $email]);
             $user = $stmt->fetch() ?: null;
         }
-        if (!$user && $employeeId !== '' && $email !== '') {
+
+        /*
+         * Auto-create user only when the sheet gives enough safe identity data.
+         * Exported sheets usually do not include email, so this mostly helps manual imports.
+         */
+        if (!$user && !$existingById && $employeeId !== '' && $email !== '') {
             [$first, $last] = split_full_name($staffName ?: $email);
-            $id = uuid_v4();
-            db()->prepare('INSERT INTO users (user_id, first_name, last_name, employee_id, role, is_active, email, password)
-                           VALUES (:id, :first, :last, :employee, :role, 1, :email, :password)')->execute([
-                ':id' => $id,
+            $newUserId = uuid_v4();
+
+            db()->prepare('
+                INSERT INTO users (
+                    user_id,
+                    first_name,
+                    last_name,
+                    employee_id,
+                    role,
+                    is_active,
+                    email,
+                    password
+                )
+                VALUES (
+                    :id,
+                    :first,
+                    :last,
+                    :employee,
+                    :role,
+                    1,
+                    :email,
+                    :password
+                )
+            ')->execute([
+                ':id' => $newUserId,
                 ':first' => $first ?: 'Sheet',
                 ':last' => $last,
                 ':employee' => $employeeId,
                 ':role' => 'staff',
                 ':email' => $email,
-                ':password' => password_hash(substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(12))), 0, 10), PASSWORD_DEFAULT),
+                ':password' => password_hash(
+                    substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(12))), 0, 10),
+                    PASSWORD_DEFAULT
+                ),
             ]);
+
             $user = find_user_identifier($employeeId);
         }
 
-        if (!$user) {
-            $skipped++;
-            $errors[] = 'Row ' . ($i + 1) . ': no matching user. Add Employee ID + Email to auto-create.';
+        /*
+         * If Log ID already exists in the database, update that exact row.
+         * This is the important part. This stops the duplicate-row nonsense.
+         */
+        if ($existingById) {
+            $sql = '
+                UPDATE attendance_logs
+                SET
+                    event_type = :event_type,
+                    event_time = :event_time,
+                    location = :location,
+                    device_info = :device,
+                    sync_status = :sync
+            ';
+
+            $params = [
+                ':event_type' => $eventType,
+                ':event_time' => $eventTime,
+                ':location' => $location,
+                ':device' => $device,
+                ':sync' => $syncStatus,
+                ':id' => $existingById['id'],
+            ];
+
+            /*
+             * Only update user_id if the sheet identifies a valid user.
+             * Otherwise keep the existing user_id.
+             */
+            if ($user) {
+                $sql .= ', user_id = :user_id';
+                $params[':user_id'] = $user['user_id'];
+            }
+
+            $sql .= ' WHERE id = :id';
+
+            db()->prepare($sql)->execute($params);
+
+            $updated++;
             continue;
         }
 
-        $existing = db()->prepare('SELECT id FROM attendance_logs WHERE user_id = :user_id AND event_type = :event_type AND event_time = :event_time LIMIT 1');
+        /*
+         * If there is no Log ID match, we need a valid user before inserting/updating.
+         */
+        if (!$user) {
+            $skipped++;
+            $errors[] = "Row {$rowNumber}: no matching user. Add Employee ID + Email to auto-create, or keep a valid Log ID from an existing database row.";
+            continue;
+        }
+
+        /*
+         * 2. Fallback match: old behaviour.
+         * Useful for manually-created Google Sheet rows that do not have Log ID.
+         */
+        $existing = db()->prepare('
+            SELECT id
+            FROM attendance_logs
+            WHERE user_id = :user_id
+              AND event_type = :event_type
+              AND event_time = :event_time
+            LIMIT 1
+        ');
+
         $existing->execute([
             ':user_id' => $user['user_id'],
             ':event_type' => $eventType,
             ':event_time' => $eventTime,
         ]);
+
         $existingId = $existing->fetchColumn();
 
         if ($existingId) {
-            db()->prepare('UPDATE attendance_logs SET location = :location, device_info = :device, sync_status = :sync WHERE id = :id')->execute([
+            db()->prepare('
+                UPDATE attendance_logs
+                SET
+                    location = :location,
+                    device_info = :device,
+                    sync_status = :sync
+                WHERE id = :id
+            ')->execute([
                 ':location' => $location,
                 ':device' => $device,
-                ':sync' => in_array($syncStatus, ['synced', 'pending', 'failed'], true) ? $syncStatus : 'synced',
+                ':sync' => $syncStatus,
                 ':id' => $existingId,
             ]);
+
             $updated++;
-        } else {
-            db()->prepare('INSERT INTO attendance_logs (id, user_id, event_type, event_time, check_in_method, sync_status, location, device_info)
-                           VALUES (:id, :user_id, :event_type, :event_time, :method, :sync, :location, :device)')->execute([
-                ':id' => uuid_v4(),
-                ':user_id' => $user['user_id'],
-                ':event_type' => $eventType,
-                ':event_time' => $eventTime,
-                ':method' => 'manual',
-                ':sync' => in_array($syncStatus, ['synced', 'pending', 'failed'], true) ? $syncStatus : 'synced',
-                ':location' => $location,
-                ':device' => $device,
-            ]);
-            $imported++;
+            continue;
         }
+
+        /*
+         * 3. New row.
+         * Preserve the Google Sheet Log ID only if it looks like your UUID format.
+         */
+        $newAttendanceId = sheet_id_is_safe($sheetLogId) ? $sheetLogId : uuid_v4();
+
+        db()->prepare('
+            INSERT INTO attendance_logs (
+                id,
+                user_id,
+                event_type,
+                event_time,
+                check_in_method,
+                sync_status,
+                location,
+                device_info
+            )
+            VALUES (
+                :id,
+                :user_id,
+                :event_type,
+                :event_time,
+                :method,
+                :sync,
+                :location,
+                :device
+            )
+        ')->execute([
+            ':id' => $newAttendanceId,
+            ':user_id' => $user['user_id'],
+            ':event_type' => $eventType,
+            ':event_time' => $eventTime,
+            ':method' => 'manual',
+            ':sync' => $syncStatus,
+            ':location' => $location,
+            ':device' => $device,
+        ]);
+
+        $imported++;
     }
 
-    return ['imported' => $imported, 'updated' => $updated, 'skipped' => $skipped, 'errors' => $errors];
+    return [
+        'imported' => $imported,
+        'updated' => $updated,
+        'skipped' => $skipped,
+        'errors' => $errors,
+    ];
 }
 
 function route_sheets_status(): never
