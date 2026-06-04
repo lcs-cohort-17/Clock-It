@@ -4,3 +4,5 @@ node_modules/
 vendor/
 phpunit.xml
 .phpunit.result.cache
+php-server.err.log
+php-server.out.log 
