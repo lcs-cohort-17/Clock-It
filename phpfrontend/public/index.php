@@ -101,12 +101,7 @@ $stats = [
     'totalEvents' => 42,
 ];
 
-<<<<<<< HEAD
 $loginUsers = require dirname(__DIR__) . '/src/Data/LoginMockUsers.php';
-=======
-// FIXED PATH
-$loginUsers = require __DIR__ . '/../src/data/LoginMockUsers.php';
->>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {
@@ -388,18 +383,10 @@ switch ($path) {
     |--------------------------------------------------------------------------
     */
 
-<<<<<<< HEAD
-   case '/admin-dashboard/users':
-
-    require_once dirname(__DIR__) . '/src/helpers/user-helper.php';
-    require_once dirname(__DIR__) . '/src/controllers/UserController.php';
-
-=======
     case '/admin-dashboard/users':
     require_once __DIR__ . '/../src/helpers/user-helper.php';
     // ❌ REMOVE THIS LINE: require_once __DIR__ . '/../src/controllers/UserController.php';
     
->>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
     $title = 'User Management';
     $user = get_logged_in_user();
     $isAdminDashboard = true;
@@ -426,13 +413,8 @@ switch ($path) {
         'user',
         'stats',
         'isAdminDashboard',
-<<<<<<< HEAD
-        'users',
-        'filtered'
-=======
         'filtered',
         'query'
->>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
     ));
     break;
 
@@ -479,7 +461,6 @@ switch ($path) {
         ));
         break;
 
-<<<<<<< HEAD
     case '/admin-dashboard/qr-generator':
         $title = 'QR Generator';
         $user = current_user_or($adminUser, 'admin');
@@ -503,8 +484,6 @@ switch ($path) {
     //     ));
     //     break;
 
-=======
->>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
     /*
     |--------------------------------------------------------------------------
     | STAFF
