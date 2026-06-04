@@ -1,32 +1,62 @@
 <?php
+namespace Config; 
+
+namespace Config;
+
+use PDO;
+use PDOException;
 
 class Database {
-    private static $instance = null;
-    private $pdo;
+
+    private static ?Database $instance = null;
+    private ?PDO $connection = null;
 
     private function __construct() {
-        $host     = 'sql34.cpt3.host-h.net';
-        $dbname   = 'lcstuhmwsf_db7';
-        $username = 'lcstuhmwsf_7';
-        $password = 'vGvGwshmr8e4y49aY7R8';
+        // We assume the environment variables have already been loaded 
+        // by the entry point (index.php) via Dotenv.
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+            $_ENV['DB_HOST'] ?? 'localhost',
+            $_ENV['DB_PORT'] ?? '3306',
+            $_ENV['DB_NAME'],
+            $_ENV['DB_CHARSET'] ?? 'utf8mb4'
+        );
 
-        $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ];
 
         try {
-            $this->pdo = new PDO($dsn, $username, $password, [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-            ]);
+            $this->connection = new PDO(
+                $dsn,
+                $_ENV['DB_USER'],
+                $_ENV['DB_PASS'],
+                $options
+            );
         } catch (PDOException $e) {
-            die(json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]));
+            // Log the error and stop execution
+            error_log('Database connection failed: ' . $e->getMessage());
+            
+            // In a real API, throw a custom exception or return a clean JSON error
+            throw new \RuntimeException('Database connection failed.');
         }
     }
 
-    public static function getConnection() {
+    public static function getInstance(): self {
         if (self::$instance === null) {
             self::$instance = new self();
         }
-        return self::$instance->pdo;
+
+        return self::$instance;
     }
+
+    public function getConnection(): PDO {
+        return $this->connection;
+    }
+
+    private function __clone() {}
+
+    public function __wakeup() {}
 }
