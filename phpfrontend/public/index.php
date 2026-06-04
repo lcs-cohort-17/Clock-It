@@ -43,18 +43,17 @@ if (str_starts_with($path, '/index.php/')) {
 function app_url(string $path = '/'): string
 {
     global $basePath;
-
     return $basePath . '/' . ltrim($path, '/');
 }
 
 function view(string $view, array $data = []): void
 {
     global $basePath;
-
     $data = ['basePath' => $basePath] + $data;
     extract($data);
 
-    require __DIR__ . '/../phpfrontend/src/views/' . $view . '.php';
+    // FIXED PATH
+    require __DIR__ . '/../src/views/' . $view . '.php';
 }
 
 function redirect_to(string $path): never
@@ -92,7 +91,8 @@ $stats = [
     'totalEvents' => 42,
 ];
 
-$loginUsers = require dirname(__DIR__) . '/phpfrontend/src/data/LoginMockUsers.php';
+// FIXED PATH
+$loginUsers = require __DIR__ . '/../src/data/LoginMockUsers.php';
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {
@@ -163,7 +163,7 @@ function current_user_or(array $fallback, ?string $role = null): array
 
 function admin_settings_file(): string
 {
-    return dirname(__DIR__) . '/phpfrontend/storage/settings_mock.json';
+    return dirname(__DIR__) . '/storage/settings_mock.json';
 }
 
 function admin_settings_read(): array
@@ -207,11 +207,7 @@ switch ($path) {
 
     case '/login':
         $title = 'Login | Clock-It';
-
-        view('login', compact(
-            'title',
-            'loginUsers'
-        ));
+        view('login', compact('title', 'loginUsers'));
         break;
 
     case '/logout':
@@ -231,7 +227,6 @@ switch ($path) {
         }
 
         session_destroy();
-
         redirect_to('/login');
         break;
 
@@ -343,7 +338,7 @@ switch ($path) {
 
         $settings = admin_settings_read();
         $retentionDays = (int) ($settings['data_retention_days'] ?? 90);
-        $purgeLog = dirname(__DIR__) . '/phpfrontend/storage/purge_log.txt';
+        $purgeLog = dirname(__DIR__) . '/storage/purge_log.txt';
         file_put_contents(
             $purgeLog,
             date('Y-m-d H:i:s') . " - Purged records older than {$retentionDays} days\n",
@@ -362,21 +357,38 @@ switch ($path) {
     |--------------------------------------------------------------------------
     */
 
-   case '/admin-dashboard/users':
-
-    require_once dirname(__DIR__) . '/phpfrontend/src/helpers/user-helper.php';
-    require_once dirname(__DIR__) . '/phpfrontend/src/controllers/UserController.php';
-
+    case '/admin-dashboard/users':
+    require_once __DIR__ . '/../src/helpers/user-helper.php';
+    // ❌ REMOVE THIS LINE: require_once __DIR__ . '/../src/controllers/UserController.php';
+    
     $title = 'User Management';
-    $user = current_user_or($adminUser, 'admin');
+    $user = get_logged_in_user();
     $isAdminDashboard = true;
+    
+    // Fetch real users from API
+    $apiUsers = fetch_users_from_api();
+    $allUsers = array_map('transform_user', $apiUsers);
+    
+    // Search filtering
+    $query = $_GET['q'] ?? '';
+    if ($query !== '') {
+        $queryLower = strtolower($query);
+        $filtered = array_filter($allUsers, function($u) use ($queryLower) {
+            return str_contains(strtolower($u['name']), $queryLower)
+                || str_contains(strtolower($u['email']), $queryLower)
+                || str_contains(strtolower($u['employeeId']), $queryLower);
+        });
+    } else {
+        $filtered = $allUsers;
+    }
 
     view('admin/usermanagement', compact(
         'title',
         'user',
         'stats',
         'isAdminDashboard',
-        'filtered'
+        'filtered',
+        'query'
     ));
     break;
 
@@ -422,16 +434,6 @@ switch ($path) {
             'isAdminDashboard'
         ));
         break;
-
-    // case '/admin-dashboard/testing':
-    //     $title = 'Testing';
-    //     $user = $adminUser;
-
-    //     view('admin/testing', compact(
-    //         'title',
-    //         'user'
-    //     ));
-    //     break;
 
     /*
     |--------------------------------------------------------------------------
@@ -495,9 +497,7 @@ switch ($path) {
 
     default:
         http_response_code(404);
-
         $title = '404 Not Found';
-
         view('404', compact('title'));
         break;
 }
