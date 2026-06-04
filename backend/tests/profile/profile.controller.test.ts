@@ -4,10 +4,10 @@ import express from 'express'
 
 // ─── MOCK MODEL — ONE vi.mock ONLY ───────────────────────────
 vi.mock('../../src/models/profileDb.js', () => ({
-  getProfilesDb: vi.fn(),
-  createProfileDb: vi.fn(),
-  updateProfileDb: vi.fn(),
-  deleteProfileDb: vi.fn(),
+  adminGettingAllUsersDb: vi.fn(),
+  adminCreatingUserDb: vi.fn(),
+  adminUpdatingUserDb: vi.fn(),
+  adminDeletingUserDb: vi.fn(),
   resetPasswordDb: vi.fn(),
   loginProfileDb: vi.fn(),
   getProfileByIdDb: vi.fn(),
@@ -31,10 +31,10 @@ vi.mock('jsonwebtoken', () => ({
 
 import {
   getProfileByIdDb,
-  getProfilesDb,
-  updateProfileDb,
-  deleteProfileDb,
-  createProfileDb,
+  adminGettingAllUsersDb,
+  adminUpdatingUserDb,
+  adminDeletingUserDb,
+  adminCreatingUserDb,
   resetPasswordDb,
   loginProfileDb,
   updatePasswordDb
@@ -43,10 +43,10 @@ import {
 import bcrypt from 'bcrypt'
 
 import {
-  getProfilesCon,
-  updateProfileCon,
-  deleteProfileCon,
-  createProfileCon,
+  adminGettingAllUsersCon,
+  adminUpdatingUserCon,
+  adminDeletingUserCon,
+  adminCreatingUserCon,
   resetPasswordCon,
   loginProfileCon,
   getProfileByIdCon,
@@ -69,13 +69,13 @@ app.use((req: any, res, next) => {
 })
 
 // Order matters — specific routes before param routes
-app.get('/profiles', getProfilesCon)
+app.get('/profiles', adminGettingAllUsersCon)
 app.post('/profiles/login', loginProfileCon)
-app.post('/profiles', createProfileCon)
+app.post('/profiles', adminCreatingUserCon)
 app.patch('/profiles/:employee_id/reset-password', resetPasswordCon)
 app.patch('/profiles/:employee_id/update-password', updatePasswordCon)
-app.patch('/profiles/:employee_id', updateProfileCon)
-app.delete('/profiles/:employee_id', deleteProfileCon)
+app.patch('/profiles/:employee_id', adminUpdatingUserCon)
+app.delete('/profiles/:employee_id', adminDeletingUserCon)
 app.get('/profiles/:employee_id', getProfileByIdCon)
 
 beforeEach(() => {
@@ -84,10 +84,10 @@ beforeEach(() => {
 })
 
 // ─── GET ALL ─────────────────────────────────────────────────
-describe('getProfilesCon', () => {
+describe('adminGettingAllUsersCon', () => {
 
   it('should return 200 with all profiles', async () => {
-    vi.mocked(getProfilesDb).mockResolvedValueOnce({
+    vi.mocked(adminGettingAllUsersDb).mockResolvedValueOnce({
       success: true,
       data: [
         { id: '14271887-48ea-48c8-9890-6cb196afa0Gc', first_name: 'Joshua', last_name: 'Jacobs', employee_id: 'S-005', role: 'staff', is_active: true, email: 'jodam@gmail.com', password: 'hashed' },
@@ -103,7 +103,7 @@ describe('getProfilesCon', () => {
   })
 
   it('should return 400 when model fails', async () => {
-    vi.mocked(getProfilesDb).mockResolvedValueOnce({
+    vi.mocked(adminGettingAllUsersDb).mockResolvedValueOnce({
       success: false,
       error: 'Database error'
     })
@@ -115,7 +115,7 @@ describe('getProfilesCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
-    vi.mocked(getProfilesDb).mockRejectedValueOnce(new Error('Crash'))
+    vi.mocked(adminGettingAllUsersDb).mockRejectedValueOnce(new Error('Crash'))
 
     const response = await request(app).get('/profiles')
 
@@ -124,10 +124,10 @@ describe('getProfilesCon', () => {
 })
 
 // ─── CREATE ──────────────────────────────────────────────────
-describe('createProfileCon', () => {
+describe('adminCreatingUserCon', () => {
 
   it('should return 201 with new profile and plain text password to admin', async () => {
-    vi.mocked(createProfileDb).mockResolvedValueOnce({
+    vi.mocked(adminCreatingUserDb).mockResolvedValueOnce({
       success: true,
       data: {
         id: '14271887-48ea-48c8-9890-6cb196afa0Gc',
@@ -161,7 +161,7 @@ describe('createProfileCon', () => {
   })
 
   it('should return 201 when admin creates another admin', async () => {
-    vi.mocked(createProfileDb).mockResolvedValueOnce({
+    vi.mocked(adminCreatingUserDb).mockResolvedValueOnce({
       success: true,
       data: {
         id: '24271887-48ea-48c8-9890-6cb196afa0Gc',
@@ -202,7 +202,7 @@ describe('createProfileCon', () => {
   })
 
   it('should return 400 when model returns error', async () => {
-    vi.mocked(createProfileDb).mockResolvedValueOnce({
+    vi.mocked(adminCreatingUserDb).mockResolvedValueOnce({
       success: false,
       error: 'Staff employee_id must start with S-'
     })
@@ -222,7 +222,7 @@ describe('createProfileCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
-    vi.mocked(createProfileDb).mockRejectedValueOnce(new Error('Crash'))
+    vi.mocked(adminCreatingUserDb).mockRejectedValueOnce(new Error('Crash'))
 
     const response = await request(app)
       .post('/profiles')
@@ -375,10 +375,10 @@ describe('loginProfileCon', () => {
 })
 
 // ─── UPDATE ──────────────────────────────────────────────────
-describe('updateProfileCon', () => {
+describe('adminUpdatingUserCon', () => {
 
   it('should return 200 on successful update', async () => {
-    vi.mocked(updateProfileDb).mockResolvedValueOnce({
+    vi.mocked(adminUpdatingUserDb).mockResolvedValueOnce({
       success: true,
       data: {
         id: '18741887-48ea-48c8-9890-6cb196afa0Gc',
@@ -401,7 +401,7 @@ describe('updateProfileCon', () => {
   })
 
   it('should return 400 when model fails', async () => {
-    vi.mocked(updateProfileDb).mockResolvedValueOnce({
+    vi.mocked(adminUpdatingUserDb).mockResolvedValueOnce({
       success: false,
       error: 'Update failed'
     })
@@ -415,7 +415,7 @@ describe('updateProfileCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
-    vi.mocked(updateProfileDb).mockRejectedValueOnce(new Error('Crash'))
+    vi.mocked(adminUpdatingUserDb).mockRejectedValueOnce(new Error('Crash'))
 
     const response = await request(app)
       .patch('/profiles/S-007')
@@ -426,10 +426,10 @@ describe('updateProfileCon', () => {
 })
 
 // ─── DELETE ──────────────────────────────────────────────────
-describe('deleteProfileCon', () => {
+describe('adminDeletingUserCon', () => {
 
   it('should return 200 on successful soft delete', async () => {
-    vi.mocked(deleteProfileDb).mockResolvedValueOnce({
+    vi.mocked(adminDeletingUserDb).mockResolvedValueOnce({
       success: true,
       message: 'profile deleted successfully'
     })
@@ -442,7 +442,7 @@ describe('deleteProfileCon', () => {
   })
 
   it('should return 400 when model fails', async () => {
-    vi.mocked(deleteProfileDb).mockResolvedValueOnce({
+    vi.mocked(adminDeletingUserDb).mockResolvedValueOnce({
       success: false,
       error: 'Delete failed'
     })
@@ -454,7 +454,7 @@ describe('deleteProfileCon', () => {
   })
 
   it('should return 500 on unexpected crash', async () => {
-    vi.mocked(deleteProfileDb).mockRejectedValueOnce(new Error('Crash'))
+    vi.mocked(adminDeletingUserDb).mockRejectedValueOnce(new Error('Crash'))
 
     const response = await request(app).delete('/profiles/S-007')
 

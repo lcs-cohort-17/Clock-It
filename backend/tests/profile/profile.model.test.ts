@@ -24,11 +24,11 @@ vi.mock('../../src/config/supabase.js', () => ({
     }
 }))
 
-import {getProfilesDb, 
+import {adminGettingAllUsersDb, 
     getProfileByIdDb,
-    deleteProfileDb, 
-    updateProfileDb,
-    createProfileDb,
+    adminDeletingUserDb, 
+    adminUpdatingUserDb,
+    adminCreatingUserDb,
     updatePasswordDb,
     resetPasswordDb
 } from '../../src/models/profileDb.js'
@@ -47,7 +47,7 @@ beforeEach(() => {
 
 //GET ALL
 
-describe('getProfilesDb', () => {
+describe('adminGettingAllUsersDb', () => {
 
  it('should return all profiles successfully', async () => {
     const mockData = [
@@ -57,7 +57,7 @@ describe('getProfilesDb', () => {
 
     mockSelect.mockResolvedValueOnce({ data: mockData, error: null })
 
-    const result = await getProfilesDb()
+    const result = await adminGettingAllUsersDb()
 
     expect(result.success).toBe(true)
     expect(result.data).toHaveLength(2)
@@ -70,7 +70,7 @@ describe('getProfilesDb', () => {
 
     mockSelect.mockResolvedValueOnce({ data: mockData, error: null })
 
-    const result = await getProfilesDb()
+    const result = await adminGettingAllUsersDb()
 
     // Check the first record has all required fields
     const profile = result.data?.[0]
@@ -97,14 +97,14 @@ describe('getProfilesDb', () => {
       error: { message: 'Database error' }
     })
 
-    const result = await getProfilesDb()
+    const result = await adminGettingAllUsersDb()
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Database error')
   })
 })
 
-describe('createProfileDb', () => {
+describe('adminCreatingUserDb', () => {
 
   it('should create a staff profile, store hashed password, return plain text to admin', async () => {
     const mockData = {
@@ -120,7 +120,7 @@ describe('createProfileDb', () => {
 
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
+    const result = await adminCreatingUserDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
 
     expect(result.success).toBe(true)
     expect(result.data?.first_name).toBe('Joshua')
@@ -151,7 +151,7 @@ describe('createProfileDb', () => {
 
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-    const result = await createProfileDb('Sarah', 'Johnson', 'A-010', 'admin', 'sarah@company.com')
+    const result = await adminCreatingUserDb('Sarah', 'Johnson', 'A-010', 'admin', 'sarah@company.com')
 
     expect(result.success).toBe(true)
     expect(result.data?.role).toBe('admin')
@@ -185,28 +185,28 @@ describe('createProfileDb', () => {
     mockSingle.mockResolvedValueOnce({ data: mockData1, error: null })
     mockSingle.mockResolvedValueOnce({ data: mockData2, error: null })
 
-    const result1 = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
-    const result2 = await createProfileDb('Sarah', 'Johnson', 'S-006', 'staff', 'sarah@company.com')
+    const result1 = await adminCreatingUserDb('Joshua', 'Jacobs', 'S-005', 'staff', 'jodam@gmail.com')
+    const result2 = await adminCreatingUserDb('Sarah', 'Johnson', 'S-006', 'staff', 'sarah@company.com')
 
     expect(result1.data?.password).not.toBe(result2.data?.password)
   })
 
   it('should only accept role of staff or admin', async () => {
-    const result = await createProfileDb('Joshua', 'Jacobs', 'S-005', 'invalid' as any, 'jodam@gmail.com')
+    const result = await adminCreatingUserDb('Joshua', 'Jacobs', 'S-005', 'invalid' as any, 'jodam@gmail.com')
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Role must be either staff or admin')
   })
 
   it('should reject staff employee_id that does not start with S-', async () => {
-    const result = await createProfileDb('Joshua', 'Jacobs', 'A-005', 'staff', 'jodam@gmail.com')
+    const result = await adminCreatingUserDb('Joshua', 'Jacobs', 'A-005', 'staff', 'jodam@gmail.com')
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Staff employee_id must start with S-')
   })
 
   it('should reject admin employee_id that does not start with A-', async () => {
-    const result = await createProfileDb('Sarah', 'Johnson', 'S-010', 'admin', 'sarah@company.com')
+    const result = await adminCreatingUserDb('Sarah', 'Johnson', 'S-010', 'admin', 'sarah@company.com')
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Admin employee_id must start with A-')
@@ -218,14 +218,14 @@ describe('createProfileDb', () => {
       error: { message: 'Creation failed' }
     })
 
-    const result = await createProfileDb('Joshua', 'Jacobs', 'A-005', 'admin', 'jodam@gmail.com')
+    const result = await adminCreatingUserDb('Joshua', 'Jacobs', 'A-005', 'admin', 'jodam@gmail.com')
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Creation failed')
   })
 })
 //UPDATE
-describe('updateProfileDb', () => {
+describe('adminUpdatingUserDb', () => {
 
   it('should update a staff profile successfully by employee_id', async () => {
     const mockData = {
@@ -241,7 +241,7 @@ describe('updateProfileDb', () => {
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
     // Target by employee_id not uuid
-    const result = await updateProfileDb('S-007',{
+    const result = await adminUpdatingUserDb('S-007',{
       first_name: 'Siza',
       last_name: 'Mpafa',
       role: 'staff',
@@ -272,7 +272,7 @@ describe('updateProfileDb', () => {
 
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-    const result = await updateProfileDb('A-010', {
+    const result = await adminUpdatingUserDb('A-010', {
     first_name: 'Sarah',
       email: 'sarah@company.com'
     })
@@ -295,7 +295,7 @@ describe('updateProfileDb', () => {
 
   mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-  const result = await updateProfileDb('S-007', { is_active: false })
+  const result = await adminUpdatingUserDb('S-007', { is_active: false })
 
   expect(result.success).toBe(true)
   expect(result.data?.is_active).toBe(false)  // confirms it was disabled
@@ -316,7 +316,7 @@ describe('updateProfileDb', () => {
     mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
     // Partial<Profile> — only passing one field
-    const result = await updateProfileDb('S-007', { role: 'admin' })
+    const result = await adminUpdatingUserDb('S-007', { role: 'admin' })
 
     expect(result.success).toBe(true)
     expect(result.data?.role).toBe('admin')
@@ -331,7 +331,7 @@ describe('updateProfileDb', () => {
       error: { message: 'Update failed' }
     })
 
-    const result = await updateProfileDb('S-007', { first_name: 'Ghost' })
+    const result = await adminUpdatingUserDb('S-007', { first_name: 'Ghost' })
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Update failed')
@@ -339,7 +339,7 @@ describe('updateProfileDb', () => {
 
   it('should return error if no fields provided', async () => {
     // Partial<Profile> with empty object — nothing to update
-    const result = await updateProfileDb('S-007', {})
+    const result = await adminUpdatingUserDb('S-007', {})
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('No fields provided for update')
@@ -351,20 +351,20 @@ describe('updateProfileDb', () => {
       error: { message: 'Profile not found' }
     })
 
-    const result = await updateProfileDb('X-999', { first_name: 'Ghost' })
+    const result = await adminUpdatingUserDb('X-999', { first_name: 'Ghost' })
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Profile not found')
   })
 })
 
-describe('deleteProfileDb', () => {
+describe('adminDeletingUserDb', () => {
 
   it('should delete a staff profile successfully by employee_id', async () => {
     mockSingle.mockResolvedValueOnce({ data: null, error: null })
 
     // Target by employee_id not uuid
-    const result = await deleteProfileDb('S-007')
+    const result = await adminDeletingUserDb('S-007')
 
     expect(result.success).toBe(true)
     expect(result.message).toBe('profile deleted successfully')
@@ -373,7 +373,7 @@ describe('deleteProfileDb', () => {
   it('should delete an admin profile successfully by employee_id', async () => {
     mockSingle.mockResolvedValueOnce({ data: null, error: null })
 
-    const result = await deleteProfileDb('A-010')
+    const result = await adminDeletingUserDb('A-010')
 
     expect(result.success).toBe(true)
     expect(result.message).toBe('profile deleted successfully')
@@ -388,7 +388,7 @@ describe('deleteProfileDb', () => {
 
   mockSingle.mockResolvedValueOnce({ data: mockData, error: null })
 
-  const result = await deleteProfileDb('S-007')
+  const result = await adminDeletingUserDb('S-007')
 
   expect(result.success).toBe(true)
   // Record still exists — just disabled
@@ -401,7 +401,7 @@ describe('deleteProfileDb', () => {
       error: { message: 'Profile not found' }
     })
 
-    const result = await deleteProfileDb('X-999')
+    const result = await adminDeletingUserDb('X-999')
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Profile not found')
@@ -413,7 +413,7 @@ describe('deleteProfileDb', () => {
       error: { message: 'Delete failed' }
     })
 
-    const result = await deleteProfileDb('S-007')
+    const result = await adminDeletingUserDb('S-007')
 
     expect(result.success).toBe(false)
     expect(result.error).toBe('Delete failed')

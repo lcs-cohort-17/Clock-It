@@ -1,17 +1,9 @@
 <?php
-
-declare(strict_types=1);
-
-// =============================================
-// AUTOLOAD (MUST BE FIRST)
-// =============================================
-require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
-
 // =============================================
 // ERROR HANDLING
 // =============================================
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1); // Set to 1 for debugging
 
 set_exception_handler(function ($exception) {
     error_log('UNCAUGHT EXCEPTION: ' . $exception->getMessage());
@@ -27,35 +19,29 @@ set_exception_handler(function ($exception) {
 // =============================================
 // DOTENV BOOTSTRAP
 // =============================================
+require __DIR__ . '/../../vendor/autoload.php';
+
 use Dotenv\Dotenv;
 
-$dotenv = Dotenv::createImmutable(dirname(__DIR__, 2));
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
 // =============================================
-// USE STATEMENTS
+// MANUAL AUTOLOAD FIX FOR MIDDLEWARE
 // =============================================
-use App\Models\ProfileDb;
-use App\Models\QrCodeDb;
-use App\Middleware\AuthMiddleware;
-use Controllers\ProfileController;
+if (!class_exists('Middleware\AuthMiddleware')) {
+    require_once __DIR__ . '/../middleware/AuthMiddleware.php';
+}
 
 // =============================================
-// SERVICES
-// =============================================
-$auth = new AuthMiddleware($_ENV['JWT_SECRET']);
-$model = new ProfileDb();
-$qrModel = new QrCodeDb();
-$controller = new ProfileController($model);
-
-// =============================================
-// CORS
+// CORS HEADERS
 // =============================================
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 header('Content-Type: application/json');
 
+// Handle preflight OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -64,59 +50,209 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // =============================================
 // ROUTING
 // =============================================
+
 $method = $_SERVER['REQUEST_METHOD'];
-$path = preg_replace('#^/api#', '', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// Remove /api prefix if present
+$path = preg_replace('#^/api#', '', $path);
+
+error_log("[DEBUG] $method $path");
+
+// Get JSON input for POST/PATCH/PUT requests
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
-// --- routes unchanged below ---
-// [EXISTING PROFILE ROUTES]
-if ($method === 'GET' && $path === '/test') { echo json_encode(['message' => 'Test route works!']); exit; }
-if ($method === 'GET' && $path === '/admin/users') { $controller->adminGettingAllUsers(); exit; }
-if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) { $controller->getProfileById($matches[1]); exit; }
-if ($method === 'POST' && $path === '/admin/users') { $controller->adminCreatingUser($input); exit; }
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) { $controller->adminUpdatingUser($matches[1], $input); exit; }
-if ($method === 'DELETE' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) { $controller->adminDeletingUser($matches[1]); exit; }
-if ($method === 'POST' && $path === '/login') { $controller->loginProfile($input); exit; }
-if ($method === 'POST' && $path === '/admin/users/clear-cache') { $controller->clearCache($input); exit; }
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/update-password$#', $path, $matches)) { $controller->updatePassword($matches[1], $input); exit; }
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) { $controller->resetPassword($matches[1]); exit; }
+// Build request array for middleware
+$request = [
+    'headers' => getallheaders(),
+    'method' => $method,
+    'path' => $path,
+    'query' => $_GET,
+    'body' => $input
+];
 
 // =============================================
-// QR CODE ROUTES (NEW)
+// DEBUG: Check headers (MOVED HERE - AFTER $request is defined!)
+// =============================================
+error_log("DEBUG: All headers: " . print_r(getallheaders(), true));
+error_log("DEBUG: Authorization header: " . ($request['headers']['Authorization'] ?? 'NOT FOUND'));
+error_log("DEBUG: authorization header: " . ($request['headers']['authorization'] ?? 'NOT FOUND'));
+
+// =============================================
+// PROFILE ROUTES
 // =============================================
 
-// Generate QR (Admin)
-if ($method === 'POST' && $path === '/admin/qr/generate') {
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    $guard = $auth->requireAdmin(['headers' => ['authorization' => $authHeader]]);
-    
-    if ($guard !== null) {
-        http_response_code($guard['status']);
-        echo json_encode($guard['body']);
-        exit;
-    }
+use App\Models\ProfileDb;
+use Controllers\ProfileController;
+use Middleware\AuthMiddleware;
+use Config\Database;  // ADD THIS!
 
-    $token = bin2hex(random_bytes(16));
-    $type = $input['type'] ?? 'clock_in';
-    $userId = 'admin_user'; // Replace with logic from your token if needed
+// Initialize JWT secret AND database connection for timeout checking
+$jwtSecret = $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this';
+$db = Database::getInstance()->getConnection();  // Get database connection
+$authMiddleware = new AuthMiddleware($jwtSecret, $db);  // Pass db to middleware
 
-    $qrModel->createToken($token, $type, $userId);
-    http_response_code(201);
-    echo json_encode(['success' => true, 'token' => $token]);
+$model = new ProfileDb();
+$controller = new ProfileController($model);
+
+// POST - Forgot password (public)
+if ($method === 'POST' && $path === '/forgot-password') {
+    $controller->forgotPassword($input);
     exit;
 }
 
-// Validate QR (Public)
-if ($method === 'POST' && $path === '/scan/validate') {
-    $token = $input['token'] ?? '';
-    $data = $qrModel->validateAndUseToken($token);
+// POST - Reset password (public)
+if ($method === 'POST' && $path === '/reset-password') {
+    $controller->resetPasswordWithToken($input);
+    exit;
+}
 
-    if ($data) {
-        echo json_encode(['valid' => true, 'type' => $data['type']]);
-    } else {
-        http_response_code(400);
-        echo json_encode(['valid' => false, 'error' => 'Invalid, expired, or used token']);
+// =============================================
+// TEST ROUTE (PUBLIC - no auth needed)
+// =============================================
+if ($method === 'GET' && $path === '/test') {
+    echo json_encode(['message' => 'Test route works!']);
+    exit;
+}
+
+// =============================================
+// PUBLIC ROUTES (no token required)
+// =============================================
+
+// POST - Login
+if ($method === 'POST' && $path === '/login') {
+    $controller->loginProfile($input);
+    exit;
+}
+
+// =============================================
+// AUTHENTICATED ROUTES (require token)
+// =============================================
+
+// GET - Get current user's own profile
+if ($method === 'GET' && $path === '/user/profile') {
+    $authResult = $authMiddleware->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
     }
+    $controller->getCurrentUserProfile($request);
+    exit;
+}
+
+// GET all users (admin only)
+if ($method === 'GET' && $path === '/admin/users') {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->adminGettingAllUsers();
+    exit;
+}
+
+// PATCH - Soft delete user
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/deactivate$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->softDeleteUser($matches[1]);
+    exit;
+}
+
+// PATCH - Activate user
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/activate$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->activateUser($matches[1]);
+    exit;
+}
+
+// GET user by employee_id (admin only)
+if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->getProfileById($matches[1]);
+    exit;
+}
+
+// PATCH - Update user (admin only)
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->adminUpdatingUser($matches[1], $input);
+    exit;
+}
+
+// POST - Create user (admin only)
+if ($method === 'POST' && $path === '/admin/users') {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->adminCreatingUser($input);
+    exit;
+}
+
+// PATCH - Reset password (admin)
+if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) {
+    $authResult = $authMiddleware->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $controller->resetPassword($matches[1]);
+    exit;
+}
+
+// PATCH - Update own password (requires auth)
+if ($method === 'PATCH' && $path === '/user/update-password') {
+    $authResult = $authMiddleware->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $employee_id = $request['user']['employee_id'] ?? null;
+    if (!$employee_id) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'User not found']);
+        exit;
+    }
+    $controller->updatePassword($employee_id, $input);
+    exit;
+}
+
+// POST - Clear cache (requires auth)
+if ($method === 'POST' && $path === '/user/cache/clear') {
+    $authResult = $authMiddleware->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    // Pass empty body and the authenticated user
+    $controller->clearCache([], $request['user'] ?? null);
     exit;
 }
 
@@ -124,4 +260,8 @@ if ($method === 'POST' && $path === '/scan/validate') {
 // 404 NOT FOUND
 // =============================================
 http_response_code(404);
-echo json_encode(['success' => false, 'error' => 'Route not found: ' . $method . ' ' . $path]);
+echo json_encode([
+    'success' => false,
+    'error' => 'Route not found: ' . $method . ' ' . $path
+]);
+exit;

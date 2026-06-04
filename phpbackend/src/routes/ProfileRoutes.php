@@ -25,19 +25,19 @@ class ProfileRoutes
         $this->app->post('/profiles/login', [$this->profileController, 'loginProfile']);
 
         // Protected routes
-        $this->app->get('/profiles', [$this->profileController, 'getProfiles']);
+        $this->app->get('/', [$this->profileController, 'adminGettingAllUsers']);
         $this->app->add(new AuthMiddleware());
 
         $this->app->get('/profiles/{employee_id}', [$this->profileController, 'getProfileById']);
         $this->app->add(new AuthMiddleware());
 
-        $this->app->post('/profiles', [$this->profileController, 'createProfile']);
+        $this->app->post('/', [$this->profileController, 'adminCreatingUser']);
         $this->app->add(new AuthMiddleware());
 
-        $this->app->patch('/profiles/{employee_id}', [$this->profileController, 'updateProfile']);
+        $this->app->patch('/{id}', [$this->profileController, 'adminUpdatingUser']);
         $this->app->add(new AuthMiddleware());
 
-        $this->app->delete('/profiles/{employee_id}', [$this->profileController, 'deleteProfile']);
+        $this->app->delete('/{id}', [$this->profileController, 'adminDeletingUser']);
         $this->app->add(new AuthMiddleware());
 
         $this->app->patch('/profiles/{employee_id}/update-password', [$this->profileController, 'updatePassword']);
