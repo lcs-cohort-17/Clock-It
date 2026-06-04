@@ -1,3 +1,4 @@
+[x-cloak] { display: none !important; }
 .search-input {
     height: 52px;
     border-radius: 16px;
@@ -147,10 +148,10 @@ table td {
 }
 
 /* Slight specific nudge for the pencil icon which renders visually lower */
-.btn-icon i.bi-pencil,
-.btn-icon i.bi-pencil-fill {
+/* .btn-icon i.bi-pencil, */
+/* .btn-icon i.bi-pencil-fill { */
     /* removed special nudge */
-}
+/* } */
 
 .btn-light {
     background: transparent !important;

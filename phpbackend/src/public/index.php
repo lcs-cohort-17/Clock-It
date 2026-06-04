@@ -204,6 +204,31 @@ if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)
     exit;
 }
 
+// PATCH - Update own profile (staff/admin self-update)
+if ($method === 'PATCH' && $path === '/user/profile') {
+    $authResult = $authMiddleware->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+    $employee_id = $request['user']['employee_id'] ?? null;
+    if (!$employee_id) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'User not authenticated']);
+        exit;
+    }
+    $allowedFields = ['first_name', 'last_name', 'email'];
+    $updates = array_intersect_key($input, array_flip($allowedFields));
+    if (empty($updates)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'No valid fields to update']);
+        exit;
+    }
+    $controller->adminUpdatingUser($employee_id, $updates);
+    exit;
+}
+
 // PATCH - Update user (admin only)
 if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
     $authResult = $authMiddleware->requireAdmin($request);

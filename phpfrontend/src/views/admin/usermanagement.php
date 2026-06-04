@@ -118,7 +118,7 @@ ob_start();
                                                         @click="openEditModal(user)"
                                                         title="Edit user"
                                                         :aria-label="'Edit ' + user.name">
-                                                    <i class="bi bi-pencil"></i>
+                                                    <i class="bi bi-pencil" style="pointer-events: none;"></i>
                                                 </button>
                                                 
                                                 <!-- Reset Password -->
@@ -165,7 +165,7 @@ ob_start();
                 </div>
 
                 <!-- ADD MODAL -->
-                <div class="modal-overlay" x-show="showAddModal" x-cloak @click.self="showAddModal = false">
+                <div class="modal-overlay" x-show="showAddModal" x-cloak @click.self="showAddModal = false" style="display: none;">
                     <div class="modal-box">
                         <div class="d-flex justify-content-between mb-4">
                             <h3>Add User</h3>
@@ -212,44 +212,44 @@ ob_start();
                     </div>
                 </div>
 
-                <!-- EDIT MODAL -->
-                <div class="modal-overlay" x-show="showEditModal" x-cloak @click.self="showEditModal = false">
-                    <div class="modal-box">
-                        <div class="d-flex justify-content-between mb-4">
-                            <h3>Edit User</h3>
-                            <button class="btn-close" @click="showEditModal = false" aria-label="Close"></button>
-                        </div>
-                        <form @submit.prevent="updateUser()">
-                            <input type="hidden" x-model="editUser.employee_id">
-                            <div class="mb-3">
-                                <label class="form-label">First Name</label>
-                                <input type="text" x-model="editUser.first_name" class="form-control">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" x-model="editUser.last_name" class="form-control">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" x-model="editUser.email" class="form-control">
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label">Role</label>
-                                <select x-model="editUser.role" class="form-select">
-                                    <option value="staff">Staff</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2">
-                                <button type="button" class="btn btn-outline-secondary" @click="showEditModal = false">Cancel</button>
-                                <button type="submit" class="btn btn-main" :disabled="saving">
-                                    <span x-show="saving" class="spinner-border spinner-border-sm me-1"></span>
-                                    <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+<!-- EDIT MODAL (using x-show, like the add modal) -->
+<div class="modal-overlay" x-show="showEditModal" x-cloak @click.self="showEditModal = false" style="display: none;">
+    <div class="modal-box">
+        <div class="d-flex justify-content-between mb-4">
+            <h3>Edit User</h3>
+            <button class="btn-close" @click="showEditModal = false" aria-label="Close"></button>
+        </div>
+        <form @submit.prevent="updateUser()">
+            <input type="hidden" x-model="editUser.employee_id">
+            <div class="mb-3">
+                <label class="form-label">First Name</label>
+                <input type="text" x-model="editUser.first_name" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Last Name</label>
+                <input type="text" x-model="editUser.last_name" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" x-model="editUser.email" class="form-control">
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Role</label>
+                <select x-model="editUser.role" class="form-select">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary" @click="showEditModal = false">Cancel</button>
+                <button type="submit" class="btn btn-main" :disabled="saving">
+                    <span x-show="saving" class="spinner-border spinner-border-sm me-1"></span>
+                    <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
             </div>
         </div>
     </div>
