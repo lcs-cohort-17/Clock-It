@@ -104,29 +104,151 @@ function dashboard() {
   return {
     showCalendar: false,
     showLeave: false,
+    leaveRequestType: 'Annual Leave',
+    leaveRequestStartDate: '',
+    leaveRequestEndDate: '',
+    leaveRequestReason: '',
+    leaveRequestErrors: {},
+    leaveRequestSuccess: false,
     currentMonth: new Date().getMonth(),
     currentYear: new Date().getFullYear(),
     selectedDate: null,
     calendarDays: [],
+    attendanceHistoryMap: {},
+    leaveEvents: {},
 
     init() {
+      this.loadAttendanceHistory();
+      this.loadLeaveEvents();
       this.generateCalendar();
     },
 
+    loadAttendanceHistory() {
+      var history = [];
+
+      if (typeof window !== 'undefined' && window.ATTENDANCE_DATA && Array.isArray(window.ATTENDANCE_DATA.history)) {
+        history = window.ATTENDANCE_DATA.history;
+      }
+
+      this.attendanceHistoryMap = history.reduce(function (map, entry) {
+        if (entry && entry.date && entry.status) {
+          map[entry.date] = entry.status;
+        }
+        return map;
+      }, {});
+    },
+
+    parseDateKey(dateKey) {
+      var parts = String(dateKey || '').split('-').map(Number);
+      if (parts.length !== 3 || parts.some(function (part) { return Number.isNaN(part); })) {
+        return null;
+      }
+
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    },
+
+    formatDateKey(date) {
+      var month = String(date.getMonth() + 1).padStart(2, '0');
+      var day = String(date.getDate()).padStart(2, '0');
+
+      return `${date.getFullYear()}-${month}-${day}`;
+    },
+
+    loadLeaveEvents() {
+      var stored = [];
+      try {
+        stored = JSON.parse(window.localStorage.getItem('leaveRequests') || '[]');
+      } catch (_) {
+        stored = [];
+      }
+
+      var map = {};
+      var self = this;
+      stored.forEach(function (request) {
+        if (!request.startDate || !request.endDate) {
+          return;
+        }
+
+        var startDate = self.parseDateKey(request.startDate);
+        var endDate = self.parseDateKey(request.endDate);
+        if (!startDate || !endDate) {
+          return;
+        }
+
+        var status = request.status || 'Pending';
+        var current = new Date(startDate);
+
+        while (current <= endDate) {
+          var dateKey = self.formatDateKey(current);
+          map[dateKey] = {
+            type: 'leave',
+            status: status,
+            label: `${status} ${request.type || 'Leave'}`,
+            description: request.reason || '',
+          };
+          current = new Date(current);
+          current.setDate(current.getDate() + 1);
+        }
+      });
+
+      this.leaveEvents = map;
+    },
+
+    getEventForDay(day) {
+      if (!day) {
+        return null;
+      }
+
+      var date = new Date(this.currentYear, this.currentMonth, day);
+      var dateKey = this.formatDateKey(date);
+
+      if (this.leaveEvents[dateKey]) {
+        return this.leaveEvents[dateKey];
+      }
+
+      if (this.attendanceHistoryMap[dateKey]) {
+        return {
+          type: 'attendance',
+          status: this.attendanceHistoryMap[dateKey],
+          label: this.attendanceHistoryMap[dateKey],
+        };
+      }
+
+      var today = new Date();
+      if (date > today) {
+        return null;
+      }
+
+      var dayOfWeek = date.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return { type: 'attendance', status: 'Absent', label: 'Absent' };
+      }
+
+      return { type: 'attendance', status: 'Present', label: 'Present' };
+    },
+
     generateCalendar() {
-      const firstDay = new Date(this.currentYear, this.currentMonth, 1);
-      const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
-      const daysInMonth = lastDay.getDate();
-      const startingDayOfWeek = firstDay.getDay();
+      var firstDay = new Date(this.currentYear, this.currentMonth, 1);
+      var lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
+      var daysInMonth = lastDay.getDate();
+      var startingDayOfWeek = firstDay.getDay();
 
       this.calendarDays = [];
 
-      for (let i = 0; i < startingDayOfWeek; i += 1) {
+      for (var i = 0; i < startingDayOfWeek; i += 1) {
         this.calendarDays.push(null);
       }
 
-      for (let day = 1; day <= daysInMonth; day += 1) {
-        this.calendarDays.push(day);
+      for (var day = 1; day <= daysInMonth; day += 1) {
+        var date = new Date(this.currentYear, this.currentMonth, day);
+        var event = this.getEventForDay(day);
+
+        this.calendarDays.push({
+          day: day,
+          dateKey: this.formatDateKey(date),
+          isToday: date.toDateString() === new Date().toDateString(),
+          event: event,
+        });
       }
     },
 
@@ -156,19 +278,28 @@ function dashboard() {
       }
     },
 
+    openCalendar() {
+      this.selectedDate = null;
+      this.showCalendar = true;
+    },
+
     isToday(day) {
       const today = new Date();
-      return day
-        && day === today.getDate()
-        && this.currentMonth === today.getMonth()
-        && this.currentYear === today.getFullYear();
+      return (
+        day &&
+        day === today.getDate() &&
+        this.currentMonth === today.getMonth() &&
+        this.currentYear === today.getFullYear()
+      );
     },
 
     isSelected(day) {
-      return this.selectedDate
-        && day === this.selectedDate.getDate()
-        && this.currentMonth === this.selectedDate.getMonth()
-        && this.currentYear === this.selectedDate.getFullYear();
+      return (
+        this.selectedDate &&
+        day === this.selectedDate.getDate() &&
+        this.currentMonth === this.selectedDate.getMonth() &&
+        this.currentYear === this.selectedDate.getFullYear()
+      );
     },
 
     getMonthYear() {
@@ -177,6 +308,82 @@ function dashboard() {
         'July', 'August', 'September', 'October', 'November', 'December',
       ];
       return `${months[this.currentMonth]} ${this.currentYear}`;
+    },
+
+    resetLeaveForm() {
+      this.leaveRequestType = 'Annual Leave';
+      this.leaveRequestStartDate = '';
+      this.leaveRequestEndDate = '';
+      this.leaveRequestReason = '';
+      this.leaveRequestErrors = {};
+      this.leaveRequestSuccess = false;
+    },
+
+    openLeaveRequest() {
+      this.resetLeaveForm();
+      this.showLeave = true;
+    },
+
+    validateLeaveRequest() {
+      var errors = {};
+
+      if (!this.leaveRequestType) {
+        errors.type = 'Please select a leave type.';
+      }
+      if (!this.leaveRequestStartDate) {
+        errors.startDate = 'Start date is required.';
+      }
+      if (!this.leaveRequestEndDate) {
+        errors.endDate = 'End date is required.';
+      } else if (this.leaveRequestStartDate && this.leaveRequestEndDate < this.leaveRequestStartDate) {
+        errors.endDate = 'End date must be on or after the start date.';
+      }
+      if (!this.leaveRequestReason || this.leaveRequestReason.trim() === '') {
+        errors.reason = 'Reason is required.';
+      }
+
+      return errors;
+    },
+
+    saveLeaveRequest() {
+      var request = {
+        id: Date.now(),
+        type: this.leaveRequestType,
+        startDate: this.leaveRequestStartDate,
+        endDate: this.leaveRequestEndDate,
+        reason: this.leaveRequestReason,
+        status: 'Pending',
+        submittedAt: new Date().toISOString(),
+      };
+
+      var existing = [];
+      try {
+        existing = JSON.parse(window.localStorage.getItem('leaveRequests') || '[]');
+      } catch (_) {
+        existing = [];
+      }
+
+      existing.push(request);
+      window.localStorage.setItem('leaveRequests', JSON.stringify(existing));
+      this.loadLeaveEvents();
+      return request;
+    },
+
+    submitLeaveRequest() {
+      this.leaveRequestErrors = this.validateLeaveRequest();
+      if (Object.keys(this.leaveRequestErrors).length > 0) {
+        return;
+      }
+
+      this.saveLeaveRequest();
+      this.leaveRequestSuccess = true;
+      this.generateCalendar();
+
+      var self = this;
+      setTimeout(function () {
+        self.showLeave = false;
+        self.resetLeaveForm();
+      }, 1400);
     },
   };
 }
