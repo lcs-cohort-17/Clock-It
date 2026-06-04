@@ -1,149 +1,142 @@
 <?php
 
+declare(strict_types=1);
+
 class LeaveValidator
 {
     private const TYPES = Types::ALL;
     private const STATUSES = RequestStatus::ALL;
 
-    // Validate the request payload before the controller touches the database.
-    // This keeps bad data from ever reaching the model layer.
     public static function validateSubmit(array $payload): array
     {
-         error_log('PAYLOAD: ' . print_r($payload, true)); // add this
-    $errors = [];
         $errors = [];
 
-        $type = $payload['type'] ?? null;
+        $type = strtolower(trim((string) ($payload['type'] ?? '')));
         if (!in_array($type, self::TYPES, true)) {
-            self::addError(
-                $errors,
-                'type',
-                "type must be : sick, annual, unpaid or other"
-            );
+            self::addError($errors, 'type', 'Type must be sick, annual, unpaid, or other.');
         }
 
         self::validateDateRange($payload, $errors, false);
 
         $reason = trim((string) ($payload['reason'] ?? ''));
         if ($reason === '') {
-            self::addError($errors, 'reason', 'Must contain reason');
+            self::addError($errors, 'reason', 'Reason is required.');
+        } elseif (mb_strlen($reason) > 1000) {
+            self::addError($errors, 'reason', 'Reason may not be longer than 1000 characters.');
         }
 
         return $errors;
     }
 
-    // Status updates are restricted to approved/rejected/pending.
-    // The controller uses this before allowing an admin action to continue.
     public static function validateStatusUpdate(array $payload): array
     {
         $errors = [];
-        $status = $payload['status'] ?? null;
+        $status = strtolower(trim((string) ($payload['status'] ?? '')));
 
         if (!in_array($status, self::STATUSES, true)) {
-            self::addError(
-                $errors,
-                'status',
-                'Invalid status it must be approved,rejected or pending'
-            );
+            self::addError($errors, 'status', 'Status must be pending, approved, or rejected.');
         }
 
         return $errors;
     }
 
-    // Calendar query validation keeps month/year filters safe and predictable.
     public static function validateCalendarQuery(array $query): array
     {
         $errors = [];
 
-        if (array_key_exists('month', $query)) {
+        if (array_key_exists('month', $query) && $query['month'] !== '') {
             $month = filter_var($query['month'], FILTER_VALIDATE_INT);
             if ($month === false || $month < 1 || $month > 12) {
-                self::addError($errors, 'month', 'month must be between 1 and 12');
+                self::addError($errors, 'month', 'Month must be between 1 and 12.');
             }
         }
 
-        if (array_key_exists('year', $query)) {
+        if (array_key_exists('year', $query) && $query['year'] !== '') {
             $year = filter_var($query['year'], FILTER_VALIDATE_INT);
             if ($year === false || $year < 1900) {
-                self::addError($errors, 'year', 'year must be a valid year');
+                self::addError($errors, 'year', 'Year must be a valid year.');
             }
         }
 
         return $errors;
     }
 
-    // Admin updates may shift dates, so we validate the date range again here.
     public static function validateUpdateLeave(array $payload): array
     {
         $errors = [];
         self::validateDateRange($payload, $errors, true);
 
+        $reason = trim((string) ($payload['reason'] ?? ''));
+        if ($reason === '') {
+            self::addError($errors, 'reason', 'Reason is required.');
+        } elseif (mb_strlen($reason) > 1000) {
+            self::addError($errors, 'reason', 'Reason may not be longer than 1000 characters.');
+        }
+
         return $errors;
     }
 
-    // Shared date-range checker.
-    // Accepts either date-only fields or datetime fields depending on payload shape.
     private static function validateDateRange(array $payload, array &$errors, bool $allowPastDates): void
     {
-        [$startField, $endField, $format] = self::resolveDateFields($payload);
+        $format = self::resolveDateFormat($payload);
 
-        $startValue = $payload[$startField] ?? null;
-        $endValue = $payload[$endField] ?? null;
+        $startValue = $payload['start_date'] ?? null;
+        $endValue   = $payload['end_date'] ?? null;
 
-        if (!self::isValidDateValue($startValue, $format)) {
-            self::addError($errors, $startField, sprintf('%s must be a valid %s value', $startField, $format));
+        $start = self::toDateTimeImmutable($startValue, $format);
+        $end   = self::toDateTimeImmutable($endValue, $format);
+
+        if ($start === null) {
+            self::addError($errors, 'start_date', 'Start date must be a valid date.');
         }
 
-        if (!self::isValidDateValue($endValue, $format)) {
-            self::addError($errors, $endField, sprintf('%s must be a valid %s value', $endField, $format));
+        if ($end === null) {
+            self::addError($errors, 'end_date', 'End date must be a valid date.');
         }
 
-        if (!self::isValidDateValue($startValue, $format) || !self::isValidDateValue($endValue, $format)) {
+        if ($start === null || $end === null) {
             return;
         }
 
-        $start = self::toDateTimeImmutable((string) $startValue, $format);
-        $end = self::toDateTimeImmutable((string) $endValue, $format);
-
         if (!$allowPastDates) {
             $now = new DateTimeImmutable('now');
-            // For date-only, compare against today at 00:00; reject today or past
+
             if ($format === 'Y-m-d') {
                 $today = new DateTimeImmutable($now->format('Y-m-d'));
                 if ($start <= $today) {
-                    self::addError($errors, $startField, 'Start date must be in the future');
+                    self::addError($errors, 'start_date', 'Start date must be in the future.');
                 }
                 if ($end <= $today) {
-                    self::addError($errors, $endField, 'End date must be in the future');
+                    self::addError($errors, 'end_date', 'End date must be in the future.');
                 }
-            } else {
-                // For datetime, reject now or past
+            } elseif ($start <= $now || $end <= $now) {
                 if ($start <= $now) {
-                    self::addError($errors, $startField, 'Start date/time must be in the future');
+                    self::addError($errors, 'start_date', 'Start date/time must be in the future.');
                 }
                 if ($end <= $now) {
-                    self::addError($errors, $endField, 'End date/time must be in the future');
+                    self::addError($errors, 'end_date', 'End date/time must be in the future.');
                 }
             }
         }
 
-        // Allow same-day leaves: end_date >= start_date (only error if end < start)
         if ($end < $start) {
-            self::addError($errors, $endField, 'End date must be after start_date');
+            self::addError($errors, 'end_date', 'End date must be the same as or after the start date.');
         }
-    }
-
-    // If datetime keys are present, the validator switches to datetime mode.
-    private static function resolveDateFields(array $payload): array
-    {
-        return ['start_date', 'end_date', self::resolveDateFormat($payload)];
     }
 
     private static function resolveDateFormat(array $payload): string
     {
         foreach (['start_date', 'end_date'] as $field) {
             $value = $payload[$field] ?? null;
-            if (is_string($value) && str_contains($value, ':')) {
+            if (!is_string($value)) {
+                continue;
+            }
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $value)) {
+                return 'Y-m-d H:i:s';
+            }
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $value)) {
                 return 'Y-m-d H:i';
             }
         }
@@ -151,21 +144,13 @@ class LeaveValidator
         return 'Y-m-d';
     }
 
-    // Returns true only when the value parses cleanly in the expected format.
-    private static function isValidDateValue(mixed $value, string $format): bool
-    {
-        return self::toDateTimeImmutable($value, $format) !== null;
-    }
-
-    // Normalizes the date string into a DateTimeImmutable object for comparisons.
     private static function toDateTimeImmutable(mixed $value, string $format): ?DateTimeImmutable
     {
-        if (!is_string($value)) {
+        if (!is_string($value) || trim($value) === '') {
             return null;
         }
 
         $date = DateTimeImmutable::createFromFormat($format, $value);
-
         if ($date === false) {
             return null;
         }
@@ -173,13 +158,9 @@ class LeaveValidator
         return $date->format($format) === $value ? $date : null;
     }
 
-    // Error buckets are keyed by field name so the frontend can display messages per input.
     private static function addError(array &$errors, string $field, string $message): void
     {
-        if (!array_key_exists($field, $errors)) {
-            $errors[$field] = [];
-        }
-
+        $errors[$field] ??= [];
         $errors[$field][] = $message;
     }
 }

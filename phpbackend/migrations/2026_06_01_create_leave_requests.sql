@@ -14,5 +14,5 @@ CREATE TABLE `leave_requests` (
 	KEY `idx_leave_requests_dates` (`start_date`,`end_date`),
 	KEY `idx_leave_requests_user_status` (`user_id`,`status`),
 	CONSTRAINT `fk_leave_requests_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-	CONSTRAINT `chk_leave_end_after_start` CHECK (`end_date` > `start_date`)
+	CONSTRAINT `chk_leave_end_after_start` CHECK (`end_date` >= `start_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

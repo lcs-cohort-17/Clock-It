@@ -1,46 +1,62 @@
 <?php
 
+declare(strict_types=1);
 
 function handleLeaveRoutes(LeaveController $controller, array $request = []): void
 {
-    $method = $request['method'] ?? ($_SERVER['REQUEST_METHOD'] ?? 'GET');
-    $uri = $request['uri'] ?? (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
-    $auth = $GLOBALS['auth'] ?? [];
-    $body = $request['body'] ?? leaveReadJsonBody();
-    $query = $request['query'] ?? ($_GET ?? []);
+    $method = strtoupper((string) ($request['method'] ?? ($_SERVER['REQUEST_METHOD'] ?? 'GET')));
+    $uri    = (string) ($request['uri'] ?? (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/'));
+    $auth   = $GLOBALS['auth'] ?? [];
+    $body   = is_array($request['body'] ?? null) ? $request['body'] : leaveReadJsonBodyFallback();
+    $query  = is_array($request['query'] ?? null) ? $request['query'] : ($_GET ?? []);
 
-    //submit requests from users 
-    if ($method === 'POST' && $uri === '/api/leave-request') {
-        error_log('BODY: ' . print_r($body, true));
+    // Staff/user creates a leave request.
+    // Supports both names because the merged code used singular, while REST-style calls often use plural.
+    if ($method === 'POST' && in_array($uri, ['/api/leave-request', '/api/leave-requests'], true)) {
         $controller->submitLeave($auth, $body);
         return;
     }
 
-    //get leave-requests-users receive their data for calendar
+    // User calendar/list endpoint. Admin receives all requests; staff receives only their own.
     if ($method === 'GET' && $uri === '/api/leave-requests') {
         $controller->getCalendar($auth, $query);
         return;
     }
 
-    //getLeave-admin receives requests (admin list)
+    // Admin list endpoint.
     if ($method === 'GET' && $uri === '/api/admin/leave-requests') {
         $controller->getLeave($auth, $query);
         return;
     }
 
-    //updateStatus - allows admin to update status for a specific request
-    if ($method === 'PUT' && preg_match('#^/api/admin/leave-requests/([^/]+)$#', $uri, $matches) === 1) {
-        $controller->updateLeaveStatus($auth, $matches[1], $body);
+    // Admin status update. PATCH and PUT are both accepted to make Thunder Client/testing easier.
+    if (in_array($method, ['PATCH', 'PUT'], true) && preg_match('#^/api/admin/leave-requests/([^/]+)$#', $uri, $matches) === 1) {
+        $controller->updateLeaveStatus($auth, urldecode($matches[1]), $body);
         return;
     }
 
-    //updateRequest - admin edits the leave request body
-    if ($method === 'PUT' && preg_match('#^/api/admin/leave-requests/([^/]+)/updateRequest$#', $uri, $matches) === 1) {
-        $controller->updateLeave($auth, $matches[1], $body);
+    // Admin edits request details.
+    if (in_array($method, ['PATCH', 'PUT'], true) && preg_match('#^/api/admin/leave-requests/([^/]+)/updateRequest$#', $uri, $matches) === 1) {
+        $controller->updateLeave($auth, urldecode($matches[1]), $body);
         return;
     }
 
-    //error path
     http_response_code(404);
-    echo json_encode(['message' => 'Not Found'], JSON_UNESCAPED_SLASHES);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Leave API route not found.',
+        'path'    => $uri,
+        'method'  => $method,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+}
+
+function leaveReadJsonBodyFallback(): array
+{
+    $rawBody = file_get_contents('php://input');
+    if ($rawBody === false || trim($rawBody) === '') {
+        return [];
+    }
+
+    $decoded = json_decode($rawBody, true);
+    return is_array($decoded) ? $decoded : [];
 }

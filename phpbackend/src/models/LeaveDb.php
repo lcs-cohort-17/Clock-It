@@ -31,6 +31,32 @@ class LeaveDbModel implements LeaveRequestModel
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
+    /**
+     * Shared SELECT used by list, calendar, and single-record responses.
+     * This is the important fix: leave requests are joined to users so the
+     * frontend gets first_name, last_name, and email instead of only user_id.
+     */
+    private function leaveSelectWithUser(): string
+    {
+        return '
+            SELECT
+                lr.id,
+                lr.user_id,
+                u.first_name,
+                u.last_name,
+                u.email,
+                lr.type,
+                lr.start_date,
+                lr.end_date,
+                lr.reason,
+                lr.status,
+                lr.created_at,
+                lr.updated_at
+            FROM leave_requests lr
+            INNER JOIN users u ON u.user_id = lr.user_id
+        ';
+    }
+
     public function findActiveUser(string $userId): ?array
     {
         $statement = $this->connection->prepare(
@@ -81,7 +107,7 @@ class LeaveDbModel implements LeaveRequestModel
     public function findById(string $leaveId): ?array
     {
         $statement = $this->connection->prepare(
-            'SELECT * FROM leave_requests WHERE id = :id LIMIT 1'
+            $this->leaveSelectWithUser() . ' WHERE lr.id = :id LIMIT 1'
         );
         $statement->execute(['id' => $leaveId]);
 
@@ -110,18 +136,27 @@ class LeaveDbModel implements LeaveRequestModel
         ?int $year = null
     ): array {
         $params = [];
-        if ($role === 'admin') {
-            $query = 'SELECT * FROM leave_requests';
-        } else {
-            $query = 'SELECT * FROM leave_requests WHERE user_id = :user_id';
+        $conditions = [];
+
+        if ($role !== 'admin') {
+            $conditions[] = 'lr.user_id = :user_id';
             $params['user_id'] = $userId;
         }
 
         if ($month !== null && $year !== null) {
-            $query .= ($role === 'admin' ? ' WHERE' : ' AND') . ' MONTH(start_date) = :month AND YEAR(start_date) = :year';
+            $conditions[] = 'MONTH(lr.start_date) = :month';
+            $conditions[] = 'YEAR(lr.start_date) = :year';
             $params['month'] = $month;
             $params['year'] = $year;
         }
+
+        $query = $this->leaveSelectWithUser();
+
+        if ($conditions !== []) {
+            $query .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $query .= ' ORDER BY lr.start_date ASC, lr.created_at DESC';
 
         $statement = $this->connection->prepare($query);
         $statement->execute($params);
@@ -131,33 +166,18 @@ class LeaveDbModel implements LeaveRequestModel
 
     public function getLeave(?string $userId = null, ?string $role = null): array
     {
-        $baseQuery = '
-            SELECT
-                lr.id,
-                lr.user_id,
-                u.first_name,
-                u.last_name,
-                u.email,
-                lr.type,
-                lr.start_date,
-                lr.end_date,
-                lr.reason,
-                lr.status,
-                lr.created_at,
-                lr.updated_at
-            FROM leave_requests lr
-            INNER JOIN users u ON u.user_id = lr.user_id
-        ';
+        $query = $this->leaveSelectWithUser();
+        $params = [];
 
-        if ($role === 'admin') {
-            $statement = $this->connection->prepare($baseQuery . ' ORDER BY lr.created_at DESC');
-            $statement->execute();
-        } else {
-            $statement = $this->connection->prepare($baseQuery . ' WHERE lr.user_id = :user_id ORDER BY lr.created_at DESC');
-            $statement->execute([
-                'user_id' => $userId,
-            ]);
+        if ($role !== 'admin') {
+            $query .= ' WHERE lr.user_id = :user_id';
+            $params['user_id'] = $userId;
         }
+
+        $query .= ' ORDER BY lr.created_at DESC';
+
+        $statement = $this->connection->prepare($query);
+        $statement->execute($params);
 
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
