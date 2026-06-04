@@ -13,6 +13,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import profileRoutes from './src/routes/profileRoutes.js'
 import attendanceRoutes from './src/routes/leaveRoutes.js'
+import googleRoutes from './src/routes/googleRoutes.js';
 import { buildAdminDashboardRouter } from './src/routes/adminDashboardRoutes.js'
 import { supabase } from './src/config/supabase.js'
 
@@ -43,9 +44,10 @@ app.use((req, res, next) => {
 // Test route
 app.get('/test', (req, res) => res.json({ message: 'Test route works!' }))
 
+app.use('/api/admin', buildAdminDashboardRouter(supabase))
+app.use('/api/google', googleRoutes)
 app.use('/api/leaves', attendanceRoutes)
 app.use('/profiles', profileRoutes)
-app.use('/api/admin/dashboard', buildAdminDashboardRouter(supabase))
 
 app.use((req, res) => {
   res.status(404).json({ 

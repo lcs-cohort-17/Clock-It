@@ -7,6 +7,11 @@
     "test": "tests"
   },
   "scripts": {
+<<<<<<< HEAD
+=======
+    "dev": "nodemon --exec \"tsx index.ts\" --ext ts",
+    "start": "node dist/index.js",
+>>>>>>> origin/PhoenixBeforeConversion
     "dev": "tsx watch index.ts",
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/index.js",
@@ -23,6 +28,10 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
+<<<<<<< HEAD
+=======
+    "googleapis": "^172.0.0",
+>>>>>>> origin/PhoenixBeforeConversion
     "jsonwebtoken": "^9.0.3",
     "zod": "^4.4.3"
   },
