@@ -8,20 +8,11 @@ $page = max(1, (int) ($_GET['page'] ?? 1));
 
 $pageSize = 5;
 
-$totalPages = max(
-    1,
-    ceil(count($filtered) / $pageSize)
-);
+$totalPages = 1;
 
 $page = min($page, $totalPages);
 
-$start = ($page - 1) * $pageSize;
-
-$pageData = array_slice(
-    $filtered,
-    $start,
-    $pageSize
-);
+$pageData = array_values($users ?? $filtered);
 
 ob_start(); ?>
 <div class="app-shell">
@@ -122,7 +113,8 @@ ob_start(); ?>
 
             <?php foreach ($pageData as $u): ?>
 
-                <tr>
+                <tr data-user-row
+                    data-user-search-value="<?= e(strtolower($u['name'] . ' ' . $u['email'] . ' ' . $u['employeeId'])) ?>">
 
                     <td>
 
@@ -263,11 +255,11 @@ ob_start(); ?>
 
         <div class="text-muted">
 
-            Showing <?= count($pageData) ?> of <?= count($filtered) ?> employees
+            Showing <span data-user-results><?= count($pageData) ?></span> of <?= count($pageData) ?> employees
 
         </div>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-none align-items-center gap-2">
 
             <a href="<?= e(app_url('/admin-dashboard/users')) ?>?page=<?= max(1, $page - 1) ?>&q=<?= urlencode($query) ?>"
                class="btn btn-outline-secondary <?= $page <= 1 ? 'disabled' : '' ?>">

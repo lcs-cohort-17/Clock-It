@@ -8,13 +8,7 @@ declare(strict_types=1);
   </div>
 
   <div class="card-body dashboard-card-body activity-card-body p-4">
-    <div class="d-flex justify-content-center mb-3" x-show="initialLoading" x-cloak>
-      <div class="spinner-border spinner-border-sm text-primary" role="status">
-        <span class="visually-hidden">Loading recent activity</span>
-      </div>
-    </div>
-
-    <div class="empty-state activity-empty-state" x-show="!initialLoading && recentActivity.length === 0">
+    <div class="empty-state activity-empty-state" x-show="recentActivity.length === 0">
       No events today.
     </div>
 

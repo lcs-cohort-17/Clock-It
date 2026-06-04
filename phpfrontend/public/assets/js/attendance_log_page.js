@@ -42,7 +42,7 @@
   }
 
   function formatClockEventsCSV(events) {
-    var headers = ['Staff Name', 'Event Type', 'Timestamp', 'Device', 'Location', 'Sync Status'];
+    var headers = ['Staff Name', 'Event Type', 'Timestamp', 'Device', 'Sync Status'];
 
     function escapeCell(value) {
       var str = String(value == null ? '' : value);
@@ -56,7 +56,6 @@
           event.type,
           event.timestamp,
           event.device,
-          event.location,
           event.sync
         ];
       })

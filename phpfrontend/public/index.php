@@ -316,6 +316,23 @@ switch ($path) {
         ]);
         break;
 
+    case '/api/qr-code':
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            login_json_response(['error' => 'Method not allowed.'], 405);
+        }
+
+        $payload = login_request_data();
+        $text = trim((string) ($payload['text'] ?? ''));
+
+        if ($text === '') {
+            login_json_response(['error' => 'QR text is required.'], 422);
+        }
+
+        login_json_response([
+            'imageUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . rawurlencode($text),
+        ]);
+        break;
+
     case '/api/admin/settings':
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -386,6 +403,7 @@ switch ($path) {
         'user',
         'stats',
         'isAdminDashboard',
+        'users',
         'filtered'
     ));
     break;

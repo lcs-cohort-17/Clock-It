@@ -1,15 +1,27 @@
 <header class="app-header border-bottom p-3">
     <div class="d-flex justify-content-between align-items-center gap-3">
-        <button
-            type="button"
-            class="sidebar-toggle"
-            data-sidebar-toggle
-            aria-controls="sidebar"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-        >
-            <i class="bi bi-list" aria-hidden="true"></i>
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <button
+                type="button"
+                class="sidebar-toggle"
+                data-sidebar-toggle
+                aria-controls="sidebar"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+            >
+                <i class="bi bi-list" aria-hidden="true"></i>
+            </button>
+
+            <button
+                type="button"
+                class="app-back-button"
+                aria-label="Go back"
+                title="Go back"
+                onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '<?= e(app_url($isAdminDashboard ? '/admin-dashboard' : '/staff-dashboard')) ?>'; }"
+            >
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </button>
+        </div>
 
         <div class="d-flex justify-content-end align-items-center gap-2 gap-sm-3">
             <button

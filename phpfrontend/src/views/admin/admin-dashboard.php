@@ -5,7 +5,7 @@ $isAdminDashboard = true;
 $title = 'Admin Dashboard';
 
 $actions = [
-    ['label' => 'QR Generator', 'href' => app_url('/scan-qr'), 'variant' => 'light'],
+    ['label' => 'QR Generator', 'href' => app_url('/admin-dashboard/qr-generator'), 'variant' => 'light'],
     ['label' => 'Attendance Logs', 'href' => app_url('/admin-dashboard/attendance'), 'variant' => 'light'],
     ['label' => 'Settings', 'href' => app_url('/admin-dashboard/settings'), 'variant' => 'light'],
 ];

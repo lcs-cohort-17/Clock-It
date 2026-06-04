@@ -129,9 +129,9 @@ sort($typeList);
                                     <input
                                         type="text"
                                         class="search-input"
-                                        placeholder="Search name or location"
+                                        placeholder="Search staff name"
                                         x-model.debounce.200ms="search"
-                                        aria-label="Search staff name or location"
+                                        aria-label="Search staff name"
                                     >
                                 </div>
                             </div>
@@ -207,14 +207,13 @@ sort($typeList);
                                     <th scope="col">Type</th>
                                     <th scope="col">Timestamp</th>
                                     <th scope="col">Device</th>
-                                    <th scope="col">Location</th>
                                     <th scope="col">Sync</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="filteredClockEvents.length === 0">
                                     <tr>
-                                        <td colspan="6" class="no-records">No records.</td>
+                                        <td colspan="5" class="no-records">No records.</td>
                                     </tr>
                                 </template>
 
@@ -224,7 +223,6 @@ sort($typeList);
                                         <td x-text="event.type"></td>
                                         <td x-text="event.timestamp"></td>
                                         <td x-text="event.device"></td>
-                                        <td x-text="event.location"></td>
                                         <td>
                                             <span
                                                 class="sync-badge"

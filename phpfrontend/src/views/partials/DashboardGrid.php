@@ -7,7 +7,7 @@ $statusText = $isClockedIn ? 'Clocked In' : 'Clocked Out';
 $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
 ?>
 
-<section class="staff-dashboard container-fluid p-4 p-lg-5" x-data="dashboard()">
+<section class="staff-dashboard container-fluid p-4 p-lg-5" x-data="dashboard()" x-init="init()">
     <div class="staff-status-card page-card p-4 p-lg-5">
         <div class="d-flex flex-column flex-md-row justify-content-between gap-4">
             <div>
@@ -41,7 +41,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
 
     <div class="row g-4 mt-1">
         <div class="col-12 col-md-4">
-            <button type="button" class="staff-action-card page-card text-start w-100" @click="showCalendar = true">
+            <button type="button" class="staff-action-card page-card text-start w-100" @click="openCalendar()">
                 <i class="bi bi-calendar3" aria-hidden="true"></i>
                 <h2>Calendar</h2>
                 <p>View your schedule</p>
@@ -49,7 +49,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
         </div>
 
         <div class="col-12 col-md-4">
-            <button type="button" class="staff-action-card page-card text-start w-100" @click="showLeave = true">
+            <button type="button" class="staff-action-card page-card text-start w-100" @click="openLeaveRequest()">
                 <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
                 <h2>Leave Requests</h2>
                 <p>Submit a new request</p>
