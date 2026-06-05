@@ -193,7 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
         el.setAttribute('x-init', 'init()')
         Alpine.initTree(el)
     }
-<<<<<<< HEAD
 
 }
 
@@ -365,6 +364,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
     filterUsers();
 });
-=======
-})
->>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
