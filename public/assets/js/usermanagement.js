@@ -35,39 +35,63 @@ function userManager() {
 document.addEventListener('DOMContentLoaded', function () {
     var input = document.querySelector('[data-user-search]');
 
-    if (!input || !input.form) {
+    if (!input) {
         return;
     }
 
-    var lastValue = input.value || '';
+    var rows = Array.prototype.slice.call(document.querySelectorAll('[data-user-row]'));
+    var results = document.querySelector('[data-user-results]');
 
-    function submitSearch() {
-        var value = input.value || '';
-
-        if (value === lastValue) {
+    function updateUrl(value) {
+        if (!window.history || !window.history.replaceState) {
             return;
         }
 
-        lastValue = value;
-
-        var url = new URL(input.form.action || window.location.href, window.location.origin);
+        var url = new URL(window.location.href);
         if (value.trim() !== '') {
             url.searchParams.set('q', value.trim());
         } else {
             url.searchParams.delete('q');
         }
         url.searchParams.delete('page');
-
-        window.location.assign(url.toString());
+        window.history.replaceState({}, '', url.toString());
     }
 
-    input.addEventListener('blur', submitSearch);
+    function filterUsers() {
+        var value = (input.value || '').toLowerCase().trim();
+        var visibleCount = 0;
+
+        rows.forEach(function (row) {
+            var haystack = row.getAttribute('data-user-search-value') || '';
+            var visible = !value || haystack.indexOf(value) !== -1;
+            row.hidden = !visible;
+            if (visible) {
+                visibleCount += 1;
+            }
+        });
+
+        if (results) {
+            results.textContent = String(visibleCount);
+        }
+        updateUrl(value);
+    }
+
+    if (input.form) {
+        input.form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            filterUsers();
+        });
+    }
+
+    input.addEventListener('input', filterUsers);
+    input.addEventListener('search', filterUsers);
 
     input.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             event.preventDefault();
-            submitSearch();
-            input.blur();
+            filterUsers();
         }
     });
+
+    filterUsers();
 });

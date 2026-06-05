@@ -154,8 +154,7 @@
     return events.filter(function (e) {
       var matchesSearch =
         !search ||
-        (e.staff    || '').toLowerCase().includes(search) ||
-        (e.location || '').toLowerCase().includes(search);
+        (e.staff || '').toLowerCase().includes(search);
 
       var matchesStaff  = !staff  || e.staff === staff;
       var matchesStatus = !status || e.type  === status;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use ClockIt\Data\AttendanceRepository;
 
-require dirname(__DIR__, 2) . '/phpfrontend/src/bootstrap.php';
+require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

@@ -15,13 +15,7 @@ declare(strict_types=1);
   </div>
 
   <div class="card-body dashboard-card-body onsite-card-body p-4">
-    <div class="d-flex justify-content-center mb-3" x-show="initialLoading" x-cloak>
-      <div class="spinner-border spinner-border-sm text-primary" role="status">
-        <span class="visually-hidden">Loading onsite staff</span>
-      </div>
-    </div>
-
-    <div class="empty-state onsite-empty-state" x-show="!initialLoading && onsiteStaff.length === 0">
+    <div class="empty-state onsite-empty-state" x-show="onsiteStaff.length === 0">
       No staff currently onsite.
     </div>
 

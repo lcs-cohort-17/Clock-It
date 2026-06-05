@@ -1,10 +1,20 @@
-<div x-show="showLeave" x-cloak class="staff-dashboard-modal" @click.self="showLeave = false">
+<div x-show="showLeave" x-cloak class="staff-dashboard-modal" data-staff-modal="leave" @click.self="showLeave = false; resetLeaveForm()">
 
 <div class="staff-dashboard-modal-card staff-leave-modal">
 
-<div class="d-flex justify-content-between">
+<div class="d-flex justify-content-between align-items-start gap-3">
 
-<div>
+<button
+type="button"
+class="modal-back-button"
+aria-label="Back"
+title="Back"
+@click="showLeave=false; resetLeaveForm()"
+>
+<i class="bi bi-arrow-left" aria-hidden="true"></i>
+</button>
+
+<div class="flex-grow-1">
 
 <h2>New Leave Request</h2>
 
@@ -13,19 +23,29 @@
 </div>
 
 <button
+type="button"
 class="btn-close"
-@click="showLeave=false"
+aria-label="Close"
+@click="showLeave=false; resetLeaveForm()"
 ></button>
 
 </div>
 
-<form @submit.prevent="showLeave = false">
+<form @submit.prevent="submitLeaveRequest()">
+
+<div class="mt-3" x-show="leaveRequestSuccess" x-cloak>
+    <div class="alert alert-success" role="status">
+        Your leave request has been saved and is pending approval. It now appears on your calendar.
+    </div>
+</div>
+
+<div x-show="!leaveRequestSuccess">
 
 <div class="mb-3">
 
-<label>Type</label>
+<label class="form-label">Type</label>
 
-<select class="form-select">
+<select class="form-select" x-model="leaveRequestType">
 
 <option>Annual Leave</option>
 
@@ -46,7 +66,10 @@ class="btn-close"
 <input
 type="date"
 class="form-control"
+x-model="leaveRequestStartDate"
 >
+
+<div class="text-danger small mt-1" x-show="leaveRequestErrors.startDate" x-text="leaveRequestErrors.startDate"></div>
 
 </div>
 
@@ -57,7 +80,10 @@ class="form-control"
 <input
 type="date"
 class="form-control"
+x-model="leaveRequestEndDate"
 >
+
+<div class="text-danger small mt-1" x-show="leaveRequestErrors.endDate" x-text="leaveRequestErrors.endDate"></div>
 
 </div>
 
@@ -70,7 +96,12 @@ class="form-control"
 <textarea
 class="form-control"
 rows="4"
+x-model="leaveRequestReason"
 ></textarea>
+
+<div class="text-danger small mt-1" x-show="leaveRequestErrors.reason" x-text="leaveRequestErrors.reason"></div>
+
+</div>
 
 </div>
 
@@ -79,11 +110,9 @@ rows="4"
 <button
 type="button"
 class="btn btn-outline-secondary"
-@click="showLeave=false"
+@click="showLeave=false; resetLeaveForm()"
 >
-
 Cancel
-
 </button>
 
 <button

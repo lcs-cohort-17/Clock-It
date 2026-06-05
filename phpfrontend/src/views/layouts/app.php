@@ -8,6 +8,7 @@
     
     <!-- Theme detection -->
     <script>
+        window.clockItBasePath = <?= json_encode($basePath ?? '') ?>;
         (() => {
             const savedTheme = localStorage.getItem('theme');
             const theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -41,21 +42,20 @@
     <!-- 2. API Service -->
     <script src="<?= e(app_url('/assets/js/api.js')) ?>"></script>
     
-    <!-- 3. Alpine.js (must load before store & components) -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <!-- 4. Global Store -->
+    <!-- 3. Global Store -->
     <script src="<?= e(app_url('/assets/js/store.js')) ?>"></script>
     
-    <!-- 5. Page Components (registered via alpine:init) -->
+    <!-- 4. Page Components (registered via alpine:init) -->
     <script src="<?= e(app_url('/assets/js/usermanagement.js')) ?>"></script>
+    
+    <!-- 5. Alpine.js starts after stores and components are registered -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <!-- 6. Theme & UI scripts -->
     <script src="<?= e(app_url('/assets/js/theme.js')) ?>"></script>
     <script src="<?= e(app_url('/assets/js/app.js')) ?>"></script>
     <script src="<?= e(app_url('/assets/js/calendar.js')) ?>"></script>
     <script src="<?= e(app_url('/assets/js/dashboard.js')) ?>"></script>
-    <script src="<?= e(app_url('/assets/js/sidebar.js')) ?>"></script>
     
     <!-- 7. Third-party libraries -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>

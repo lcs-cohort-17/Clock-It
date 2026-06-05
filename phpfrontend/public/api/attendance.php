@@ -12,9 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-require_once dirname(__DIR__, 2) . '/phpfrontend/src/views/includes/config.php';
-require_once dirname(__DIR__, 2) . '/phpfrontend/src/views/includes/functions.php';
-require dirname(__DIR__, 2) . '/phpfrontend/src/Data/data.php';
+require_once dirname(__DIR__, 2) . '/src/views/includes/config.php';
+require_once dirname(__DIR__, 2) . '/src/views/includes/functions.php';
+require dirname(__DIR__, 2) . '/src/Data/data.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;

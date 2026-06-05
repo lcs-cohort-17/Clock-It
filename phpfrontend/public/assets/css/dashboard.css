@@ -232,3 +232,223 @@
         min-height: 140px;
     }
 }
+
+/* App-wide responsive and theme consistency */
+.content {
+    color: var(--text);
+}
+
+.content h1,
+.content .display-6,
+.content .main-title,
+.content .page-title,
+.content .staff-page-title,
+.content .staff-history-title,
+.content .scan-title,
+.content .attendance-hero h1,
+.content .profile-page-header h1,
+.content .dashboard-page-header h1 {
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: var(--staff-page-title-size);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: 0;
+}
+
+.content h2,
+.content .h5,
+.content .staff-section-title,
+.content .staff-card-title,
+.content .dashboard-card-title,
+.content .quick-action-title,
+.content .profile-name {
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: var(--staff-section-title-size);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+.content p,
+.content .subtitle,
+.content .page-subtitle,
+.content .staff-page-subtitle,
+.content .staff-section-subtitle,
+.content .dashboard-card-subtitle,
+.content .quick-action-description,
+.content .scan-lead,
+.content .scan-muted,
+.content .text-muted {
+    color: var(--muted) !important;
+    font-size: var(--staff-subtitle-size);
+    line-height: 1.5;
+}
+
+.content .page-card,
+.content .dashboard-card,
+.content .dashboard-stat-card,
+.content .quick-action-card,
+.content .qr-code-card,
+.content .settings-card,
+.content .scan-card,
+.content .profile-card,
+.content .attendance-profile-card,
+.content .history-metric-card,
+.content .attendance-panel,
+.content .modal-box,
+.content .password-box {
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    background: var(--surface) !important;
+    color: var(--text);
+    box-shadow: 0 12px 28px var(--shadow);
+}
+
+.content .form-control,
+.content .form-select,
+.content .search-input {
+    min-height: 46px;
+    border-color: var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.content .form-control:focus,
+.content .form-select:focus,
+.content .search-input:focus {
+    border-color: var(--mid-blue);
+    box-shadow: 0 0 0 3px rgba(59, 117, 151, .16);
+}
+
+.content .btn,
+.content .btn-main,
+.content .scan-open-btn,
+.content .scan-demo-btn,
+.content .settings-purge-btn {
+    border-radius: 8px;
+}
+
+.content .table-wrapper,
+.content .staff-history-table,
+.content .history-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.content .table {
+    --bs-table-bg: var(--surface);
+    --bs-table-color: var(--text);
+    --bs-table-border-color: var(--border);
+    margin-bottom: 0;
+    color: var(--text);
+}
+
+.content .table thead,
+.content table thead {
+    background: var(--surface-soft);
+}
+
+.content .table th,
+.content table th {
+    color: var(--muted) !important;
+    font-size: var(--staff-label-size);
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.content .table td,
+.content table td {
+    color: var(--text);
+    font-size: var(--staff-body-size);
+    vertical-align: middle;
+}
+
+@media (max-width: 991.98px) {
+    .content.container-fluid,
+    .content > .container-fluid,
+    .content .container-fluid,
+    .admin-dashboard-page,
+    .settings-page,
+    .scan-page,
+    .staff-dashboard,
+    .staff-history,
+    .profile-page {
+        width: 100%;
+        max-width: 100%;
+        padding: 20px !important;
+    }
+
+    .content .d-flex.justify-content-between,
+    .content .d-flex.align-items-center.justify-content-between {
+        gap: 12px;
+    }
+
+    .content .table {
+        min-width: 680px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    :root {
+        --staff-page-title-size: 26px;
+        --staff-section-title-size: 18px;
+        --staff-card-title-size: 16px;
+        --staff-subtitle-size: 13px;
+        --staff-body-size: 13px;
+        --staff-label-size: 10px;
+    }
+
+    .content.container-fluid,
+    .content > .container-fluid,
+    .content .container-fluid,
+    .admin-dashboard-page,
+    .settings-page,
+    .scan-page,
+    .staff-dashboard,
+    .staff-history,
+    .profile-page {
+        padding: 14px !important;
+    }
+
+    .content .page-card,
+    .content .dashboard-card,
+    .content .dashboard-stat-card,
+    .content .quick-action-card,
+    .content .qr-code-card,
+    .content .settings-card,
+    .content .scan-card,
+    .content .profile-card,
+    .content .attendance-profile-card {
+        padding: 16px !important;
+    }
+
+    .content h1,
+    .content .display-6,
+    .content .main-title,
+    .content .page-title,
+    .content .staff-page-title,
+    .content .staff-history-title,
+    .content .scan-title {
+        font-size: var(--staff-page-title-size);
+    }
+
+    .content .btn-main,
+    .content .submit-button,
+    .content .scan-open-btn,
+    .content .settings-purge-btn {
+        width: 100%;
+        min-height: 46px;
+        padding: 10px 14px;
+    }
+
+    .content .table {
+        min-width: 620px;
+    }
+}

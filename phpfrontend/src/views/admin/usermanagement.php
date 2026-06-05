@@ -1,18 +1,9 @@
-<?php
-$query = $_GET['q'] ?? '';
+<?php ob_start(); ?>
 
-/* Pagination - kept for fallback */
-$page = max(1, (int) ($_GET['page'] ?? 1));
-$pageSize = 5;
-$totalPages = max(1, ceil(count($filtered) / $pageSize));
-$page = min($page, $totalPages);
-$start = ($page - 1) * $pageSize;
-$pageData = array_slice($filtered, $start, $pageSize);
-
-ob_start(); 
-?>
-
-<div class="app-shell" id="userManagementApp">
+<!-- Add x-data and x-init directly in HTML -->
+<div class="app-shell" id="userManagementApp" data-api-user-management 
+     x-data="userManager()" x-init="init()">
+    
     <?php include __DIR__ . '/../partials/admin_sidebar.php'; ?>
 
     <div class="main-panel">
@@ -20,27 +11,41 @@ ob_start();
 
         <div class="content">
             <div class="container-fluid py-5 px-4">
+                
+                <!-- PAGE CARD -->
                 <div class="page-card p-4 p-xl-5 shadow-sm">
-                    
-                    <!-- HEADER -->
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
                         <div>
                             <h1 class="main-title">User Management</h1>
                             <p class="subtitle">Add, edit, or disable accounts. Connected to live database.</p>
                         </div>
-                        <button class="btn btn-main" @click="openAddModal()">
-                            <i class="bi bi-plus-lg me-1"></i> Add User
+
+                        <button class="btn btn-main" type="button" @click="openAddModal()">
+                            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+                            Add User
                         </button>
                     </div>
 
-                    <!-- Messages -->
-                    <div x-show="successMessage" x-transition class="alert alert-success d-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i>
+                    <!-- Success Alert -->
+                    <div x-show.important="successMessage" 
+                         x-cloak
+                         x-transition
+                         class="alert alert-success d-flex align-items-center gap-2 position-relative" 
+                         role="alert">
+                        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
                         <span x-text="successMessage"></span>
+                        <button type="button" class="btn-close position-absolute end-0 me-3" @click="successMessage = ''" aria-label="Close"></button>
                     </div>
-                    <div x-show="errorMessage" x-transition class="alert alert-danger d-flex align-items-center gap-2">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
+
+                    <!-- Error Alert -->
+                    <div x-show.important="errorMessage" 
+                         x-cloak
+                         x-transition
+                         class="alert alert-danger d-flex align-items-center gap-2 position-relative" 
+                         role="alert">
+                        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                         <span x-text="errorMessage"></span>
+                        <button type="button" class="btn-close position-absolute end-0 me-3" @click="errorMessage = ''" aria-label="Close"></button>
                     </div>
 
                     <!-- Loading -->
@@ -51,34 +56,27 @@ ob_start();
                         <p class="mt-2 text-muted">Loading users...</p>
                     </div>
 
-                    <!-- SEARCH - Alpine.js powered, no page reload -->
+                    <!-- Search -->
                     <div class="search-box position-relative w-100 mb-4">
                         <i class="bi bi-search search-icon" aria-hidden="true"></i>
-                        
                         <input type="text"
                                x-model="searchQuery"
                                @input="onSearchInput()"
-                               @keydown.enter.prevent="onSearchSubmit()"
                                placeholder="Search by name, email, or employee ID"
-                               autocomplete="off"
                                class="form-control search-input ps-5">
-                        
-                        <!-- Clear search button -->
                         <button x-show="searchQuery.length > 0"
                                 @click="clearSearch()"
                                 class="btn btn-sm btn-link position-absolute end-0 top-50 translate-middle-y text-muted"
-                                type="button"
-                                aria-label="Clear search">
+                                type="button">
                             <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
 
-                    <!-- Search results count -->
                     <div x-show="searchQuery.length > 0" class="mb-3 text-muted">
-                        Found <strong x-text="users.length"></strong> result(s) for "<span x-text="searchQuery"></span>"
+                        Found <strong x-text="users.length"></strong> result(s)
                     </div>
 
-                    <!-- TABLE -->
+                    <!-- Table -->
                     <div x-show="!loading" class="table-wrapper">
                         <table class="table align-middle mb-0">
                             <thead>
@@ -107,69 +105,62 @@ ob_start();
                                             <span class="badge-staff" x-show="user.role !== 'Admin'">Staff</span>
                                         </td>
                                         <td>
-                                            <span class="status" 
-                                                  :class="user.status.toLowerCase()"
-                                                  x-text="user.status"></span>
+                                            <span class="status" :class="user.status.toLowerCase()" x-text="user.status"></span>
                                         </td>
                                         <td class="text-end">
                                             <div class="action-buttons">
-                                                <!-- Edit -->
+                                                <!-- EDIT BUTTON -->
                                                 <button class="btn btn-light btn-icon"
+                                                        type="button"
                                                         @click="openEditModal(user)"
-                                                        title="Edit user"
-                                                        :aria-label="'Edit ' + user.name">
+                                                        title="Edit user">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
-                                                
-                                                <!-- Reset Password -->
+
+                                                <!-- RESET PASSWORD BUTTON -->
                                                 <button class="btn btn-light btn-icon"
+                                                        type="button"
                                                         @click="resetPassword(user)"
-                                                        title="Reset password"
-                                                        :aria-label="'Reset password for ' + user.name">
+                                                        title="Reset password">
                                                     <i class="bi bi-key"></i>
                                                 </button>
-                                                
-                                                <!-- Toggle Status -->
+
+                                                <!-- TOGGLE STATUS BUTTON -->
                                                 <button class="btn btn-outline-danger btn-icon"
+                                                        type="button"
                                                         @click="toggleStatus(user)"
-                                                        :title="user.status === 'Active' ? 'Deactivate user' : 'Activate user'"
-                                                        :aria-label="(user.status === 'Active' ? 'Deactivate' : 'Activate') + ' ' + user.name">
+                                                        :title="user.status === 'Active' ? 'Deactivate' : 'Activate'">
                                                     <i class="bi bi-slash-circle"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
                                 </template>
-                                
-                                <!-- Empty state -->
                                 <tr x-show="users.length === 0">
                                     <td colspan="6" class="text-center py-5 text-muted">
-                                        <i class="bi bi-people" style="font-size: 3rem;"></i>
-                                        <p class="mt-2" x-show="searchQuery.length > 0">No users match your search.</p>
-                                        <p class="mt-2" x-show="searchQuery.length === 0">No users found. Click "Add User" to create one.</p>
+                                        No users found.
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Users count -->
-                    <div x-show="!loading" class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3">
-                        <div class="text-muted">
-                            Showing <span x-text="users.length"></span> user<span x-show="users.length !== 1">s</span>
-                        </div>
-                        <button @click="fetchUsers()" class="btn btn-outline-secondary btn-sm" :disabled="loading">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    <div x-show="!loading" class="d-flex justify-content-between align-items-center mt-4">
+                        <span class="text-muted" x-text="`Showing ${users.length} user(s)`"></span>
+                        <button @click="fetchUsers()" class="btn btn-outline-secondary btn-sm" type="button" :disabled="loading">
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+                            Refresh
                         </button>
                     </div>
                 </div>
+                <!-- END PAGE CARD -->
 
-                <!-- ADD MODAL -->
+                <!-- ADD USER MODAL -->
                 <div class="modal-overlay" x-show="showAddModal" x-cloak @click.self="showAddModal = false">
                     <div class="modal-box">
                         <div class="d-flex justify-content-between mb-4">
                             <h3>Add User</h3>
-                            <button class="btn-close" @click="showAddModal = false" aria-label="Close"></button>
+                            <button class="btn-close" type="button" @click="showAddModal = false"></button>
                         </div>
                         <form @submit.prevent="addUser()">
                             <div class="mb-3">
@@ -179,10 +170,6 @@ ob_start();
                             <div class="mb-3">
                                 <label class="form-label">Last Name</label>
                                 <input type="text" x-model="newUser.last_name" class="form-control" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Employee ID <small class="text-muted">(optional, auto-generated if empty)</small></label>
-                                <input type="text" x-model="newUser.employee_id" class="form-control" placeholder="e.g., A-011">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Email</label>
@@ -195,12 +182,6 @@ ob_start();
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
-                            <!-- Show generated password after creating -->
-                            <div x-show="generatedPassword" class="alert alert-info mb-3">
-                                <strong>🔑 Generated Password:</strong> 
-                                <code class="user-select-all" x-text="generatedPassword"></code>
-                                <br><small class="text-muted">Copy this password now. It won't be shown again.</small>
-                            </div>
                             <div class="d-flex justify-content-end gap-2">
                                 <button type="button" class="btn btn-outline-secondary" @click="showAddModal = false">Cancel</button>
                                 <button type="submit" class="btn btn-main" :disabled="saving">
@@ -212,26 +193,25 @@ ob_start();
                     </div>
                 </div>
 
-                <!-- EDIT MODAL -->
+                <!-- EDIT USER MODAL -->
                 <div class="modal-overlay" x-show="showEditModal" x-cloak @click.self="showEditModal = false">
                     <div class="modal-box">
                         <div class="d-flex justify-content-between mb-4">
                             <h3>Edit User</h3>
-                            <button class="btn-close" @click="showEditModal = false" aria-label="Close"></button>
+                            <button class="btn-close" type="button" @click="showEditModal = false"></button>
                         </div>
                         <form @submit.prevent="updateUser()">
-                            <input type="hidden" x-model="editUser.employee_id">
                             <div class="mb-3">
                                 <label class="form-label">First Name</label>
-                                <input type="text" x-model="editUser.first_name" class="form-control">
+                                <input type="text" x-model="editUser.first_name" class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Last Name</label>
-                                <input type="text" x-model="editUser.last_name" class="form-control">
+                                <input type="text" x-model="editUser.last_name" class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Email</label>
-                                <input type="email" x-model="editUser.email" class="form-control">
+                                <input type="email" x-model="editUser.email" class="form-control" required>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Role</label>
@@ -250,6 +230,36 @@ ob_start();
                         </form>
                     </div>
                 </div>
+
+                <!-- PASSWORD RESET MODAL -->
+                <div class="modal-overlay" x-show="showPasswordModal" x-cloak @click.self="closePasswordModal()">
+                    <div class="modal-box">
+                        <div class="d-flex justify-content-between mb-4">
+                            <h3>Password Reset</h3>
+                            <button class="btn-close" type="button" @click="closePasswordModal()"></button>
+                        </div>
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-key-fill me-2"></i>
+                            <strong>Temporary password for <span x-text="passwordResetUser?.name"></span></strong>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Temporary Password</label>
+                            <div class="input-group">
+                                <input type="text" x-model="generatedPassword" class="form-control font-monospace" readonly>
+                                <button class="btn btn-outline-secondary" type="button" @click="copyPassword()">
+                                    <i class="bi bi-clipboard me-1"></i>Copy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between gap-2">
+                            <button type="button" class="btn btn-outline-secondary" @click="closePasswordModal()">Close</button>
+                            <button type="button" class="btn btn-main" @click="sendPasswordEmail()">
+                                <i class="bi bi-envelope me-1"></i>Send via Email
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

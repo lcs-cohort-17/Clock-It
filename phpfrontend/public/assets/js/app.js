@@ -171,6 +171,7 @@ document.addEventListener('alpine:init', () => {
         permissionStream.getTracks().forEach((track) => track.stop());
 
         if (typeof Html5Qrcode === 'undefined') {
+          this.error = this.config.messages.scannerLoadFailed;
           return;
         }
 
@@ -186,6 +187,7 @@ document.addEventListener('alpine:init', () => {
         const preferredCamera = this.pickCamera(cameras);
         await this.startWithCamera(preferredCamera?.id ?? cameras[0].id);
       } catch (error) {
+        this.error = error?.message || this.config.messages.cameraApiUnavailable;
         await this.stopScanner();
       }
     },
@@ -256,4 +258,172 @@ document.addEventListener('alpine:init', () => {
       });
     },
   }));
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const basePath = window.clockItBasePath || '';
+  const backButton = document.querySelector('[data-app-back]');
+
+  function normalizedPath() {
+    const path = window.location.pathname || '/';
+    return basePath && path.startsWith(basePath)
+      ? path.slice(basePath.length) || '/'
+      : path;
+  }
+
+  function dashboardPathFor(button) {
+    return button?.dataset.dashboardPath || '/staff-dashboard';
+  }
+
+  const stackKey = 'clockItPathStack';
+  let stack = [];
+  try {
+    stack = JSON.parse(sessionStorage.getItem(stackKey) || '[]');
+  } catch (_) {
+    stack = [];
+  }
+
+  const currentPath = normalizedPath();
+  if (currentPath !== '/login' && stack[stack.length - 1] !== currentPath) {
+    stack.push(currentPath);
+    stack = stack.slice(-20);
+    sessionStorage.setItem(stackKey, JSON.stringify(stack));
+  }
+
+  backButton?.addEventListener('click', () => {
+    const dashboardPath = dashboardPathFor(backButton);
+
+    if (currentPath === dashboardPath) {
+      return;
+    }
+
+    let pathStack = [];
+    try {
+      pathStack = JSON.parse(sessionStorage.getItem(stackKey) || '[]');
+    } catch (_) {
+      pathStack = [];
+    }
+
+    if (pathStack[pathStack.length - 1] === currentPath) {
+      pathStack.pop();
+    }
+
+    let targetPath = dashboardPath;
+    while (pathStack.length > 0) {
+      const candidate = pathStack.pop();
+      if (candidate && candidate !== '/login') {
+        targetPath = candidate;
+        break;
+      }
+    }
+
+    if (targetPath === '/login') {
+      targetPath = dashboardPath;
+    }
+
+    sessionStorage.setItem(stackKey, JSON.stringify(pathStack.length ? pathStack : [dashboardPath]));
+    window.location.href = targetPath.startsWith(basePath) ? targetPath : `${basePath}${targetPath}`;
+  });
+
+  const scanCard = document.getElementById('scan-qr-card');
+  if (!scanCard || window.Alpine) {
+    return;
+  }
+
+  const readyPanel = scanCard.querySelector('[data-scan-ready]');
+  const activePanel = scanCard.querySelector('[data-scan-active]');
+  const errorBox = scanCard.querySelector('[data-scan-error]');
+  const resultBox = scanCard.querySelector('[data-scan-result]');
+  const reader = scanCard.querySelector('#reader');
+  let fallbackScanner = null;
+
+  function showBox(box, message) {
+    if (!box) return;
+    box.removeAttribute('x-cloak');
+    box.textContent = message || '';
+    box.style.display = message ? 'block' : 'none';
+  }
+
+  function setScanning(isScanning) {
+    if (readyPanel) readyPanel.style.display = isScanning ? 'none' : 'block';
+    if (activePanel) {
+      activePanel.removeAttribute('x-cloak');
+      activePanel.style.display = isScanning ? 'block' : 'none';
+    }
+  }
+
+  async function stopFallbackScanner() {
+    if (fallbackScanner) {
+      try {
+        await fallbackScanner.stop();
+        fallbackScanner.clear();
+      } catch (_) {
+      }
+    }
+
+    fallbackScanner = null;
+    setScanning(false);
+  }
+
+  function recordFallbackScan(code) {
+    const scanType = window.getScanType(code);
+    if (!scanType) {
+      showBox(errorBox, window.scanQrConfig.messages.invalidQrCode);
+      showBox(resultBox, '');
+      return;
+    }
+
+    window.recordAttendanceScan(scanType);
+    showBox(errorBox, '');
+    showBox(resultBox, `${window.scanQrConfig.messages.scanResultPrefix}${window.normalizeScanValue(code)}`);
+  }
+
+  scanCard.querySelector('[data-scan-open]')?.addEventListener('click', async () => {
+    showBox(errorBox, '');
+    showBox(resultBox, '');
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      showBox(errorBox, window.scanQrConfig.messages.cameraApiUnavailable);
+      return;
+    }
+
+    if (typeof Html5Qrcode === 'undefined') {
+      showBox(errorBox, window.scanQrConfig.messages.scannerLoadFailed);
+      return;
+    }
+
+    try {
+      const cameras = await Html5Qrcode.getCameras();
+      if (!cameras.length) {
+        showBox(errorBox, window.scanQrConfig.messages.noCameraFound);
+        return;
+      }
+
+      setScanning(true);
+      fallbackScanner = new Html5Qrcode(reader.id);
+      await fallbackScanner.start(
+        cameras[0].id,
+        {
+          fps: window.scanQrConfig.scanner.fps,
+          qrbox: window.scanQrConfig.scanner.qrbox,
+        },
+        async (decodedText) => {
+          recordFallbackScan(decodedText);
+          await stopFallbackScanner();
+        },
+        () => {}
+      );
+    } catch (error) {
+      showBox(errorBox, error?.message || window.scanQrConfig.messages.cameraApiUnavailable);
+      await stopFallbackScanner();
+    }
+  });
+
+  scanCard.querySelector('[data-scan-stop]')?.addEventListener('click', stopFallbackScanner);
+
+  scanCard.querySelectorAll('[data-demo-code]').forEach((button) => {
+    button.addEventListener('click', () => {
+      recordFallbackScan(button.getAttribute('data-demo-code'));
+    });
+  });
 });

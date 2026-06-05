@@ -99,6 +99,7 @@ button:disabled {
 
 .login-page {
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
     background: var(--clockit-soft);
 }
@@ -146,7 +147,9 @@ button:disabled {
 }
 
 .promo-column {
-    display: none;
+    display: flex;
+    width: 100%;
+    min-height: 17rem;
 }
 
 .promo-section {
@@ -158,6 +161,27 @@ button:disabled {
     background: linear-gradient(135deg, var(--clockit-navy), var(--clockit-blue), var(--clockit-green));
     color: #fff;
     padding: 2rem;
+}
+
+@media (max-width: 1023.98px) {
+    .promo-section {
+        min-height: 17rem;
+        padding: 5rem 1.5rem 2rem;
+    }
+
+    .promo-logo-row {
+        margin-bottom: 1.5rem;
+    }
+
+    .promo-content h2 {
+        max-width: 36rem;
+    }
+
+    .promo-feature-list {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-top: 1.25rem;
+    }
 }
 
 .promo-logo-row {
@@ -749,8 +773,11 @@ button:disabled {
 }
 
 @media (min-width: 1024px) {
+    .login-page {
+        flex-direction: row;
+    }
+
     .promo-column {
-        display: flex;
         width: 50%;
     }
 

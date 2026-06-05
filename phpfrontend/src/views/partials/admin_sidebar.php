@@ -37,6 +37,14 @@ $displayEmail = $user['email'] ?? '';
                 <i class="bi bi-gear me-2"></i> Settings
             </a>
         </li>
+
+        <li class="nav-item">
+            <a href="<?= e(app_url('/admin-dashboard/qr-generator')) ?>"
+               class="<?= navLinkClass('/admin-dashboard/qr-generator', $currentPath) ?>">
+                <i class="bi bi-qr-code me-2" aria-hidden="true"></i>
+                QR Generator
+            </a>
+        </li>
     </ul>
     <div class="mt-auto pt-4">
         <h6 id="sidebar-name"><?= htmlspecialchars($displayName) ?></h6>

@@ -46,6 +46,16 @@ function app_url(string $path = '/'): string
     return $basePath . '/' . ltrim($path, '/');
 }
 
+function route_url(string $path = '/'): string
+{
+    return app_url($path);
+}
+
+function asset_url(string $assetPath = '/'): string
+{
+    return app_url(ltrim($assetPath, '/'));
+}
+
 function view(string $view, array $data = []): void
 {
     global $basePath;
@@ -72,7 +82,7 @@ $staffUser = [
     'id' => 'staff-001',
     'name' => 'Sarah Mthembu',
     'email' => 'sarah@clockit.app',
-    'employeeId' => 'S-101',
+    'employeeId' => 'EMP001',
     'role' => 'staff',
 ];
 
@@ -91,8 +101,7 @@ $stats = [
     'totalEvents' => 42,
 ];
 
-// FIXED PATH
-$loginUsers = require __DIR__ . '/../src/data/LoginMockUsers.php';
+$loginUsers = require dirname(__DIR__) . '/src/Data/LoginMockUsers.php';
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {
@@ -301,6 +310,23 @@ switch ($path) {
         ]);
         break;
 
+    case '/api/qr-code':
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            login_json_response(['error' => 'Method not allowed.'], 405);
+        }
+
+        $payload = login_request_data();
+        $text = trim((string) ($payload['text'] ?? ''));
+
+        if ($text === '') {
+            login_json_response(['error' => 'QR text is required.'], 422);
+        }
+
+        login_json_response([
+            'imageUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . rawurlencode($text),
+        ]);
+        break;
+
     case '/api/admin/settings':
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -435,6 +461,29 @@ switch ($path) {
         ));
         break;
 
+    case '/admin-dashboard/qr-generator':
+        $title = 'QR Generator';
+        $user = current_user_or($adminUser, 'admin');
+        $isAdminDashboard = true;
+
+        view('admin/qr_code_generator', compact(
+            'title',
+            'user',
+            'stats',
+            'isAdminDashboard'
+        ));
+        break;
+
+    // case '/admin-dashboard/testing':
+    //     $title = 'Testing';
+    //     $user = $adminUser;
+
+    //     view('admin/testing', compact(
+    //         'title',
+    //         'user'
+    //     ));
+    //     break;
+
     /*
     |--------------------------------------------------------------------------
     | STAFF
@@ -494,6 +543,18 @@ switch ($path) {
     | 404
     |--------------------------------------------------------------------------
     */
+    case '/api/admin/users/reset-password':
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        login_json_response(['error' => 'Method not allowed'], 405);
+    }
+
+    $password = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8);
+
+    login_json_response([
+        'success' => true,
+        'password' => $password
+    ]);
+
 
     default:
         http_response_code(404);

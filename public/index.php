@@ -47,6 +47,16 @@ function app_url(string $path = '/'): string
     return $basePath . '/' . ltrim($path, '/');
 }
 
+function route_url(string $path = '/'): string
+{
+    return app_url($path);
+}
+
+function asset_url(string $assetPath = '/'): string
+{
+    return app_url(ltrim($assetPath, '/'));
+}
+
 function view(string $view, array $data = []): void
 {
     global $basePath;
@@ -306,6 +316,23 @@ switch ($path) {
         ]);
         break;
 
+    case '/api/qr-code':
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            login_json_response(['error' => 'Method not allowed.'], 405);
+        }
+
+        $payload = login_request_data();
+        $text = trim((string) ($payload['text'] ?? ''));
+
+        if ($text === '') {
+            login_json_response(['error' => 'QR text is required.'], 422);
+        }
+
+        login_json_response([
+            'imageUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . rawurlencode($text),
+        ]);
+        break;
+
     case '/api/admin/settings':
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -376,6 +403,7 @@ switch ($path) {
         'user',
         'stats',
         'isAdminDashboard',
+        'users',
         'filtered'
     ));
     break;
@@ -419,6 +447,19 @@ switch ($path) {
         view('admin/admin_settings', compact(
             'title',
             'user',
+            'isAdminDashboard'
+        ));
+        break;
+
+    case '/admin-dashboard/qr-generator':
+        $title = 'QR Generator';
+        $user = current_user_or($adminUser, 'admin');
+        $isAdminDashboard = true;
+
+        view('admin/qr_code_generator', compact(
+            'title',
+            'user',
+            'stats',
             'isAdminDashboard'
         ));
         break;

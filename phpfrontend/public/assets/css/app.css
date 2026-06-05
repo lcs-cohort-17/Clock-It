@@ -269,6 +269,41 @@ textarea {
   background: var(--app-surface-soft);
 }
 
+.app-back-button,
+.modal-back-button {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font-size: 20px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.app-back-button:hover,
+.app-back-button:focus,
+.modal-back-button:hover,
+.modal-back-button:focus {
+  border-color: var(--mid-blue);
+  background: var(--app-surface-soft);
+  color: var(--mid-blue);
+}
+
+.modal-back-button {
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+}
+
 .sidebar-backdrop {
   display: none;
 }
@@ -298,6 +333,11 @@ textarea {
   .sidebar-toggle {
     opacity: 1 !important;
     pointer-events: auto !important;
+  }
+
+  .app-back-button {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   #sidebar {
@@ -361,6 +401,13 @@ textarea {
     padding: 4px 6px;
   }
 
+  .sidebar-toggle,
+  .app-back-button {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+
   .theme-toggle-track {
     width: 36px;
   }
@@ -415,13 +462,45 @@ textarea {
   }
 
   .staff-dashboard-modal .calendar-grid {
-    gap: 4px;
+    gap: 3px;
   }
 
   .staff-dashboard-modal .calendar-day {
-    min-height: 40px;
+    min-height: 36px;
     padding: 2px;
-    font-size: 13px;
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .staff-dashboard-modal .calendar-header-day {
+    font-size: 10px;
+  }
+
+  .staff-dashboard-modal .calendar-date-number {
+    min-height: 12px;
+  }
+
+  .staff-dashboard-modal .calendar-status-badge {
+    max-width: 100%;
+    min-height: 13px;
+    margin-top: 2px;
+    padding: 0 3px;
+    overflow: hidden;
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .staff-dashboard-modal .d-flex.flex-wrap.gap-2.mb-3 {
+    gap: 4px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .staff-dashboard-modal .badge {
+    font-size: 10px;
   }
 }
 
@@ -513,6 +592,65 @@ textarea {
   border-color: #87a066;
   background: #87a066;
   color: var(--deep-navy);
+}
+
+.qr-code-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+}
+
+.qr-code-image-frame,
+.qr-code-image-frame-sm {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 250px;
+  width: 100%;
+  padding: 1rem;
+  background: var(--app-surface-soft);
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+}
+
+.qr-code-image {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  border-radius: 18px;
+  box-shadow: 0 14px 32px rgba(9, 60, 93, 0.08);
+}
+
+.qr-expired-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: rgba(9, 60, 93, 0.78);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.qr-countdown {
+  color: var(--app-text);
+  font-weight: 700;
+}
+
+.qr-scan-text {
+  width: 100%;
+  background: var(--app-surface-soft);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+  border-radius: 16px;
+  padding: 1rem;
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .staff-dashboard {
@@ -644,7 +782,12 @@ textarea {
 }
 
 .staff-dashboard-modal .calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   min-height: 48px;
+  padding: 4px;
   border: 1px solid var(--app-border);
   border-radius: 8px;
   background: var(--app-surface);
@@ -676,6 +819,54 @@ textarea {
   border-color: var(--mid-blue);
   background: var(--mid-blue);
   color: #ffffff;
+}
+
+.staff-dashboard-modal .calendar-date-number {
+  display: block;
+  min-height: 18px;
+  line-height: 1.1;
+}
+
+.staff-dashboard-modal .calendar-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 20px;
+  margin-top: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(13, 110, 253, 0.12);
+  color: var(--mid-blue);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.staff-dashboard-modal .calendar-day.status-present .calendar-status-badge {
+  background: rgba(25, 135, 84, 0.12);
+  color: #146c43;
+}
+
+.staff-dashboard-modal .calendar-day.status-absent .calendar-status-badge {
+  background: rgba(220, 53, 69, 0.12);
+  color: #842029;
+}
+
+.staff-dashboard-modal .calendar-day.status-leave-approved .calendar-status-badge {
+  background: rgba(13, 110, 253, 0.16);
+  color: #0d6efd;
+}
+
+.staff-dashboard-modal .calendar-day.status-leave-pending .calendar-status-badge {
+  background: rgba(255, 193, 7, 0.2);
+  color: #8a5a00;
+}
+
+.staff-dashboard-modal .calendar-day.status-leave-other .calendar-status-badge {
+  background: rgba(108, 117, 125, 0.16);
+  color: #495057;
 }
 
 .staff-history {
