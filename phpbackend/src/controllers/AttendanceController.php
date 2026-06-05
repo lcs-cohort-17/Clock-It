@@ -3,103 +3,119 @@
 namespace App\Controllers;
 
 use App\Models\AttendanceDb;
-use App\Services\AttendanceService;
+use Throwable;
 
 class AttendanceController
 {
     private AttendanceDb $model;
-    private AttendanceService $service;
 
-    // cache — same as statsCache in Node.js
-    private static ?array $cache = null;
-    private static int $cacheExpiresAt = 0;
-    private static int $cacheTtlMs = 5000;
-
-    public function __construct(?AttendanceDb $model = null, ?AttendanceService $service = null)
+    public function __construct(AttendanceDb $model)
     {
-        $this->model   = $model ?? new AttendanceDb();
-        $this->service = $service ?? new AttendanceService();
+        $this->model = $model;
     }
 
-    // same as handleGetStats()
-    public function handleGetStats(): void
+    public function clock(array $request): array
     {
-        // same as if (Date.now() < statsCache.expiresAt && statsCache.data)
-        $now = (int)(microtime(true) * 1000);
-        if (self::$cache !== null && $now < self::$cacheExpiresAt) {
-            http_response_code(200);
-            echo json_encode(self::$cache);
-            return;
-        }
-
         try {
-            // same as fetchDashboardStats(supabase)
-            $data = $this->model->fetchDashboardStats();
+            $user = $request['user'] ?? null;
+            $body = $request['body'] ?? [];
 
-            // same as statsCache.data = responsePayload
-            self::$cache = $data;
-            self::$cacheExpiresAt = $now + self::$cacheTtlMs;
+            $userId = $user['user_id'] ?? null;
 
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'success',
-                'data'   => $data,
+            if (!$userId) {
+                return $this->response(401, "Unauthorized");
+            }
+
+            $qrToken = $body['qr_token'] ?? null;
+            $device = $body['device_info'] ?? null;
+            $location = $body['location'] ?? null;
+
+            if (!$qrToken) {
+                return $this->response(400, "QR token required");
+            }
+
+            // ----------------------------------------
+            // 1. CHECK USER ACTIVE
+            // ----------------------------------------
+            $isActive = $this->model->getUserStatus($userId);
+
+            if ($isActive === null) {
+                return $this->response(401, "User not found");
+            }
+
+            if ((int)$isActive === 0) {
+                return $this->response(403, "User is inactive");
+            }
+
+            // ----------------------------------------
+            // 2. VALIDATE QR TOKEN
+            // ----------------------------------------
+            $qr = $this->model->getQrByToken($qrToken);
+
+            if (!$qr) {
+                return $this->response(410, "QR code invalid, used or expired");
+            }
+
+            // 60 SECOND RULE (ticket requirement)
+            if (strtotime($qr['created_at']) < time() - 60) {
+                return $this->response(410, "QR code expired");
+            }
+
+            // ----------------------------------------
+            // 3. GET LAST ATTENDANCE (TODAY ONLY)
+            // ----------------------------------------
+            $last = $this->model->getLastEvent($userId);
+
+            $newEvent = "in";
+
+            if ($last) {
+                $lastEvent = $last['event_type'];
+
+                $newEvent = ($lastEvent === "in") ? "out" : "in";
+
+                if ($lastEvent === $newEvent) {
+                    return $this->response(409, "Duplicate clock action not allowed");
+                }
+            }
+
+            // ----------------------------------------
+            // 4. TRANSACTION
+            // ----------------------------------------
+            $this->model->db->beginTransaction();
+
+            $this->model->insertAttendance([
+                'user_id' => $userId,
+                'event_type' => $newEvent,
+                'device_info' => $device,
+                'location' => $location,
+                'qr_code_id' => $qr['id']
             ]);
 
-        } catch (\Exception $e) {
-            // same as res.status(500).json({ error: String(error) })
-            http_response_code(500);
-            echo json_encode([
-                'status'  => 'error',
-                'message' => $e->getMessage() ?? 'Unable to fetch dashboard statistics',
+            $this->model->markQrUsed($qr['id']);
+
+            $this->model->db->commit();
+
+            return $this->response(200, [
+                "message" => "Clock {$newEvent} successful"
             ]);
+
+        } catch (Throwable $e) {
+            if (isset($this->model->db) && $this->model->db->inTransaction()) {
+                $this->model->db->rollBack();
+            }
+
+            return $this->response(500, $e->getMessage());
         }
     }
 
-    // same as getRecentActivityController()
-    public function getRecentActivity(): void
+    private function response(int $status, $message): array
     {
-        try {
-            $page  = isset($_GET['page'])  ? (int)$_GET['page']  : 1;
-            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
-
-            $rawData    = $this->model->fetchRecentActivity($page, $limit);
-            $formatted  = $this->service->formatRecentActivity($rawData);
-
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'success',
-                'data'   => $formatted,
-            ]);
-
-        } catch (\Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'Failed to fetch recent activity',
-            ]);
-        }
-    }
-
-    // same as getCurrentlyOnsiteController()
-    public function getCurrentlyOnsite(): void
-    {
-        try {
-            $rawData   = $this->model->fetchCurrentlyOnsite();
-            $formatted = $this->service->formatOnsite($rawData);
-
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'success',
-                'data'   => $formatted,
-            ]);
-
-        } catch (\Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'Failed to fetch currently onsite staff',
-            ]);
-        }
+        return [
+            "status" => $status,
+            "body" => [
+                "success" => $status === 200,
+                "message" => $message
+            ]
+        ];
     }
 }

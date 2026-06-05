@@ -3,13 +3,10 @@
 // ERROR HANDLING
 // =============================================
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // Set to 1 for debugging
+ini_set('display_errors', 1);
 
-// Global exception handler
 set_exception_handler(function ($exception) {
     error_log('UNCAUGHT EXCEPTION: ' . $exception->getMessage());
-    error_log('Stack: ' . $exception->getTraceAsString());
-    
     http_response_code(500);
     echo json_encode([
         'success' => false,
@@ -20,251 +17,219 @@ set_exception_handler(function ($exception) {
 });
 
 // =============================================
-// SETUP
+// DOTENV BOOTSTRAP (Unified Path Handling)
 // =============================================
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Dotenv\Dotenv;
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
+// Explicitly resolve the real path to prevent working directory misalignment
+$envDir = realpath(__DIR__ . '/../..');
+if (!$envDir || !file_exists($envDir . '/.env')) {
+    $envDir = __DIR__ . '/../..'; // Fallback to raw relative definition if realpath resolution fails
+}
+
+$dotenv = Dotenv::createImmutable($envDir);
 $dotenv->load();
 
+// Read key cleanly from loaded configuration sources
+$jwtSecret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?? null;
+
+// Break early if the key fails to load to prevent fallback signature checking bugs
+if (!$jwtSecret) {
+    error_log('CRITICAL: JWT_SECRET environment variable is not defined.');
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Internal Server Error',
+        'message' => 'Configuration mismatch: Missing security properties.'
+    ]);
+    exit;
+}
+
 // =============================================
-// MANUAL AUTOLOAD FIX FOR MIDDLEWARE
+// AUTOLOAD
 // =============================================
 if (!class_exists('Middleware\AuthMiddleware')) {
     require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 }
 
 // =============================================
-// CORS HEADERS
+// HEADERS
 // =============================================
+header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Content-Type: application/json');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Handle preflight OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
 // =============================================
-// ROUTING
+// REQUEST
 // =============================================
-
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-// Remove /api prefix if present
 $path = preg_replace('#^/api#', '', $path);
 
-error_log("[DEBUG] $method $path");
+$input = json_decode(file_get_contents("php://input"), true) ?? [];
 
-// Get JSON input for POST/PATCH/PUT requests
-$input = json_decode(file_get_contents('php://input'), true) ?? [];
-
-// Build request array for middleware
 $request = [
     'headers' => getallheaders(),
     'method' => $method,
     'path' => $path,
-    'query' => $_GET,
     'body' => $input
 ];
 
 // =============================================
-// DEBUG: Check headers (MOVED HERE - AFTER $request is defined!)
+// DB + AUTH
 // =============================================
-error_log("DEBUG: All headers: " . print_r(getallheaders(), true));
-error_log("DEBUG: Authorization header: " . ($request['headers']['Authorization'] ?? 'NOT FOUND'));
-error_log("DEBUG: authorization header: " . ($request['headers']['authorization'] ?? 'NOT FOUND'));
-
-// =============================================
-// PROFILE ROUTES
-// =============================================
-
-use App\Models\ProfileDb;
-use Controllers\ProfileController;
+use Config\Database;
 use Middleware\AuthMiddleware;
-use Config\Database;  // ADD THIS!
 
-// Initialize JWT secret AND database connection for timeout checking
-$jwtSecret = $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this';
-$db = Database::getInstance()->getConnection();  // Get database connection
-$authMiddleware = new AuthMiddleware($jwtSecret, $db);  // Pass db to middleware
-
-$model = new ProfileDb();
-$controller = new ProfileController($model);
-
-// POST - Forgot password (public)
-if ($method === 'POST' && $path === '/forgot-password') {
-    $controller->forgotPassword($input);
-    exit;
-}
-
-// POST - Reset password (public)
-if ($method === 'POST' && $path === '/reset-password') {
-    $controller->resetPasswordWithToken($input);
-    exit;
-}
+$db = Database::getInstance()->getConnection();
+$auth = new AuthMiddleware($jwtSecret, $db);
 
 // =============================================
-// TEST ROUTE (PUBLIC - no auth needed)
+// ROUTE: ATTENDANCE CLOCK (MC)
 // =============================================
-if ($method === 'GET' && $path === '/test') {
-    echo json_encode(['message' => 'Test route works!']);
-    exit;
-}
+if ($method === 'POST' && $path === '/attendance/clock') {
 
-// =============================================
-// PUBLIC ROUTES (no token required)
-// =============================================
-
-// POST - Login
-if ($method === 'POST' && $path === '/login') {
-    $controller->loginProfile($input);
-    exit;
-}
-
-// =============================================
-// AUTHENTICATED ROUTES (require token)
-// =============================================
-
-// GET - Get current user's own profile
-if ($method === 'GET' && $path === '/user/profile') {
-    $authResult = $authMiddleware->requireLogin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
+    // 1. AUTH CHECK
+    // Pass the $request reference explicitly down into your auth system handler
+    $authCheck = $auth->requireLogin($request);
+    if ($authCheck !== null) {
+        http_response_code($authCheck['status']);
+        echo json_encode($authCheck['body']);
         exit;
     }
-    $controller->getCurrentUserProfile($request);
-    exit;
-}
 
-// GET all users (admin only)
-if ($method === 'GET' && $path === '/admin/users') {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->adminGettingAllUsers();
-    exit;
-}
+    // Capture the payload array variables mutation populated by requireLogin()
+    $user = $request['user'] ?? null;
+    $userId = $user['user_id'] ?? null;
 
-// PATCH - Soft delete user
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/deactivate$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->softDeleteUser($matches[1]);
-    exit;
-}
-
-// PATCH - Activate user
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/activate$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->activateUser($matches[1]);
-    exit;
-}
-
-// GET user by employee_id (admin only)
-if ($method === 'GET' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->getProfileById($matches[1]);
-    exit;
-}
-
-// PATCH - Update user (admin only)
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->adminUpdatingUser($matches[1], $input);
-    exit;
-}
-
-// POST - Create user (admin only)
-if ($method === 'POST' && $path === '/admin/users') {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->adminCreatingUser($input);
-    exit;
-}
-
-// PATCH - Reset password (admin)
-if ($method === 'PATCH' && preg_match('#^/admin/users/([^/]+)/reset-password$#', $path, $matches)) {
-    $authResult = $authMiddleware->requireAdmin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $controller->resetPassword($matches[1]);
-    exit;
-}
-
-// PATCH - Update own password (requires auth)
-if ($method === 'PATCH' && $path === '/user/update-password') {
-    $authResult = $authMiddleware->requireLogin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
-        exit;
-    }
-    $employee_id = $request['user']['employee_id'] ?? null;
-    if (!$employee_id) {
+    if (!$userId) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'User not found']);
+        echo json_encode(['success' => false, 'error' => 'Invalid user metadata claims']);
         exit;
     }
-    $controller->updatePassword($employee_id, $input);
-    exit;
-}
 
-// POST - Clear cache (requires auth)
-if ($method === 'POST' && $path === '/user/cache/clear') {
-    $authResult = $authMiddleware->requireLogin($request);
-    if ($authResult !== null) {
-        http_response_code($authResult['status']);
-        echo json_encode($authResult['body']);
+    $qrToken = $input['qr_token'] ?? null;
+    $device = $input['device_info'] ?? null;
+    $location = $input['location'] ?? null;
+
+    if (!$qrToken) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'QR token required']);
         exit;
     }
-    // Pass empty body and the authenticated user
-    $controller->clearCache([], $request['user'] ?? null);
-    exit;
+
+    try {
+
+        // 2. VALIDATE QR
+        $stmt = $db->prepare("
+            SELECT * FROM qr_codes
+            WHERE token = ?
+              AND used_at IS NULL
+              AND expires_at > NOW()
+        ");
+        
+        $stmt->execute([$qrToken]);
+        $qr = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$qr) {
+            http_response_code(410);
+            echo json_encode(['success' => false, 'error' => 'QR code expired or already used']);
+            exit;
+        }
+
+        // 3. CHECK USER ACTIVE
+        $stmt = $db->prepare("SELECT is_active FROM users WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $isActive = $stmt->fetchColumn();
+
+        if (!$isActive) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'User inactive']);
+            exit;
+        }
+
+        // 4. LAST ATTENDANCE CHECK
+        $stmt = $db->prepare("
+            SELECT event_type
+            FROM attendance_logs
+            WHERE user_id = ?
+            AND DATE(event_time) = CURDATE()
+            ORDER BY event_time DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        $last = $stmt->fetchColumn();
+
+        $newType = ($last === 'in') ? 'out' : 'in';
+
+        if ($last === $newType) {
+            http_response_code(409);
+            echo json_encode(['success' => false, 'error' => 'Duplicate clock action']);
+            exit;
+        }
+
+        // 5. TRANSACTION
+        $db->beginTransaction();
+
+        // INSERT ATTENDANCE
+        $stmt = $db->prepare("
+            INSERT INTO attendance_logs
+            (user_id, event_type, event_time, check_in_method, sync_status, location, device_info, qr_code_id, created_at)
+            VALUES (?, ?, NOW(), 'qr', 1, ?, ?, ?, NOW())
+        ");
+
+        $stmt->execute([
+            $userId,
+            $newType,
+            $location,
+            $device,
+            $qr['id']
+        ]);
+
+        // MARK QR USED
+        $stmt = $db->prepare("
+            UPDATE qr_codes
+            SET used_at = NOW()
+            WHERE id = ?
+        ");
+        $stmt->execute([$qr['id']]);
+
+        $db->commit();
+
+        echo json_encode([
+            'success' => true,
+            'message' => "Clock {$newType} successful"
+        ]);
+        exit;
+
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+        exit;
+    }
 }
 
 // =============================================
-// 404 NOT FOUND
+// 404
 // =============================================
 http_response_code(404);
 echo json_encode([
     'success' => false,
-    'error' => 'Route not found: ' . $method . ' ' . $path
+    'error' => 'Route not found'
 ]);
 exit;

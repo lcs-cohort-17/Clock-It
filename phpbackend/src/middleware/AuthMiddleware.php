@@ -227,7 +227,7 @@ class AuthMiddleware
         try {
             $decoded = JWT::decode($token, new Key($this->jwtSecret, 'HS256'));
             
-            // Convert decoded object to array
+            // Convert decoded object to array safely
             $decodedArray = (array)$decoded;
             
             // Extract last_activity if present
@@ -245,27 +245,27 @@ class AuthMiddleware
             
         } catch (ExpiredException $e) {
             error_log("JWT Expired: " . $e->getMessage());
-            return ['error' => 'Token has expired', 'status' => 403];
+            return ['error' => 'Token has expired', 'status' => 401];
         } catch (SignatureInvalidException $e) {
-            error_log("JWT Invalid Signature: " . $e->getMessage());
-            return ['error' => 'Invalid token signature', 'status' => 403];
+            error_log("JWT Signature Invalid: " . $e->getMessage());
+            return ['error' => 'Invalid token signature', 'status' => 401];
         } catch (Exception $e) {
-            error_log("JWT Decode Error: " . $e->getMessage());
-            return ['error' => 'Invalid token', 'status' => 403];
+            error_log("JWT Generic Error: " . $e->getMessage());
+            return ['error' => 'Invalid token', 'status' => 401];
         }
     }
 
     /**
-     * Build a standardised error response.
+     * Standard error output helper structure
      */
-    private function unauthorizedResponse(string $message, int $status): array
+    private function unauthorizedResponse(string $message, int $status = 401): array
     {
         return [
             'status' => $status,
-            'body'   => [
+            'body' => [
                 'success' => false,
-                'error'   => $message,
-            ],
+                'error'   => $message
+            ]
         ];
     }
 }

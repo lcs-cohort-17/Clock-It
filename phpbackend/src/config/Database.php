@@ -1,15 +1,10 @@
 <?php
 namespace Config; 
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+namespace Config;
 
-use Dotenv\Dotenv;
 use PDO;
 use PDOException;
-
-// Load .env file credentials (Get env creds from database manager)
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
-$dotenv->load();
 
 class Database {
 
@@ -17,13 +12,14 @@ class Database {
     private ?PDO $connection = null;
 
     private function __construct() {
-
+        // We assume the environment variables have already been loaded 
+        // by the entry point (index.php) via Dotenv.
         $dsn = sprintf(
             'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-            $_ENV['DB_HOST'],
-            $_ENV['DB_PORT'],
+            $_ENV['DB_HOST'] ?? 'localhost',
+            $_ENV['DB_PORT'] ?? '3306',
             $_ENV['DB_NAME'],
-            $_ENV['DB_CHARSET']
+            $_ENV['DB_CHARSET'] ?? 'utf8mb4'
         );
 
         $options = [
@@ -33,32 +29,22 @@ class Database {
         ];
 
         try {
-
             $this->connection = new PDO(
                 $dsn,
                 $_ENV['DB_USER'],
                 $_ENV['DB_PASS'],
                 $options
             );
-
         } catch (PDOException $e) {
-
-            error_log(
-                'Database connection failed: ' . $e->getMessage()
-            );
-
-            http_response_code(500);
-
-            echo json_encode([
-                'error' => 'Database connection failed.'
-            ]);
-
-            exit;
+            // Log the error and stop execution
+            error_log('Database connection failed: ' . $e->getMessage());
+            
+            // In a real API, throw a custom exception or return a clean JSON error
+            throw new \RuntimeException('Database connection failed.');
         }
     }
 
     public static function getInstance(): self {
-
         if (self::$instance === null) {
             self::$instance = new self();
         }
