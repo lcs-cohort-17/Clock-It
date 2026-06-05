@@ -193,8 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         el.setAttribute('x-init', 'init()')
         Alpine.initTree(el)
     }
-
-}
+})
 
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-auto-dismiss-alert]').forEach(function (alert) {
