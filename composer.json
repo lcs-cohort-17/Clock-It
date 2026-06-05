@@ -1,0 +1,21 @@
+{
+  "name": "clockit/clockit",
+  "type": "project",
+  "license": "proprietary",
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "ClockIt\\Data\\": "phpfrontend/src/data/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit"
+  }
+}

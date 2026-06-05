@@ -1,0 +1,450 @@
+[x-cloak] {
+    display: none !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Hover effects */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Status badge animations */
+.status-badge {
+    transition: all 0.2s ease;
+}
+
+.status-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Table row hover effect */
+.table-row-hover {
+    transition: background-color 0.2s ease;
+}
+
+.table-row-hover:hover {
+    background-color: #f8fafc;
+}
+
+/* Button loading state */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Card styles */
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Input focus effects */
+.input-focus-ring {
+    transition: all 0.2s ease;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+        padding: 20px;
+    }
+    
+    .card, .bg-white {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    table {
+        page-break-inside: avoid;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+        page-break-after: avoid;
+    }
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .responsive-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .responsive-table table {
+        width: 100%;
+        min-width: 600px;
+    }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    .dark\:bg-gray-800 {
+        background-color: #1f2937;
+    }
+    
+    .dark\:text-white {
+        color: #ffffff;
+    }
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid rgba(59, 130, 246, 0.1);
+    border-radius: 50%;
+    border-top: 3px solid #3b82f6;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+.spinner-sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+/* Tooltip styles */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    background-color: #1f2937;
+    color: white;
+    text-align: center;
+    padding: 5px 10px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+ .hero-section {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card {
+            transition: all 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .sort-header {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .sort-header:hover {
+            background-color: #f1f5f9;
+        }
+        .status-badge {
+            transition: all 0.2s ease;
+        }
+        .status-badge:hover {
+            transform: scale(1.05);
+        }
+        .table-row-hover {
+            transition: background-color 0.2s ease;
+        }
+        .table-row-hover:hover {
+            background-color: #f8fafc;
+        }
+        /* Calendar Styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .calendar-day-cell {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 120px;
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            min-width: 0;
+        }
+        .calendar-day-cell:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+        .calendar-day-cell.prev-month, .calendar-day-cell.next-month {
+            background: #f3f4f6;
+            opacity: 0.7;
+        }
+        .day-number {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 50%;
+        }
+        .today-indicator {
+            background: #3b82f6;
+            color: white;
+        }
+        .calendar-status-badge {
+            display: block;
+            text-align: center;
+            padding: 2px 4px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-top: 4px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        @media (max-width: 768px) {
+            .calendar-grid {
+                gap: 6px !important;
+            }
+            .calendar-day-cell {
+                min-height: 70px !important;
+                padding: 4px !important;
+                border-radius: 8px !important;
+            }
+            .day-number {
+                font-size: 0.85rem !important;
+                width: 20px !important;
+                height: 20px !important;
+                line-height: 20px !important;
+                margin-bottom: 4px !important;
+            }
+            .calendar-status-badge {
+                font-size: 0.6rem !important;
+                padding: 1px 2px !important;
+                margin-top: 2px !important;
+            }
+            .calendar-status-badge .opacity-90 {
+                display: none !important;
+            }
+        }
+        @media (max-width: 480px) {
+            .calendar-grid {
+                gap: 4px !important;
+            }
+            .calendar-day-cell {
+                min-height: 55px !important;
+                padding: 2px !important;
+                border-radius: 6px !important;
+            }
+            .day-number {
+                font-size: 0.75rem !important;
+                width: 18px !important;
+                height: 18px !important;
+                line-height: 18px !important;
+            }
+            .calendar-status-badge {
+                font-size: 0.52rem !important;
+                padding: 0px 2px !important;
+                margin-top: 1px !important;
+            }
+        }
+        /* View Toggle Button */
+        .view-toggle-btn {
+            padding: 10px 24px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: white;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+        }
+        .view-toggle-btn:hover {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .view-toggle-btn.active {
+            background: #1e3a8a;
+            color: white;
+            border-color: #1e3a8a;
+        }
+        .view-toggle-container {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px;
+            border-radius: 12px;
+        }
+        /* Status colors for calendar */
+        .status-present { background: #10b981; color: white; }
+        .status-absent { background: #ef4444; color: white; }
+        .status-late { background: #f59e0b; color: white; }
+        .status-halfday { background: #6366f1; color: white; }
+        .status-holiday { background: #8b5cf6; color: white; }
+        /* Month navigation */
+        .month-nav-btn {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .month-nav-btn:hover {
+            background: #f3f4f6;
+        }
+        [x-cloak] {
+            display: none !important;
+        }
+        /* Employee switcher styles */
+        .employee-switcher {
+            position: relative;
+        }
+        .employee-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            z-index: 50;
+            min-width: 220px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .demo-badge {
+            background: #fef3c7;
+            color: #d97706;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
+        /* Calendar day row spacing */
+        .calendar-day-cell .records-container {
+            max-height: 80px;
+            overflow-y: auto;
+        }
+        /* Custom scrollbar for calendar */
+        .records-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .records-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .records-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
