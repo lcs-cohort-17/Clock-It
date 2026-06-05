@@ -199,3 +199,9 @@ bun.lockb
 *.save
 *.orig
 *~
+
+vendor/
+
+# Runtime profile uploads
+/public/uploads/profiles/*
+!/public/uploads/profiles/.gitkeep
