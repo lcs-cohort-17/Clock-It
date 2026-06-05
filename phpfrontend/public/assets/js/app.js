@@ -166,11 +166,16 @@ document.addEventListener('alpine:init', () => {
     cameras: [],
     activeCameraId: '',
 
+    showSuccessModal: false,
+    successTitle: '',
+    successMessage: '',
+
     async startScanner() {
       this.error = '';
       this.result = '';
       this.cameras = [];
       this.activeCameraId = '';
+      this.showSuccessModal = false;
 
       if (!navigator.mediaDevices?.getUserMedia) {
         this.error = this.config.messages.cameraApiUnavailable;
@@ -267,7 +272,20 @@ document.addEventListener('alpine:init', () => {
       }
 
       this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(decodedText)}`;
+      if (scanType === 'clock-in') {
+        this.result = 'Clocked In';
+        this.successTitle = 'Clocked In';
+        this.successMessage = 'You have clocked in successfully!';
+      } else if (scanType === 'clock-out') {
+        this.result = 'Clocked Out';
+        this.successTitle = 'Clocked Out';
+        this.successMessage = 'You have clocked out successfully!';
+      } else {
+        this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(decodedText)}`;
+        this.successTitle = 'Success';
+        this.successMessage = `Event recorded: ${window.normalizeScanValue(decodedText)}`;
+      }
+      this.showSuccessModal = true;
       window.recordAttendanceScan(scanType);
       await this.stopScanner();
     },
@@ -279,7 +297,20 @@ document.addEventListener('alpine:init', () => {
       }
 
       this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(code)}`;
+      if (scanType === 'clock-in') {
+        this.result = 'Clocked In';
+        this.successTitle = 'Clocked In';
+        this.successMessage = 'You have clocked in successfully!';
+      } else if (scanType === 'clock-out') {
+        this.result = 'Clocked Out';
+        this.successTitle = 'Clocked Out';
+        this.successMessage = 'You have clocked out successfully!';
+      } else {
+        this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(code)}`;
+        this.successTitle = 'Success';
+        this.successMessage = `Event recorded: ${window.normalizeScanValue(code)}`;
+      }
+      this.showSuccessModal = true;
       window.recordAttendanceScan(scanType);
     },
 

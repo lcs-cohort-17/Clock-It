@@ -85,6 +85,35 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
     x-text="result"
     class="alert scan-alert-success mt-3 mb-0"
   ></div>
+
+  <!-- Success Modal -->
+  <div
+    class="modal fade"
+    :class="{ 'show d-block': showSuccessModal }"
+    x-show="showSuccessModal"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    style="background: rgba(0, 0, 0, 0.5); z-index: 1050;"
+    x-cloak
+  >
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-body text-center p-5">
+          <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle mb-4 animate-scale" style="width: 80px; height: 80px;">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h3 class="fw-bold mb-2 text-dark" x-text="successTitle"></h3>
+          <p class="text-muted mb-4" x-text="successMessage"></p>
+          <button type="button" class="btn btn-success w-100 py-2 rounded-3 fw-semibold shadow-sm" style="background: #198754; border: none;" @click="showSuccessModal = false">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <?php if ($isStandalone): ?>
             </div>
