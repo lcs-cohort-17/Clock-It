@@ -171,7 +171,43 @@ class ProfileDb implements ProfileModelInterface
             return new ApiResponse(false, null, $error->getMessage());
         }
     }
-    
+
+       // ─── GET CURRENT USER PROFILE (for logged-in user) ─────────────────
+    public function getCurrentUserProfileDb(string $employee_id): ApiResponse
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT user_id, first_name, last_name, employee_id, role, is_active, email, img, created_at FROM users WHERE employee_id = :employee_id");
+            $stmt->execute(['employee_id' => $employee_id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($data === false) {
+                return new ApiResponse(false, null, 'User profile not found');
+            }
+            
+            // Capitalize first name
+            if (isset($data['first_name']) && !empty($data['first_name'])) {
+                $data['first_name'] = $this->capitalizeFirstName($data['first_name']);
+            }
+            
+            // Build full profile image URL if img exists
+            if (isset($data['img']) && !empty($data['img'])) {
+                // Get base URL from environment or use default
+                $baseUrl = $_ENV['BASE_URL'] ?? 'http://localhost:8000';
+                $data['img'] = $baseUrl . '/uploads/' . $data['img'];
+            } else {
+                $data['img'] = null;
+            }
+            
+            // Remove sensitive fields
+            unset($data['password']);
+            
+            return new ApiResponse(true, $data);
+            
+        } catch (PDOException $error) {
+            return new ApiResponse(false, null, $error->getMessage());
+        }
+    }    
+
     // ─── UPDATE USER ───────────────────────────────────────────────
     
     public function adminUpdatingUserDb(string $employee_id, array $updates): ApiResponse
@@ -261,33 +297,33 @@ class ProfileDb implements ProfileModelInterface
     
     // ─── RESET PASSWORD (Admin) ────────────────────────────────────
     
-    public function resetPasswordDb(string $employee_id): ApiResponse
-    {
-        try {
-            $newPassword = $this->generatePassword();
-            $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+    // public function resetPasswordDb(string $employee_id): ApiResponse
+    // {
+    //     try {
+    //         $newPassword = $this->generatePassword();
+    //         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
-            // CHANGED: profiles -> users
-            $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE employee_id = :employee_id");
-            $stmt->execute(['password' => $hashedPassword, 'employee_id' => $employee_id]);
+    //         // CHANGED: profiles -> users
+    //         $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE employee_id = :employee_id");
+    //         $stmt->execute(['password' => $hashedPassword, 'employee_id' => $employee_id]);
             
-            if ($stmt->rowCount() === 0) {
-                return new ApiResponse(false, null, 'Profile not found');
-            }
+    //         if ($stmt->rowCount() === 0) {
+    //             return new ApiResponse(false, null, 'Profile not found');
+    //         }
             
-            // Get updated record - CHANGED: profiles -> users
-            $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
-            $stmt2->execute(['employee_id' => $employee_id]);
-            $data = $stmt2->fetch(PDO::FETCH_ASSOC);
+    //         // Get updated record - CHANGED: profiles -> users
+    //         $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
+    //         $stmt2->execute(['employee_id' => $employee_id]);
+    //         $data = $stmt2->fetch(PDO::FETCH_ASSOC);
             
-            // Return plain text password (not hashed)
-            $data['password'] = $newPassword;
+    //         // Return plain text password (not hashed)
+    //         $data['password'] = $newPassword;
             
-            return new ApiResponse(true, $data);
-        } catch (PDOException $error) {
-            return new ApiResponse(false, null, $error->getMessage());
-        }
-    }
+    //         return new ApiResponse(true, $data);
+    //     } catch (PDOException $error) {
+    //         return new ApiResponse(false, null, $error->getMessage());
+    //     }
+    // }
     
     // ─── UPDATE OWN PASSWORD (Staff) ───────────────────────────────
     
@@ -327,4 +363,160 @@ class ProfileDb implements ProfileModelInterface
             return new ApiResponse(false, null, $error->getMessage());
         }
     }
+
+    // ─── GET SESSION TIMEOUT FROM SETTINGS ──────────────────────────
+public function getSessionTimeoutDb(): ApiResponse
+{
+    try {
+        // Check if settings table exists, if not, create it
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'settings'");
+        $stmt->execute();
+        $tableExists = $stmt->fetchColumn();
+        
+        if (!$tableExists) {
+            // Create settings table
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS settings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    setting_key VARCHAR(100) UNIQUE NOT NULL,
+                    setting_value TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            ");
+            // Insert default timeout
+            $this->db->exec("INSERT INTO settings (setting_key, setting_value) VALUES ('session_timeout_minutes', '30')");
+            return new ApiResponse(true, ['session_timeout_minutes' => 30]);
+        }
+        
+        // Get timeout from settings
+        $stmt = $this->db->prepare("SELECT setting_value FROM settings WHERE setting_key = 'session_timeout_minutes'");
+        $stmt->execute();
+        $timeout = $stmt->fetchColumn();
+        
+        $timeoutMinutes = $timeout ? (int)$timeout : 30;
+        
+        return new ApiResponse(true, ['session_timeout_minutes' => $timeoutMinutes]);
+    } catch (PDOException $error) {
+        return new ApiResponse(false, null, $error->getMessage());
+    }
+}
+
+
+// ─── CREATE PASSWORD_RESETS TABLE ───────────────────────────────
+private function ensurePasswordResetsTable(): void
+{
+    $this->db->exec("
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL,
+            token VARCHAR(100) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            used BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_token (token),
+            INDEX idx_email (email)
+        )
+    ");
+}
+
+// ─── FORGOT PASSWORD ────────────────────────────────────────────
+public function forgotPasswordDb(string $email): ApiResponse
+{
+    try {
+        $this->ensurePasswordResetsTable();
+        
+        // Check if user exists
+        $stmt = $this->db->prepare("SELECT user_id FROM users WHERE email = :email AND is_active = 1");
+        $stmt->execute(['email' => $email]);
+        $user = $stmt->fetch();
+        
+        if (!$user) {
+            // Don't reveal if email exists for security
+            return new ApiResponse(true, null, null, 'If your email is registered, you will receive a reset link');
+        }
+        
+        // Generate random token
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', time() + 3600); // 1 hour expiry
+        
+        // Store token
+        $stmt = $this->db->prepare("
+            INSERT INTO password_resets (email, token, expires_at) 
+            VALUES (:email, :token, :expires_at)
+        ");
+        $stmt->execute([
+            'email' => $email,
+            'token' => $token,
+            'expires_at' => $expiresAt
+        ]);
+        
+        // Send email (you'll need to configure mail)
+        $this->sendResetEmail($email, $token);
+        
+        return new ApiResponse(true, null, null, 'Password reset link sent to your email');
+        
+    } catch (PDOException $error) {
+        return new ApiResponse(false, null, $error->getMessage());
+    }
+}
+
+// ─── SEND RESET EMAIL ───────────────────────────────────────────
+private function sendResetEmail(string $email, string $token): void
+{
+    $resetLink = "http://localhost:3000/reset-password?token=" . $token;
+    $subject = "Password Reset Request";
+    $message = "Click this link to reset your password: " . $resetLink . "\n\nThis link expires in 1 hour.";
+    $headers = "From: noreply@yourapp.com";
+    
+    // Use mail() function (or configure SMTP)
+    mail($email, $subject, $message, $headers);
+    
+    // For development, log the token
+    error_log("Password reset token for $email: $token");
+}
+
+// ─── RESET PASSWORD (with token) ─────────────────────────────────
+public function resetPasswordDb(string $token, string $newPassword): ApiResponse
+{
+    try {
+        $this->ensurePasswordResetsTable();
+        
+        // Find valid token (removed 'used' check since column may not exist yet)
+        $stmt = $this->db->prepare("
+            SELECT * FROM password_resets 
+            WHERE token = :token AND expires_at > NOW()
+        ");
+        $stmt->execute(['token' => $token]);
+        $reset = $stmt->fetch();
+        
+        if (!$reset) {
+            return new ApiResponse(false, null, 'Invalid or expired reset token');
+        }
+        
+        // Hash new password
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+        
+        // Update user password
+        $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE email = :email");
+        $stmt->execute([
+            'password' => $hashedPassword,
+            'email' => $reset['email']
+        ]);
+        
+        // Mark token as used (only if column exists)
+        try {
+            $stmt = $this->db->prepare("UPDATE password_resets SET used = 1 WHERE token = :token");
+            $stmt->execute(['token' => $token]);
+        } catch (PDOException $e) {
+            // Column doesn't exist yet - that's fine
+            error_log("Could not mark token as used: " . $e->getMessage());
+        }
+        
+        return new ApiResponse(true, null, null, 'Password reset successfully');
+        
+    } catch (PDOException $error) {
+        return new ApiResponse(false, null, $error->getMessage());
+    }
+}
 }

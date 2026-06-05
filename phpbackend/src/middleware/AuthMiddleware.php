@@ -1,20 +1,23 @@
 <?php
 
-namespace App\Middleware;
+namespace Middleware;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\SignatureInvalidException;
-use Throwable;
+use PDO;
+use Exception;
 
 class AuthMiddleware
 {
     private string $jwtSecret;
+    private ?PDO $db = null;
 
-    public function __construct(string $jwtSecret)
+    public function __construct(string $jwtSecret, ?PDO $db = null)
     {
         $this->jwtSecret = $jwtSecret;
+        $this->db = $db;
     }
 
     /**
@@ -30,9 +33,51 @@ class AuthMiddleware
         }
 
         $request['user'] = $result['user'];
+        $request['last_activity'] = $result['last_activity'] ?? time();
+
+        // Optional: check session timeout on every handled request
+        $timeout = $this->checkSessionTimeout($request);
+        if ($timeout !== null) {
+            return $timeout;
+        }
 
         return $next($request);
     }
+
+    // ----------------------------------------------------------------
+    // Session Timeout Check
+    // ----------------------------------------------------------------
+
+    private function checkSessionTimeout(array &$request): ?array
+    {
+        if (!$this->db) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->db->prepare("SELECT setting_value FROM settings WHERE setting_key = 'session_timeout_minutes'");
+            $stmt->execute();
+            $timeout = $stmt->fetchColumn();
+            $timeoutMinutes = $timeout ? (int)$timeout : 30;
+            $timeoutSeconds = $timeoutMinutes * 60;
+
+            $lastActivity = $request['last_activity'] ?? time();
+
+            if (time() - $lastActivity > $timeoutSeconds) {
+                return $this->unauthorizedResponse('Session expired due to inactivity. Please login again.', 401);
+            }
+
+            $request['last_activity'] = time();
+            return null;
+        } catch (Exception $e) {
+            error_log("Session timeout check failed: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Pattern A guards – accept full $request with headers
+    // ----------------------------------------------------------------
 
     public function requireLogin(array &$request): ?array
     {
@@ -43,6 +88,12 @@ class AuthMiddleware
         }
 
         $request['user'] = $result['user'];
+        $request['last_activity'] = $result['last_activity'] ?? time();
+
+        $timeoutCheck = $this->checkSessionTimeout($request);
+        if ($timeoutCheck !== null) {
+            return $timeoutCheck;
+        }
 
         return null;
     }
@@ -75,9 +126,13 @@ class AuthMiddleware
         return null;
     }
 
+    // ----------------------------------------------------------------
+    // Pattern B guards – accept plain $auth array
+    // ----------------------------------------------------------------
+
     public function requireLoginFromAuth(array $auth): ?array
     {
-        $userId = $auth['userId'] ?? null;
+        $userId = $auth['userId'] ?? $auth['user_id'] ?? null;
 
         if ($userId === null || trim((string) $userId) === '') {
             return $this->unauthorizedResponse('Access token required', 401);
@@ -114,45 +169,48 @@ class AuthMiddleware
         return null;
     }
 
-    /**
-     * @return array{user?: array<string, mixed>, error?: string, status?: int}
-     */
+    // ----------------------------------------------------------------
+    // Token decoding
+    // ----------------------------------------------------------------
+
     private function decodeToken(array $request): array
     {
-        $headers = $request['headers'] ?? [];
-        if (!is_array($headers)) {
-            $headers = [];
-        }
+        // Accept both "Authorization" and "authorization" headers
+        $authHeader = $request['headers']['Authorization']
+            ?? $request['headers']['authorization']
+            ?? null;
 
-        $headers = array_change_key_case($headers, CASE_LOWER);
-        $authHeader = trim((string) ($headers['authorization'] ?? ''));
+        error_log("DEBUG: Looking for auth header, found: " . ($authHeader ? substr($authHeader, 0, 30) : 'null'));
 
-        if (!preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
+        if (!$authHeader || !preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
             return ['error' => 'Access token required', 'status' => 401];
         }
 
-        $token = trim($matches[1]);
-
-        if ($token === '') {
-            return ['error' => 'Access token required', 'status' => 401];
-        }
+        $token = $matches[1];
 
         try {
             $decoded = JWT::decode($token, new Key($this->jwtSecret, 'HS256'));
+            $decodedArray = (array) $decoded;
+
+            $lastActivity = $decodedArray['last_activity'] ?? time();
 
             return [
                 'user' => [
-                    'userId'      => (string) ($decoded->userId ?? ''),
-                    'email'       => (string) ($decoded->email ?? ''),
-                    'role'        => strtolower((string) ($decoded->role ?? 'staff')),
-                    'employee_id' => (string) ($decoded->employee_id ?? ''),
+                    'user_id'     => $decodedArray['user_id'] ?? $decodedArray['userId'] ?? null,
+                    'email'       => $decodedArray['email'] ?? null,
+                    'role'        => $decodedArray['role'] ?? null,
+                    'employee_id' => $decodedArray['employee_id'] ?? null,
                 ],
+                'last_activity' => $lastActivity,
             ];
-        } catch (ExpiredException) {
+        } catch (ExpiredException $e) {
+            error_log("JWT Expired: " . $e->getMessage());
             return ['error' => 'Token has expired', 'status' => 403];
-        } catch (SignatureInvalidException) {
+        } catch (SignatureInvalidException $e) {
+            error_log("JWT Invalid Signature: " . $e->getMessage());
             return ['error' => 'Invalid token signature', 'status' => 403];
-        } catch (Throwable) {
+        } catch (Exception $e) {
+            error_log("JWT Decode Error: " . $e->getMessage());
             return ['error' => 'Invalid token', 'status' => 403];
         }
     }
@@ -163,7 +221,7 @@ class AuthMiddleware
             'status' => $status,
             'body'   => [
                 'success' => false,
-                'message' => $message,
+                'error'   => $message,
             ],
         ];
     }

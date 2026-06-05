@@ -5,7 +5,6 @@
         "This file is @generated automatically"
     ],
     "content-hash": "e86d447d7fd284c014e861e9d187bb15",
-    // "content-hash": "2cdebd1abefba1324fec34b19b9c1349",
     "packages": [
         {
             "name": "firebase/php-jwt",
