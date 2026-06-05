@@ -246,6 +246,8 @@ document.addEventListener('alpine:init', () => {
     result: '',
     cameras: [],
     activeCameraId: '',
+    decodedQrValue: '',
+    scannedAt: null,
 
     async startScanner() {
       if (this.isStarting || this.isScanning) {
@@ -363,27 +365,30 @@ document.addEventListener('alpine:init', () => {
       this.isProcessing = true;
 
       const scanType = window.getScanType(decodedText);
-      if (!scanType) {
-        this.error = this.config.messages.invalidQrCode;
-        this.result = '';
-        await this.stopScanner();
-        await this.showFeedbackModal('Invalid QR Code', this.config.messages.invalidQrCode, 'danger');
-        this.isProcessing = false;
-        return;
-      }
+      this.decodedQrValue = decodedText;
+      this.scannedAt = new Date();
 
       try {
-        const response = await window.mockAttendanceApi(decodedText);
-        this.error = '';
-        this.result = response.status;
-        window.recordAttendanceScan(scanType);
-        await this.stopScanner();
-        await this.showFeedbackModal(response.title, response.message, response.variant);
+        if (scanType) {
+          // Valid CLOCK_IN or CLOCK_OUT
+          const response = await window.mockAttendanceApi(decodedText);
+          this.error = '';
+          this.result = response.status;
+          window.recordAttendanceScan(scanType);
+          await this.stopScanner();
+          await this.showFeedbackModal(response.title, response.message, response.variant, decodedText, this.scannedAt);
+        } else {
+          // Any other QR code - display the data
+          this.error = '';
+          this.result = `Scanned: ${decodedText}`;
+          await this.stopScanner();
+          await this.showFeedbackModal('QR Code Scanned', `Data: ${decodedText}`, 'info', decodedText, this.scannedAt);
+        }
       } catch (error) {
         this.error = error?.message ?? this.config.messages.invalidQrCode;
         this.result = '';
         await this.stopScanner();
-        await this.showFeedbackModal(error?.title ?? 'Scan Error', this.error, error?.variant ?? 'danger');
+        await this.showFeedbackModal(error?.title ?? 'Scan Error', this.error, error?.variant ?? 'danger', decodedText);
       } finally {
         this.isProcessing = false;
       }
@@ -393,10 +398,12 @@ document.addEventListener('alpine:init', () => {
       void this.handleScanSuccess(code);
     },
 
-    async showFeedbackModal(title, message, variant = 'success') {
+    async showFeedbackModal(title, message, variant = 'success', qrValue = '', scannedAt = null) {
       this.modalTitle = title;
       this.modalMessage = message;
       this.modalVariant = variant;
+      this.decodedQrValue = qrValue || this.decodedQrValue;
+      this.scannedAt = scannedAt || this.scannedAt || new Date();
 
       await this.$nextTick();
 

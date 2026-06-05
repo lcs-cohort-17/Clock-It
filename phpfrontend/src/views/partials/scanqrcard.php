@@ -106,19 +106,39 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
   >
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
-        <div class="modal-header" :class="modalVariant === 'success' ? 'bg-success text-white' : 'bg-danger text-white'">
+        <div class="modal-header" :class="modalVariant === 'success' ? 'bg-success text-white' : modalVariant === 'info' ? 'bg-info text-white' : 'bg-danger text-white'">
           <h2 class="modal-title fs-5 fw-bold" x-text="modalTitle"></h2>
           <button
             type="button"
             class="btn-close"
-            :class="modalVariant === 'success' ? 'btn-close-white' : ''"
+            :class="modalVariant === 'success' || modalVariant === 'info' ? 'btn-close-white' : 'btn-close-white'"
             data-bs-dismiss="modal"
             aria-label="Close"
           ></button>
         </div>
         <div class="modal-body">
-          <p class="mb-2" x-text="modalMessage"></p>
-          <p class="small text-body-secondary mb-0" x-show="result" x-text="result"></p>
+          <!-- QR Data Details -->
+          <div class="qr-data-details bg-light p-3 rounded" x-show="decodedQrValue">
+            <h6 class="fw-bold mb-2">QR Code Data:</h6>
+            <div class="qr-value-display bg-white p-2 rounded border mb-3">
+              <code class="text-monospace" x-text="decodedQrValue" style="word-break: break-all; font-size: 0.85rem;"></code>
+            </div>
+            
+            <div class="row g-2 text-sm">
+              <div class="col-auto">
+                <small class="text-body-secondary d-block">
+                  <strong>Status:</strong>
+                </small>
+                <small x-text="result"></small>
+              </div>
+              <div class="col-auto" x-show="scannedAt">
+                <small class="text-body-secondary d-block">
+                  <strong>Scanned At:</strong>
+                </small>
+                <small x-text="scannedAt ? new Date(scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''"></small>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>

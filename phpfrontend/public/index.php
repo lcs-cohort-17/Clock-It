@@ -64,8 +64,7 @@ function view(string $view, array $data = []): void
     $data = ['basePath' => $basePath] + $data;
     extract($data);
 
-    require __DIR__ . '/../phpfrontend/src/views/' . $view . '.php';
-}
+require __DIR__ . '/../src/views/' . $view . '.php';}
 
 function redirect_to(string $path): never
 {
@@ -147,7 +146,7 @@ function get_live_stats(): array
 
 $stats = get_live_stats();
 
-$loginUsers = require dirname(__DIR__) . '/phpfrontend/src/data/LoginMockUsers.php';
+$loginUsers = require __DIR__ . '/../src/Data/LoginMockUsers.php';
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {

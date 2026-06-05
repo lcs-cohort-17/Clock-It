@@ -160,11 +160,19 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('scanQrCard', () => ({
     config: window.scanQrConfig,
     scanner: null,
+    modalInstance: null,
     isScanning: false,
+    isStarting: false,
+    isProcessing: false,
     error: '',
     result: '',
     cameras: [],
     activeCameraId: '',
+    decodedQrValue: '',
+    scannedAt: null,
+    modalTitle: '',
+    modalMessage: '',
+    modalVariant: 'success',
 
     async startScanner() {
       this.error = '';
@@ -258,29 +266,61 @@ document.addEventListener('alpine:init', () => {
     },
 
     async handleScanSuccess(decodedText) {
+      if (this.isProcessing) {
+        return;
+      }
+
+      this.isProcessing = true;
+
       const scanType = window.getScanType(decodedText);
-      if (!scanType) {
-        this.error = this.config.messages.invalidQrCode;
+      this.decodedQrValue = decodedText;
+      this.scannedAt = new Date();
+
+      try {
+        if (scanType) {
+          // Valid CLOCK_IN or CLOCK_OUT
+          const response = await window.mockAttendanceApi(decodedText);
+          this.error = '';
+          this.result = response.status;
+          window.recordAttendanceScan(scanType);
+          await this.stopScanner();
+          await this.showFeedbackModal(response.title, response.message, response.variant, decodedText, this.scannedAt);
+        } else {
+          // Any other QR code - display the data
+          this.error = '';
+          this.result = `Scanned: ${decodedText}`;
+          await this.stopScanner();
+          await this.showFeedbackModal('QR Code Scanned', `Data: ${decodedText}`, 'info', decodedText, this.scannedAt);
+        }
+      } catch (error) {
+        this.error = error?.message ?? this.config.messages.invalidQrCode;
         this.result = '';
         await this.stopScanner();
-        return;
+        await this.showFeedbackModal(error?.title ?? 'Scan Error', this.error, error?.variant ?? 'danger', decodedText);
+      } finally {
+        this.isProcessing = false;
       }
-
-      this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(decodedText)}`;
-      window.recordAttendanceScan(scanType);
-      await this.stopScanner();
-    },
+    }
 
     handleDemoScan(code) {
-      const scanType = window.getScanType(code);
-      if (!scanType) {
+      void this.handleScanSuccess(code);
+    },
+
+    async showFeedbackModal(title, message, variant = 'success', qrValue = '', scannedAt = null) {
+      this.modalTitle = title;
+      this.modalMessage = message;
+      this.modalVariant = variant;
+      this.decodedQrValue = qrValue || this.decodedQrValue;
+      this.scannedAt = scannedAt || this.scannedAt || new Date();
+
+      await this.$nextTick();
+
+      if (typeof bootstrap === 'undefined' || !this.$refs.feedbackModal) {
         return;
       }
 
-      this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(code)}`;
-      window.recordAttendanceScan(scanType);
+      this.modalInstance ??= bootstrap.Modal.getOrCreateInstance(this.$refs.feedbackModal);
+      this.modalInstance.show();
     },
 
     init() {
