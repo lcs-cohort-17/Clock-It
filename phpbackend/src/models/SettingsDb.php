@@ -60,25 +60,24 @@ class SettingsDbModel implements SettingsModel
     }
 
     public function upsertSetting(string $key, string $value): bool
-    {
-        $statement = $this->connection->prepare(
-            'INSERT INTO settings (`key`, `value`)
-     VALUES (:key, :value)
-     ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)'
-        );
+{
+    $statement = $this->connection->prepare(
+        'INSERT INTO settings ("key", "value")
+         VALUES (:key, :value)
+         ON CONFLICT("key") DO UPDATE SET "value" = excluded."value"'
+    );
 
-        return $statement->execute(['key' => $key, 'value' => $value]);
-    }
+    return $statement->execute(['key' => $key, 'value' => $value]);
+}
 
     public function purgeAttendance(int $days): int
-    {
-        $statement = $this->connection->prepare(
-            'DELETE FROM attendance
-     WHERE timestamp < DATE_SUB(NOW(), INTERVAL :days DAY)'
-        );
-        $statement->bindValue(':days', $days, PDO::PARAM_INT);
-        $statement->execute();
+{
+    $statement = $this->connection->prepare(
+        'DELETE FROM attendance
+         WHERE timestamp < datetime("now", "-" || ? || " days")'
+    );
+    $statement->execute([$days]);
 
-        return $statement->rowCount();
-    }
+    return $statement->rowCount();
+}
 }

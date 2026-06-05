@@ -14,13 +14,19 @@ use App\Middleware\AuthMiddleware;
 require __DIR__ . '/../../vendor/autoload.php';
 require __DIR__ . '/../routes/SettingsRoutes.php';
 
+
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
+$dotenv->load();
+
+$defaultSecret = $_ENV['JWT_SECRET'] ?? throw new RuntimeException('JWT_SECRET not set');
+
 $sqliteFile = __DIR__ . '/../../clockit.sqlite';
 $pdo = new PDO('sqlite:' . $sqliteFile);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 initializeDatabase($pdo);
 
-$defaultSecret = getenv('JWT_SECRET') ?: 'clockit-secret';
 $authMiddleware = new AuthMiddleware($defaultSecret);
 
 $GLOBALS['auth'] = resolveAuthFromRequest($defaultSecret);
@@ -105,8 +111,9 @@ function initializeDatabase(PDO $pdo): void
     );
 
     $pdo->exec(
-        "INSERT OR IGNORE INTO users (user_id, role, is_active) VALUES
-            ('1', 'admin', 1)"
-    );
+    "INSERT OR IGNORE INTO users (user_id, role, is_active) VALUES
+        ('1', 'admin', 1),
+        ('d6d5bcec-5d9b-11f1-896c-001e676e63e8', 'admin', 1)"
+);
 }
 
