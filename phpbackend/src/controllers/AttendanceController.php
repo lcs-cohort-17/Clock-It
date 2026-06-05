@@ -56,8 +56,8 @@ class AttendanceController
                 return $this->response(410, "QR code invalid, used or expired");
             }
 
-            // 60 SECOND RULE (ticket requirement)
-            if (strtotime($qr['created_at']) < time() - 60) {
+            // FIX: use expires_at (NOT created_at)
+            if (strtotime($qr['expires_at']) < time()) {
                 return $this->response(410, "QR code expired");
             }
 
@@ -81,7 +81,8 @@ class AttendanceController
             // ----------------------------------------
             // 4. TRANSACTION
             // ----------------------------------------
-            $this->model->db->beginTransaction();
+            $db = $this->model->db;
+            $db->beginTransaction();
 
             $this->model->insertAttendance([
                 'user_id' => $userId,
@@ -93,13 +94,14 @@ class AttendanceController
 
             $this->model->markQrUsed($qr['id']);
 
-            $this->model->db->commit();
+            $db->commit();
 
             return $this->response(200, [
                 "message" => "Clock {$newEvent} successful"
             ]);
 
         } catch (Throwable $e) {
+
             if (isset($this->model->db) && $this->model->db->inTransaction()) {
                 $this->model->db->rollBack();
             }
@@ -113,7 +115,7 @@ class AttendanceController
         return [
             "status" => $status,
             "body" => [
-                "success" => $status === 200,
+                "success" => $status >= 200 && $status < 300,
                 "message" => $message
             ]
         ];

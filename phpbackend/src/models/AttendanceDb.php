@@ -31,7 +31,7 @@ class AttendanceDb
     }
 
     // ----------------------------------------
-    // GET QR (UPDATED - STRICT VALIDATION SPLIT)
+    // GET QR
     // ----------------------------------------
     public function getQrByToken(string $token): ?array
     {
@@ -46,11 +46,11 @@ class AttendanceDb
         $stmt->execute([$token]);
         $qr = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $qr ?: null;
+        return $qr !== false ? $qr : null;
     }
 
     // ----------------------------------------
-    // LAST EVENT (TODAY ONLY - FIXED)
+    // LAST EVENT (TODAY ONLY)
     // ----------------------------------------
     public function getLastEvent(string $userId): ?array
     {
@@ -104,16 +104,17 @@ class AttendanceDb
     }
 
     // ----------------------------------------
-    // MARK QR USED
+    // MARK QR USED (SAFE)
     // ----------------------------------------
-    public function markQrUsed(int $qrId): void
+    public function markQrUsed(int $qrId): bool
     {
         $stmt = $this->db->prepare("
             UPDATE qr_codes
             SET used_at = NOW()
             WHERE id = ?
+              AND used_at IS NULL
         ");
 
-        $stmt->execute([$qrId]);
+        return $stmt->execute([$qrId]);
     }
 }

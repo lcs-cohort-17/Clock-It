@@ -17,32 +17,27 @@ set_exception_handler(function ($exception) {
 });
 
 // =============================================
-// DOTENV BOOTSTRAP (Unified Path Handling)
+// DOTENV BOOTSTRAP
 // =============================================
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Dotenv\Dotenv;
 
-// Explicitly resolve the real path to prevent working directory misalignment
 $envDir = realpath(__DIR__ . '/../..');
 if (!$envDir || !file_exists($envDir . '/.env')) {
-    $envDir = __DIR__ . '/../..'; // Fallback to raw relative definition if realpath resolution fails
+    $envDir = __DIR__ . '/../..';
 }
 
 $dotenv = Dotenv::createImmutable($envDir);
 $dotenv->load();
 
-// Read key cleanly from loaded configuration sources
 $jwtSecret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?? null;
 
-// Break early if the key fails to load to prevent fallback signature checking bugs
 if (!$jwtSecret) {
-    error_log('CRITICAL: JWT_SECRET environment variable is not defined.');
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Internal Server Error',
-        'message' => 'Configuration mismatch: Missing security properties.'
+        'error' => 'Missing JWT secret'
     ]);
     exit;
 }
@@ -54,13 +49,16 @@ if (!class_exists('Middleware\AuthMiddleware')) {
     require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 }
 
+require_once __DIR__ . '/../models/AdminDashboardDb.php';
+require_once __DIR__ . '/../controllers/AdminDashboardController.php';
+
 // =============================================
 // HEADERS
 // =============================================
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -93,28 +91,68 @@ $db = Database::getInstance()->getConnection();
 $auth = new AuthMiddleware($jwtSecret, $db);
 
 // =============================================
-// ROUTE: ATTENDANCE CLOCK (MC)
+// CONTROLLERS
+// =============================================
+$dashboardModel = new AdminDashboardModel($db);
+$dashboardController = new AdminDashboardController($dashboardModel);
+
+// =============================================
+// QR SCAN VALIDATION (PUBLIC)
+// =============================================
+if ($method === 'POST' && $path === '/scan/validate') {
+
+    $token = $input['qr_token'] ?? null;
+
+    if (!$token) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'QR token required']);
+        exit;
+    }
+
+    $stmt = $db->prepare("SELECT * FROM qr_codes WHERE token = ?");
+    $stmt->execute([$token]);
+    $qr = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$qr) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'QR code not found']);
+        exit;
+    }
+
+    if (!empty($qr['used_at'])) {
+        http_response_code(410);
+        echo json_encode(['success' => false, 'error' => 'QR code already used']);
+        exit;
+    }
+
+    if (strtotime($qr['expires_at']) < time()) {
+        http_response_code(410);
+        echo json_encode(['success' => false, 'error' => 'QR code expired']);
+        exit;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'valid' => true,
+        'type' => $qr['type']
+    ]);
+    exit;
+}
+
+// =============================================
+// ATTENDANCE CLOCK (STAFF)
 // =============================================
 if ($method === 'POST' && $path === '/attendance/clock') {
 
-    // 1. AUTH CHECK
-    // Pass the $request reference explicitly down into your auth system handler
-    $authCheck = $auth->requireLogin($request);
-    if ($authCheck !== null) {
-        http_response_code($authCheck['status']);
-        echo json_encode($authCheck['body']);
+    $authResult = $auth->requireLogin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
         exit;
     }
 
-    // Capture the payload array variables mutation populated by requireLogin()
-    $user = $request['user'] ?? null;
-    $userId = $user['user_id'] ?? null;
-
-    if (!$userId) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Invalid user metadata claims']);
-        exit;
-    }
+    $user = $request['user'];
+    $userId = $user['user_id'];
 
     $qrToken = $input['qr_token'] ?? null;
     $device = $input['device_info'] ?? null;
@@ -122,106 +160,160 @@ if ($method === 'POST' && $path === '/attendance/clock') {
 
     if (!$qrToken) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'QR token required']);
+        echo json_encode(['error' => 'QR token required']);
         exit;
     }
 
-    try {
+    $stmt = $db->prepare("SELECT * FROM qr_codes WHERE token = ?");
+    $stmt->execute([$qrToken]);
+    $qr = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // 2. VALIDATE QR
-        $stmt = $db->prepare("
-            SELECT * FROM qr_codes
-            WHERE token = ?
-              AND used_at IS NULL
-              AND expires_at > NOW()
-        ");
-        
-        $stmt->execute([$qrToken]);
-        $qr = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$qr) {
-            http_response_code(410);
-            echo json_encode(['success' => false, 'error' => 'QR code expired or already used']);
-            exit;
-        }
-
-        // 3. CHECK USER ACTIVE
-        $stmt = $db->prepare("SELECT is_active FROM users WHERE user_id = ?");
-        $stmt->execute([$userId]);
-        $isActive = $stmt->fetchColumn();
-
-        if (!$isActive) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'User inactive']);
-            exit;
-        }
-
-        // 4. LAST ATTENDANCE CHECK
-        $stmt = $db->prepare("
-            SELECT event_type
-            FROM attendance_logs
-            WHERE user_id = ?
-            AND DATE(event_time) = CURDATE()
-            ORDER BY event_time DESC
-            LIMIT 1
-        ");
-        $stmt->execute([$userId]);
-        $last = $stmt->fetchColumn();
-
-        $newType = ($last === 'in') ? 'out' : 'in';
-
-        if ($last === $newType) {
-            http_response_code(409);
-            echo json_encode(['success' => false, 'error' => 'Duplicate clock action']);
-            exit;
-        }
-
-        // 5. TRANSACTION
-        $db->beginTransaction();
-
-        // INSERT ATTENDANCE
-        $stmt = $db->prepare("
-            INSERT INTO attendance_logs
-            (user_id, event_type, event_time, check_in_method, sync_status, location, device_info, qr_code_id, created_at)
-            VALUES (?, ?, NOW(), 'qr', 1, ?, ?, ?, NOW())
-        ");
-
-        $stmt->execute([
-            $userId,
-            $newType,
-            $location,
-            $device,
-            $qr['id']
-        ]);
-
-        // MARK QR USED
-        $stmt = $db->prepare("
-            UPDATE qr_codes
-            SET used_at = NOW()
-            WHERE id = ?
-        ");
-        $stmt->execute([$qr['id']]);
-
-        $db->commit();
-
-        echo json_encode([
-            'success' => true,
-            'message' => "Clock {$newType} successful"
-        ]);
-        exit;
-
-    } catch (Throwable $e) {
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
-
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'error' => $e->getMessage()
-        ]);
+    if (!$qr || !empty($qr['used_at']) || strtotime($qr['expires_at']) < time()) {
+        http_response_code(410);
+        echo json_encode(['error' => 'Invalid QR']);
         exit;
     }
+
+    $stmt = $db->prepare("SELECT is_active FROM users WHERE user_id = ?");
+    $stmt->execute([$userId]);
+
+    if (!$stmt->fetchColumn()) {
+        http_response_code(403);
+        echo json_encode(['error' => 'User inactive']);
+        exit;
+    }
+
+    $stmt = $db->prepare("
+        SELECT event_type
+        FROM attendance_logs
+        WHERE user_id = ?
+        AND DATE(event_time) = CURDATE()
+        ORDER BY event_time DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$userId]);
+    $last = $stmt->fetchColumn();
+
+    $newType = $qr['type'];
+
+    if ($last === $newType) {
+        http_response_code(409);
+        echo json_encode(['error' => 'Duplicate action']);
+        exit;
+    }
+
+    $db->beginTransaction();
+
+    $stmt = $db->prepare("
+        INSERT INTO attendance_logs
+        (user_id, event_type, event_time, check_in_method, sync_status, location, device_info, qr_code_id, created_at)
+        VALUES (?, ?, NOW(), 'qr', 'synced', ?, ?, ?, NOW())
+    ");
+
+    $stmt->execute([
+        $userId,
+        $newType,
+        $location,
+        $device,
+        $qr['id']
+    ]);
+
+    $stmt = $db->prepare("UPDATE qr_codes SET used_at = NOW() WHERE id = ?");
+    $stmt->execute([$qr['id']]);
+
+    $db->commit();
+
+    echo json_encode([
+        'success' => true,
+        'message' => "Clock {$newType} successful"
+    ]);
+    exit;
+}
+
+// =============================================
+// ADMIN DASHBOARD (ADDED HERE)
+// =============================================
+
+// STATS
+if ($method === 'GET' && $path === '/api/admin/dashboard/stats') {
+
+    $authResult = $auth->requireAdmin($request);
+    if ($authResult) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+
+    $result = $dashboardController->stats();
+    http_response_code($result['status']);
+    echo json_encode($result['body']);
+    exit;
+}
+
+// ONSITE
+if ($method === 'GET' && $path === '/api/admin/dashboard/onsite') {
+
+    $authResult = $auth->requireAdmin($request);
+    if ($authResult) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+
+    $result = $dashboardController->onsite();
+    http_response_code($result['status']);
+    echo json_encode($result['body']);
+    exit;
+}
+
+// RECENT ACTIVITY
+if ($method === 'GET' && $path === '/api/admin/dashboard/recent-activity') {
+
+    $authResult = $auth->requireAdmin($request);
+    if ($authResult) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+
+    $result = $dashboardController->recentActivity();
+    http_response_code($result['status']);
+    echo json_encode($result['body']);
+    exit;
+}
+
+// =============================================
+// ADMIN QR GENERATE
+// =============================================
+if ($method === 'POST' && $path === '/admin/qr/generate') {
+
+    $authResult = $auth->requireAdmin($request);
+    if ($authResult !== null) {
+        http_response_code($authResult['status']);
+        echo json_encode($authResult['body']);
+        exit;
+    }
+
+    $user = $request['user'];
+    $createdBy = $user['user_id'];
+
+    $token = bin2hex(random_bytes(16));
+    $type = $input['type'] ?? 'clock_in';
+    $expiresAt = date('Y-m-d H:i:s', time() + 60);
+
+    $stmt = $db->prepare("
+        INSERT INTO qr_codes (token, type, expires_at, created_by)
+        VALUES (?, ?, ?, ?)
+    ");
+
+    $stmt->execute([$token, $type, $expiresAt, $createdBy]);
+
+    echo json_encode([
+        'success' => true,
+        'qr_token' => $token,
+        'expires_at' => $expiresAt
+    ]);
+    exit;
 }
 
 // =============================================

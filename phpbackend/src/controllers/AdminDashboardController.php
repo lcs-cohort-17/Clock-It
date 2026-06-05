@@ -22,20 +22,17 @@ class AdminDashboardController
             return [
                 'status' => 200,
                 'body' => [
-                    'currentlyOnsite' => $data['currentlyOnsite'] ?? 0,
-                    'totalClockedInToday' => $data['totalClockedInToday'] ?? 0,
-                    'pendingSync' => 0,
-                    'totalEventsToday' => $data['totalEventsToday'] ?? 0,
+                    'success' => true,
+                    'data' => [
+                        'currentlyOnsite' => (int)($data['currentlyOnsite'] ?? 0),
+                        'totalClockedInToday' => (int)($data['totalClockedInToday'] ?? 0),
+                        'pendingSync' => 0,
+                        'totalEventsToday' => (int)($data['totalEventsToday'] ?? 0),
+                    ],
                 ],
             ];
         } catch (\Throwable $e) {
-            return [
-                'status' => 500,
-                'body' => [
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ],
-            ];
+            return $this->error($e, 'Failed to fetch stats');
         }
     }
 
@@ -47,57 +44,77 @@ class AdminDashboardController
         try {
             $records = $this->model->fetchCurrentlyOnsite();
 
+            $mapped = array_map(function ($r) {
+                return [
+                    'name' => $this->formatName($r),
+                    'role' => $r['role'] ?? null,
+                    'sign_in_time' => $r['sign_in_time'] ?? null,
+                ];
+            }, $records ?: []);
+
             return [
                 'status' => 200,
                 'body' => [
-                    'data' => array_map(function ($r) {
-                        return [
-                            'name' => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
-                            'role' => $r['role'] ?? null,
-                            'sign_in_time' => $r['sign_in_time'] ?? null,
-                        ];
-                    }, $records),
+                    'success' => true,
+                    'data' => $mapped,
                 ],
             ];
         } catch (\Throwable $e) {
-            return [
-                'status' => 500,
-                'body' => [
-                    'success' => false,
-                    'error' => 'Failed to fetch onsite staff'
-                ],
-            ];
+            return $this->error($e, 'Failed to fetch onsite staff');
         }
     }
 
     // =========================================================
-    // RECENT ACTIVITY (LAST 10)
+    // RECENT ACTIVITY
     // =========================================================
     public function recentActivity(): array
     {
         try {
             $records = $this->model->fetchRecentActivity(10);
 
+            $mapped = array_map(function ($r) {
+                return [
+                    'name' => $this->formatName($r),
+                    'action' => $r['event_type'] ?? null,
+                    'timestamp' => $r['event_time'] ?? null,
+                ];
+            }, $records ?: []);
+
             return [
                 'status' => 200,
                 'body' => [
-                    'data' => array_map(function ($r) {
-                        return [
-                            'name' => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
-                            'action' => $r['event_type'] ?? null,
-                            'timestamp' => $r['event_time'] ?? null,
-                        ];
-                    }, $records),
+                    'success' => true,
+                    'data' => $mapped,
                 ],
             ];
         } catch (\Throwable $e) {
-            return [
-                'status' => 500,
-                'body' => [
-                    'success' => false,
-                    'error' => 'Failed to fetch recent activity'
-                ],
-            ];
+            return $this->error($e, 'Failed to fetch recent activity');
         }
+    }
+
+    // =========================================================
+    // NAME FORMATTER (SAFE)
+    // =========================================================
+    private function formatName(array $r): string
+    {
+        $first = trim($r['first_name'] ?? '');
+        $last = trim($r['last_name'] ?? '');
+
+        return trim($first . ' ' . $last) ?: 'Unknown User';
+    }
+
+    // =========================================================
+    // ERROR HANDLER
+    // =========================================================
+    private function error(\Throwable $e, string $message): array
+    {
+        return [
+            'status' => 500,
+            'body' => [
+                'success' => false,
+                'error' => $message,
+                'debug' => $e->getMessage()
+            ],
+        ];
     }
 }
