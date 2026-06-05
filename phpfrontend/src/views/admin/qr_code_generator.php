@@ -1,4 +1,5 @@
 <?php
+//Updated
 $title = 'QR Code Generator';
 $isAdminDashboard = true;
 
