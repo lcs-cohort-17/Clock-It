@@ -1,0 +1,81 @@
+# ============================================
+# ENVIRONMENT FILES
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# ============================================
+# DEPENDENCIES
+# ============================================
+node_modules/
+vendor/
+package.json
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# ============================================
+# SENSITIVE FILES / CREDENTIALS
+# ============================================
+credentials.json
+*.key
+*.pem
+*.crt
+*.p12
+.secrets/
+
+# ============================================
+# TEST / CACHE FILES
+# ============================================
+.phpunit.result.cache
+*.cache
+.cache/
+*.tmp
+.tmp/
+temp/
+.tmp/
+tmp/
+
+# ============================================
+# ARCHIVES & BACKUPS
+# ============================================
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.backup-*
+*~
+
+# ============================================
+# PROJECT / BUILD ARTIFACTS
+# ============================================
+*.lock
+*.lockb
+*.js.map
+*.css.map
+
+# ============================================
+# LOCAL SYSTEM / SERVER FILES
+# ============================================
+htdocs/
+xampp/
+
+# ============================================
+# OVERRIDES (IMPORTANT FILES THAT SHOULD STILL BE TRACKED)
+# ============================================
+!/.gitignore
+!/public/uploads/profiles/.gitkeep
+
+# ============================================
+# UPLOADS (RUNTIME GENERATED FILES)
+# ============================================
+/public/uploads/profiles/*

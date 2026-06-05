@@ -102,7 +102,7 @@ class AdminDashboardController
     private function formatRecentActivityRecord(array $record): array
     {
         return [
-            'profile_id' => $record['profile_id'] ?? null,
+            'user_id' => $record['user_id'] ?? null,
             'event_time' => $record['event_time'] ?? null,
             'event_type' => $record['event_type'] ?? null,
             'sync_status' => $record['sync_status'] ?? null,
@@ -114,7 +114,7 @@ class AdminDashboardController
     private function formatOnsiteRecord(array $record): array
     {
         return [
-            'profile_id' => $record['profile_id'] ?? null,
+            'user_id' => $record['user_id'] ?? null,
             'event_time' => $record['event_time'] ?? null,
             'location' => $record['location'] ?? null,
             'staff' => $this->formatStaff($record),
@@ -123,16 +123,16 @@ class AdminDashboardController
 
     private function formatStaff(array $record): string
     {
-        $profile = $record['profiles'] ?? [];
+        $user = $record['users'] ?? [];
 
-        if (is_array($profile) && array_is_list($profile)) {
-            $profile = $profile[0] ?? [];
+        if (is_array($user) && array_is_list($user)) {
+            $user = $user[0] ?? [];
         }
 
-        if (!is_array($profile)) {
+        if (!is_array($user)) {
             return '';
         }
 
-        return trim(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? ''));
+        return trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
     }
 }

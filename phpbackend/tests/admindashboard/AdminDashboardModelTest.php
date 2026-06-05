@@ -148,7 +148,7 @@ class AdminDashboardModelTest extends TestCase
         $helpers = $this->buildModel([
             [
                 'rows' => [[
-                    'profile_id' => 10,
+                    'user_id' => 10,
                     'event_time' => '2025-05-19 10:00:00',
                     'event_type' => 'in',
                     'sync_status' => 'pending',
@@ -164,8 +164,8 @@ class AdminDashboardModelTest extends TestCase
         $this->assertStringContainsString('FROM attendance_logs al', $helpers['db']->calledQueries[0]);
         $this->assertStringContainsString('ORDER BY al.event_time DESC', $helpers['db']->calledQueries[0]);
         $this->assertStringContainsString('LIMIT 10 OFFSET 10', $helpers['db']->calledQueries[0]);
-        $this->assertSame('John', $rows[0]['profiles']['first_name']);
-        $this->assertSame('Doe', $rows[0]['profiles']['last_name']);
+        $this->assertSame('John', $rows[0]['users']['first_name']);
+        $this->assertSame('Doe', $rows[0]['users']['last_name']);
         $this->assertArrayNotHasKey('first_name', $rows[0]);
     }
 
@@ -174,7 +174,7 @@ class AdminDashboardModelTest extends TestCase
         $helpers = $this->buildModel([
             [
                 'rows' => [[
-                    'profile_id' => 10,
+                    'user_id' => 10,
                     'event_time' => '2025-05-19 10:00:00',
                     'location' => 'HQ',
                     'event_type' => 'in',
@@ -189,7 +189,7 @@ class AdminDashboardModelTest extends TestCase
         $this->assertStringContainsString('FROM attendance_logs al', $helpers['db']->calledQueries[0]);
         $this->assertStringContainsString('ORDER BY al.event_time DESC', $helpers['db']->calledQueries[0]);
         $this->assertSame('HQ', $rows[0]['location']);
-        $this->assertSame('Jane', $rows[0]['profiles']['first_name']);
-        $this->assertSame('Smith', $rows[0]['profiles']['last_name']);
+        $this->assertSame('Jane', $rows[0]['users']['first_name']);
+        $this->assertSame('Smith', $rows[0]['users']['last_name']);
     }
 }

@@ -9,30 +9,20 @@ use Firebase\JWT\SignatureInvalidException;
 use PDO;
 use Exception;
 
-/**
- * AuthMiddleware
- *
- * Centralised authentication and authorisation middleware with session timeout support.
- */
 class AuthMiddleware
 {
     private string $jwtSecret;
     private ?PDO $db = null;
 
-    // Update constructor to accept database connection
     public function __construct(string $jwtSecret, ?PDO $db = null)
     {
         $this->jwtSecret = $jwtSecret;
         $this->db = $db;
     }
 
-    // ----------------------------------------------------------------
-    // Core handler — used by route pipelines
-    // ----------------------------------------------------------------
-
     /**
-     * Verify the Bearer token and attach the decoded user to the request,
-     * then call the next handler.
+     * Verify the Bearer token, attach decoded user data to the request,
+     * then continue into the matching route.
      */
     public function handle(array $request, callable $next): array
     {
@@ -43,6 +33,13 @@ class AuthMiddleware
         }
 
         $request['user'] = $result['user'];
+        $request['last_activity'] = $result['last_activity'] ?? time();
+
+        // Optional: check session timeout on every handled request
+        $timeout = $this->checkSessionTimeout($request);
+        if ($timeout !== null) {
+            return $timeout;
+        }
 
         return $next($request);
     }
@@ -51,53 +48,37 @@ class AuthMiddleware
     // Session Timeout Check
     // ----------------------------------------------------------------
 
-    /**
-     * Check if the session has expired due to inactivity.
-     * Returns a 401 response array if expired, null otherwise.
-     */
     private function checkSessionTimeout(array &$request): ?array
     {
-        // Skip timeout check if no database connection
         if (!$this->db) {
             return null;
         }
-        
+
         try {
-            // Get timeout from settings table
             $stmt = $this->db->prepare("SELECT setting_value FROM settings WHERE setting_key = 'session_timeout_minutes'");
             $stmt->execute();
             $timeout = $stmt->fetchColumn();
             $timeoutMinutes = $timeout ? (int)$timeout : 30;
             $timeoutSeconds = $timeoutMinutes * 60;
-            
-            // Get last activity from request (set in token or passed in)
+
             $lastActivity = $request['last_activity'] ?? time();
-            
-            // Check if session expired
+
             if (time() - $lastActivity > $timeoutSeconds) {
                 return $this->unauthorizedResponse('Session expired due to inactivity. Please login again.', 401);
             }
-            
-            // Update last activity for this request
+
             $request['last_activity'] = time();
-            
             return null;
-            
         } catch (Exception $e) {
             error_log("Session timeout check failed: " . $e->getMessage());
-            return null; // Don't block on error - allow request to proceed
+            return null;
         }
     }
 
     // ----------------------------------------------------------------
-    // Pattern A guards — accept full $request with headers
+    // Pattern A guards – accept full $request with headers
     // ----------------------------------------------------------------
 
-    /**
-     * Ensures the request carries a valid JWT token.
-     * Returns a 401/403 response array on failure, null on success.
-     * Attaches decoded user to $request['user'] on success.
-     */
     public function requireLogin(array &$request): ?array
     {
         $result = $this->decodeToken($request);
@@ -107,11 +88,8 @@ class AuthMiddleware
         }
 
         $request['user'] = $result['user'];
-        
-        // Get last_activity from token if present
         $request['last_activity'] = $result['last_activity'] ?? time();
-        
-        // Check session timeout
+
         $timeoutCheck = $this->checkSessionTimeout($request);
         if ($timeoutCheck !== null) {
             return $timeoutCheck;
@@ -120,10 +98,6 @@ class AuthMiddleware
         return null;
     }
 
-    /**
-     * Ensures the request carries a valid JWT token AND role is 'admin'.
-     * Returns a 401/403 response array on failure, null on success.
-     */
     public function requireAdmin(array &$request): ?array
     {
         $guard = $this->requireLogin($request);
@@ -138,10 +112,6 @@ class AuthMiddleware
         return null;
     }
 
-    /**
-     * Ensures the request carries a valid JWT token AND role matches $role.
-     * Returns a 401/403 response array on failure, null on success.
-     */
     public function requireRole(array &$request, string $role): ?array
     {
         $guard = $this->requireLogin($request);
@@ -150,21 +120,21 @@ class AuthMiddleware
         }
 
         if (($request['user']['role'] ?? '') !== $role) {
-            return $this->unauthorizedResponse("Role '$role' required", 403);
+            return $this->unauthorizedResponse("Role '{$role}' required", 403);
         }
 
         return null;
     }
 
     // ----------------------------------------------------------------
-    // Pattern B guards — accept plain $auth array (already decoded)
+    // Pattern B guards – accept plain $auth array
     // ----------------------------------------------------------------
 
     public function requireLoginFromAuth(array $auth): ?array
     {
         $userId = $auth['userId'] ?? $auth['user_id'] ?? null;
 
-        if ($userId === null || $userId === '') {
+        if ($userId === null || trim((string) $userId) === '') {
             return $this->unauthorizedResponse('Access token required', 401);
         }
 
@@ -193,46 +163,37 @@ class AuthMiddleware
         }
 
         if (($auth['role'] ?? '') !== $role) {
-            return $this->unauthorizedResponse("Role '$role' required", 403);
+            return $this->unauthorizedResponse("Role '{$role}' required", 403);
         }
 
         return null;
     }
 
     // ----------------------------------------------------------------
-    // Private helpers
+    // Token decoding
     // ----------------------------------------------------------------
 
-    /**
-     * Decode and validate the Bearer JWT from the request headers.
-     *
-     * @return array On success: ['user' => [...], 'last_activity' => int]
-     *               On failure: ['error' => string, 'status' => int]
-     */
     private function decodeToken(array $request): array
     {
-        // Try both common cases for Authorization header
-        $authHeader = $request['headers']['Authorization'] ?? 
-                      $request['headers']['authorization'] ?? 
-                      null;
-        
+        // Accept both "Authorization" and "authorization" headers
+        $authHeader = $request['headers']['Authorization']
+            ?? $request['headers']['authorization']
+            ?? null;
+
         error_log("DEBUG: Looking for auth header, found: " . ($authHeader ? substr($authHeader, 0, 30) : 'null'));
-        
+
         if (!$authHeader || !preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
             return ['error' => 'Access token required', 'status' => 401];
         }
 
         $token = $matches[1];
-        
+
         try {
             $decoded = JWT::decode($token, new Key($this->jwtSecret, 'HS256'));
-            
-            // Convert decoded object to array
-            $decodedArray = (array)$decoded;
-            
-            // Extract last_activity if present
+            $decodedArray = (array) $decoded;
+
             $lastActivity = $decodedArray['last_activity'] ?? time();
-            
+
             return [
                 'user' => [
                     'user_id'     => $decodedArray['user_id'] ?? $decodedArray['userId'] ?? null,
@@ -242,7 +203,6 @@ class AuthMiddleware
                 ],
                 'last_activity' => $lastActivity,
             ];
-            
         } catch (ExpiredException $e) {
             error_log("JWT Expired: " . $e->getMessage());
             return ['error' => 'Token has expired', 'status' => 403];
@@ -255,9 +215,6 @@ class AuthMiddleware
         }
     }
 
-    /**
-     * Build a standardised error response.
-     */
     private function unauthorizedResponse(string $message, int $status): array
     {
         return [

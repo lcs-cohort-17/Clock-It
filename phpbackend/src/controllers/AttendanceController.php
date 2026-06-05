@@ -1,105 +1,194 @@
 <?php
 
-namespace App\Controllers;
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../services/GoogleSheetsService.php';
 
-use App\Models\AttendanceDb;
-use App\Services\AttendanceService;
+use Config\Database;
 
 class AttendanceController
 {
-    private AttendanceDb $model;
-    private AttendanceService $service;
+    private PDO $conn;
 
-    // cache — same as statsCache in Node.js
-    private static ?array $cache = null;
-    private static int $cacheExpiresAt = 0;
-    private static int $cacheTtlMs = 5000;
-
-    public function __construct(?AttendanceDb $model = null, ?AttendanceService $service = null)
+    public function __construct()
     {
-        $this->model   = $model ?? new AttendanceDb();
-        $this->service = $service ?? new AttendanceService();
+        $database   = Database::getInstance();
+        $this->conn = $database->getConnection();
     }
 
-    // same as handleGetStats()
-    public function handleGetStats(): void
+    public function index(): array
     {
-        // same as if (Date.now() < statsCache.expiresAt && statsCache.data)
-        $now = (int)(microtime(true) * 1000);
-        if (self::$cache !== null && $now < self::$cacheExpiresAt) {
-            http_response_code(200);
-            echo json_encode(self::$cache);
-            return;
-        }
-
         try {
-            // same as fetchDashboardStats(supabase)
-            $data = $this->model->fetchDashboardStats();
+            return [
+                'status' => 200,
+                'headers' => ['content-type' => 'application/json'],
+                'body' => [
+                    'data' => $this->fetchAttendanceLogs([]),
+                ],
+            ];
+        } catch (Exception $e) {
+            error_log('[AttendanceController] Index error: ' . $e->getMessage());
 
-            // same as statsCache.data = responsePayload
-            self::$cache = $data;
-            self::$cacheExpiresAt = $now + self::$cacheTtlMs;
-
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'success',
-                'data'   => $data,
-            ]);
-
-        } catch (\Exception $e) {
-            // same as res.status(500).json({ error: String(error) })
-            http_response_code(500);
-            echo json_encode([
-                'status'  => 'error',
-                'message' => $e->getMessage() ?? 'Unable to fetch dashboard statistics',
-            ]);
+            return [
+                'status' => 500,
+                'headers' => ['content-type' => 'application/json'],
+                'body' => [
+                    'success' => false,
+                    'message' => 'Failed to load attendance logs.',
+                ],
+            ];
         }
     }
 
-    // same as getRecentActivityController()
-    public function getRecentActivity(): void
+    // ── POST /api/admin/export/sheets ─────────────────────────
+    public function exportToSheets(): array
     {
         try {
-            $page  = isset($_GET['page'])  ? (int)$_GET['page']  : 1;
-            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+            $body      = json_decode(file_get_contents('php://input'), true) ?? [];
+            $startDate = $body['start_date'] ?? null;
+            $endDate   = $body['end_date']   ?? null;
+            $eventIds  = is_array($body['event_ids'] ?? null) ? $body['event_ids'] : [];
 
-            $rawData    = $this->model->fetchRecentActivity($page, $limit);
-            $formatted  = $this->service->formatRecentActivity($rawData);
+            if (($startDate !== null || $endDate !== null)
+                && (!$this->isValidDate($startDate) || !$this->isValidDate($endDate))
+            ) {
+                return [
+                    'status'  => 400,
+                    'headers' => ['content-type' => 'application/json'],
+                    'body'    => ['success' => false, 'message' => 'Invalid date format. Use YYYY-MM-DD for both start_date and end_date.'],
+                ];
+            }
 
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'success',
-                'data'   => $formatted,
+            $attendanceData = $this->fetchAttendanceLogs([
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'event_ids' => $eventIds,
             ]);
 
-        } catch (\Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'Failed to fetch recent activity',
-            ]);
+            if (empty($attendanceData)) {
+                return [
+                    'status'  => 200,
+                    'headers' => ['content-type' => 'application/json'],
+                    'body'    => ['success' => false, 'message' => 'No attendance logs found for the selected filters.'],
+                ];
+            }
+
+            $googleSheetsService = new GoogleSheetsService();
+            $sheetUrl            = $googleSheetsService->exportAttendance($attendanceData);
+
+            return [
+                'status'  => 200,
+                'headers' => ['content-type' => 'application/json'],
+                'body'    => [
+                    'success'          => true,
+                    'message'          => 'Attendance exported successfully.',
+                    'sheet_url'        => $sheetUrl,
+                    'records_exported' => count($attendanceData),
+                ],
+            ];
+        } catch (Exception $e) {
+            error_log('[AttendanceController] Export error: ' . $e->getMessage());
+
+            return [
+                'status'  => 500,
+                'headers' => ['content-type' => 'application/json'],
+                'body'    => [
+                    'success' => false,
+                    'message' => 'Failed to export attendance.',
+                    'error'   => $e->getMessage(),
+                ],
+            ];
         }
     }
 
-    // same as getCurrentlyOnsiteController()
-    public function getCurrentlyOnsite(): void
+    // ── Helpers ───────────────────────────────────────────────
+
+    private function isValidDate(?string $date): bool
     {
-        try {
-            $rawData   = $this->model->fetchCurrentlyOnsite();
-            $formatted = $this->service->formatOnsite($rawData);
+        if (!$date) return false;
+        $d = DateTime::createFromFormat('Y-m-d', $date);
+        return $d && $d->format('Y-m-d') === $date;
+    }
 
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'success',
-                'data'   => $formatted,
-            ]);
+    private function fetchAttendanceLogs(array $filters): array
+    {
+        $conditions = [];
+        $params = [];
 
-        } catch (\Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'Failed to fetch currently onsite staff',
-            ]);
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $conditions[] = 'DATE(al.event_time) BETWEEN ? AND ?';
+            $params[] = $filters['start_date'];
+            $params[] = $filters['end_date'];
         }
+
+        $eventIds = array_values(array_filter(
+            $filters['event_ids'] ?? [],
+            fn($id) => is_scalar($id) && trim((string) $id) !== ''
+        ));
+
+        if (!empty($eventIds)) {
+            $conditions[] = 'al.id IN (' . implode(',', array_fill(0, count($eventIds), '?')) . ')';
+            foreach ($eventIds as $eventId) {
+                $params[] = $eventId;
+            }
+        }
+
+        $where = empty($conditions) ? '' : 'WHERE ' . implode(' AND ', $conditions);
+        $query = "
+            SELECT
+                al.id,
+                al.event_type,
+                al.event_time,
+                al.device_info,
+                al.location,
+                al.sync_status,
+                u.first_name,
+                u.last_name
+            FROM attendance_logs al
+            LEFT JOIN users u ON u.user_id = al.user_id
+            {$where}
+            ORDER BY al.event_time DESC
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+
+        $logs = [];
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $staffName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: 'Unknown Staff';
+
+            $logs[] = [
+                'id' => $row['id'],
+                'staff' => $staffName,
+                'staff_name' => $staffName,
+                'type' => $this->formatEventType($row['event_type'] ?? ''),
+                'event_type' => $row['event_type'] ?? '',
+                'timestamp' => $row['event_time'] ?? '',
+                'device' => $row['device_info'] ?? '',
+                'location' => $row['location'] ?? '',
+                'sync' => $this->formatSyncStatus($row['sync_status'] ?? ''),
+                'sync_status' => $row['sync_status'] ?? '',
+            ];
+        }
+
+        return $logs;
+    }
+
+    private function formatEventType(string $eventType): string
+    {
+        return match (strtolower($eventType)) {
+            'in', 'clock_in' => 'Clock In',
+            'out', 'clock_out' => 'Clock Out',
+            default => ucwords(str_replace('_', ' ', $eventType)),
+        };
+    }
+
+    private function formatSyncStatus(string $syncStatus): string
+    {
+        return match (strtolower($syncStatus)) {
+            'synced' => 'Synced',
+            'failed' => 'Failed',
+            default => 'Pending',
+        };
     }
 }

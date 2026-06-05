@@ -81,11 +81,9 @@ class AdminDashboardRouter
 
     private function handleExportSheets(): array
     {
-        return [
-            'status' => 501,
-            'headers' => ['content-type' => 'application/json'],
-            'body' => ['error' => 'Not implemented'],
-        ];
+        require_once __DIR__ . '/../controllers/AttendanceController.php';
+        $controller = new AttendanceController();
+        return $controller->exportToSheets();
     }
 
     private function handleRecentActivity(): array
