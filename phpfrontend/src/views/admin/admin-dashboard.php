@@ -10,6 +10,15 @@ $actions = [
     ['label' => 'Settings', 'href' => app_url('/admin-dashboard/settings'), 'variant' => 'light'],
 ];
 $sheetsConnected = false;
+$mockDashboardData = require __DIR__ . '/../../Data/MockData.php';
+$initialOnsiteStaff = $mockDashboardData['onsiteStaff'] ?? [];
+$initialRecentActivity = $mockDashboardData['recentActivity'] ?? [];
+$stats = [
+    'currentlyOnsite' => count($initialOnsiteStaff),
+    'totalStaffToday' => count($initialOnsiteStaff),
+    'pendingSync' => $stats['pendingSync'] ?? 0,
+    'totalEvents' => count($initialRecentActivity),
+] + ($stats ?? []);
 
 ob_start();
 
@@ -23,6 +32,13 @@ ob_start();
     <div class="main-panel">
 
         <?php require __DIR__ . '/../partials/header.php'; ?>
+
+        <script>
+            window.DASHBOARD_DATA = {
+                onsiteStaff: <?= json_encode($initialOnsiteStaff, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+                recentActivity: <?= json_encode($initialRecentActivity, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+            };
+        </script>
 
         <main class="content container-fluid p-4 p-lg-5 admin-dashboard-page" x-data="attendanceDashboard()">
             <div class="dashboard-page-header d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">

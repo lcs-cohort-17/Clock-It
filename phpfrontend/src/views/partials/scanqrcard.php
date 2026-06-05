@@ -46,8 +46,7 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
 
 <div id="scan-qr-card" x-data="scanQrCard()" class="card scan-card border-0 shadow-sm">
   <div id="scanner-ui" class="card-body p-4 p-md-5 text-center">
-    <?php // Camera preview and scan controls live here. ?>
-    <div x-show="!isScanning" x-cloak>
+    <div x-show="!isScanning" data-scan-ready>
       <div class="scan-icon d-inline-flex align-items-center justify-content-center rounded-4 mb-3">
         <svg viewBox="0 0 24 24" width="37" height="37" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
           <path d="M3 7V3h4" />
@@ -58,20 +57,42 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
         </svg>
       </div>
 
-      <h2 x-text="config.ui.readyTitle" class="staff-section-title scan-title mt-4 mb-3"></h2>
-      <p x-text="config.ui.readyDescription" class="scan-muted mb-4"></p>
+      <h2 x-text="config.ui.readyTitle" class="staff-section-title scan-title mt-4 mb-3">Ready to scan</h2>
+      <p x-text="config.ui.readyDescription" class="scan-muted mb-4">Camera works offline. Events will sync automatically.</p>
 
       <button
         type="button"
-        @click="startScan()"
-        onclick="startScan()"
+        @click="startScanner"
+        data-scan-open
         class="btn scan-open-btn btn-lg px-4 mb-3"
         x-text="config.ui.openCameraLabel"
-      ></button>
+      >Open camera</button>
+
+      <hr class="my-4">
+
+      <div class="text-center">
+        <p x-text="config.ui.demoHint" class="scan-muted">No camera? Try demo scan:</p>
+        <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
+          <button
+            type="button"
+            @click="handleDemoScan(config.codes.clockIn)"
+            data-demo-code="CLOCK_IN"
+            class="btn scan-demo-btn btn-lg"
+            x-text="config.ui.demoClockInLabel"
+          >Demo: Clock In</button>
+
+          <button
+            type="button"
+            @click="handleDemoScan(config.codes.clockOut)"
+            data-demo-code="CLOCK_OUT"
+            class="btn scan-demo-btn btn-lg"
+            x-text="config.ui.demoClockOutLabel"
+          >Demo: Clock Out</button>
+        </div>
+      </div>
     </div>
 
-    <?php // This is the live camera preview box shown during scanning. ?>
-    <div x-show="isScanning" x-cloak class="text-center">
+    <div x-show="isScanning" x-cloak class="text-center" data-scan-active>
       <div id="reader" x-ref="reader" class="mx-auto"></div>
       
       <div x-show="cameras.length > 1" class="mt-3 mx-auto" style="max-width: 280px;">
@@ -90,62 +111,28 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
       <button
         type="button"
         @click="stopScanner"
+        data-scan-stop
         class="btn scan-demo-btn mt-3"
         x-text="config.ui.stopCameraLabel"
-      ></button>
+      >Stop camera</button>
     </div>
   </div>
 
   <?php // Bootstrap modal for scan success and scan errors. ?>
   <div
-    x-ref="feedbackModal"
-    class="modal fade"
-    id="scanFeedbackModal"
-    tabindex="-1"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow">
-        <div class="modal-header" :class="modalVariant === 'success' ? 'bg-success text-white' : modalVariant === 'info' ? 'bg-info text-white' : 'bg-danger text-white'">
-          <h2 class="modal-title fs-5 fw-bold" x-text="modalTitle"></h2>
-          <button
-            type="button"
-            class="btn-close"
-            :class="modalVariant === 'success' || modalVariant === 'info' ? 'btn-close-white' : 'btn-close-white'"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
-        </div>
-        <div class="modal-body">
-          <!-- QR Data Details -->
-          <div class="qr-data-details bg-light p-3 rounded" x-show="decodedQrValue">
-            <h6 class="fw-bold mb-2">QR Code Data:</h6>
-            <div class="qr-value-display bg-white p-2 rounded border mb-3">
-              <code class="text-monospace" x-text="decodedQrValue" style="word-break: break-all; font-size: 0.85rem;"></code>
-            </div>
-            
-            <div class="row g-2 text-sm">
-              <div class="col-auto">
-                <small class="text-body-secondary d-block">
-                  <strong>Status:</strong>
-                </small>
-                <small x-text="result"></small>
-              </div>
-              <div class="col-auto" x-show="scannedAt">
-                <small class="text-body-secondary d-block">
-                  <strong>Scanned At:</strong>
-                </small>
-                <small x-text="scannedAt ? new Date(scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''"></small>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    x-show="error"
+    x-cloak
+    x-text="error"
+    data-scan-error
+    class="alert scan-alert-danger mb-0"
+  ></div>
+  <div
+    x-show="result"
+    x-cloak
+    x-text="result"
+    data-scan-result
+    class="alert scan-alert-success mt-3 mb-0"
+  ></div>
 </div>
 <?php if ($isStandalone): ?>
             </div>

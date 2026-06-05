@@ -4,14 +4,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once dirname(__DIR__) . '/helpers/user-helper.php';
+if (!isset($_SESSION['users']) || !is_array($_SESSION['users']) || $_SESSION['users'] === []) {
+    $_SESSION['users'] = require __DIR__ . '/../Data/MockUsers.php';
+}
+
+$users = &$_SESSION['users'];
 
 require_once dirname(__DIR__, 3) . '/phpbackend/src/config/Database.php';
 
-try {
-    $db = \Config\Database::getInstance()->getConnection();
-} catch (\Exception $e) {
-    die("Database connection failed: " . $e->getMessage());
+if ($hasLegacyDemoIds !== []) {
+    $_SESSION['users'] = require __DIR__ . '/../Data/MockUsers.php';
+    $users = &$_SESSION['users'];
 }
 
 // Load users from DB and map to frontend shape
@@ -175,6 +178,8 @@ if (isset($_POST['reset_password'])) {
 
     $_SESSION['generated_password'] = $newPassword;
     $_SESSION['flash_success'] = 'Password has been reset.';
+
+    $_SESSION['flash_success'] = 'A temporary password has been generated.';
 
     redirect_to('/admin-dashboard/users');
 }

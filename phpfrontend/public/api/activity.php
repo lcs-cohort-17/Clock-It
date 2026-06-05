@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
+use ClockIt\Data\AttendanceRepository;
+
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
-require_once dirname(__DIR__, 2) . '/../phpbackend/src/config/Database.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

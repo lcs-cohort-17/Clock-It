@@ -11,6 +11,18 @@
             >
                 <i class="bi bi-list" aria-hidden="true"></i>
             </button>
+
+            <button
+                type="button"
+                class="app-back-button"
+                aria-label="Go back"
+                title="Go back"
+                data-app-back
+                data-dashboard-url="<?= e(app_url($isAdminDashboard ? '/admin-dashboard' : '/staff-dashboard')) ?>"
+                data-dashboard-path="<?= e($isAdminDashboard ? '/admin-dashboard' : '/staff-dashboard') ?>"
+            >
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </button>
         </div>
 
         <div class="d-flex justify-content-end align-items-center gap-2 gap-sm-3">

@@ -106,7 +106,7 @@ class ProfileDb implements ProfileModelInterface
         
         // Generate plain text password and hash it
         $plainPassword = $this->generatePassword();
-        echo "Generated password: $plainPassword\n"; // Debugging line - remove in production
+        // echo "Generated password: $plainPassword\n"; // Debugging line - remove in production
         $hashedPassword = password_hash($plainPassword, PASSWORD_BCRYPT);
         
         try {
@@ -303,7 +303,9 @@ class ProfileDb implements ProfileModelInterface
         }
     }
     
-    public function resetPasswordDb(string $employee_id): ApiResponse
+    // ─── RESET PASSWORD (Admin) ────────────────────────────────────
+    
+    public function adminResetPasswordDb(string $employee_id): ApiResponse
     {
         try {
             $newPassword = $this->generatePassword();

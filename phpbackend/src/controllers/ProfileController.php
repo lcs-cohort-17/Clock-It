@@ -332,6 +332,22 @@ public function loginProfile(array $body): void
         }
     }
 
+    // ─── ADMIN RESET PASSWORD ────────────────────────────────────────
+public function adminResetPassword(string $employee_id): void
+{
+    try {
+        $result = $this->profileModel->adminResetPasswordDb($employee_id);
+
+        if (!$result->isSuccess()) {
+            $this->json(400, $result->toArray());
+            return;
+        }
+
+        $this->json(200, $result->toArray());
+    } catch (\Throwable $e) {
+        $this->json(500, ['success' => false, 'error' => $e->getMessage()]);
+    }
+}
     // ─── UPDATE OWN PASSWORD ───────────────────────────────────────
     public function updatePassword(string $employee_id, array $body): void
     {

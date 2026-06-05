@@ -1,3 +1,4 @@
+// public/assets/js/login.js
 (function () {
     var REMEMBERED_EMAIL_KEY = 'clockit.rememberedEmail';
     var FORGOT_SUCCESS_MESSAGE = "If that email exists in our system, we've sent a password reset link.";
@@ -11,21 +12,28 @@
         var page = document.querySelector('[data-login-page]');
 
         return {
-            loginApi: page && page.dataset.loginApi ? page.dataset.loginApi : '/api/login',
-            forgotPasswordApi: page && page.dataset.forgotPasswordApi ? page.dataset.forgotPasswordApi : '/api/forgot-password',
-            socialLoginApi: page && page.dataset.socialLoginApi ? page.dataset.socialLoginApi : '/api/social-login',
+            // Point to REAL backend API
+            loginApi: window.APP_CONFIG?.API_BASE_URL + '/api/login' || 'http://localhost:8000/api/login',
+            forgotPasswordApi: window.APP_CONFIG?.API_BASE_URL + '/api/forgot-password' || 'http://localhost:8000/api/forgot-password',
             adminRoute: page && page.dataset.adminRoute ? page.dataset.adminRoute : '/admin-dashboard',
             staffRoute: page && page.dataset.staffRoute ? page.dataset.staffRoute : '/staff-dashboard'
         };
     }
 
     async function postJson(url, payload) {
+        var token = localStorage.getItem('token');
+        var headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+        
         var response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
+            headers: headers,
             body: JSON.stringify(payload)
         });
 
@@ -37,7 +45,7 @@
         }
 
         if (!response.ok) {
-            throw new Error(data.message || 'Request failed.');
+            throw new Error(data.error || data.message || 'Request failed.');
         }
 
         return data;
@@ -64,7 +72,6 @@
             },
 
             init: function () {
-                // Restore the remembered email only on this browser; passwords are never stored.
                 try {
                     var rememberedEmail = window.localStorage.getItem(REMEMBERED_EMAIL_KEY);
                     if (rememberedEmail) {
@@ -76,7 +83,6 @@
                 }
 
                 this.forgotEmail = this.email;
-                window.clockitAppReady = true;
             },
 
             isValidEmail: function (value) {
@@ -113,17 +119,9 @@
                     }
 
                     if (this.validation.email || this.validation.password) {
-                        this.errorMessage = this.validation.email && this.validation.password
-                            ? 'Email and password are required.'
-                            : (this.validation.email || this.validation.password);
+                        this.errorMessage = 'Please fill in all required fields.';
                         return false;
                     }
-                }
-
-                if (this.loginMethod === 'employeeId' && !String(this.employeeId || '').trim()) {
-                    this.validation.employeeId = 'Employee ID is required.';
-                    this.errorMessage = this.validation.employeeId;
-                    return false;
                 }
 
                 return true;
@@ -137,7 +135,7 @@
                         window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
                     }
                 } catch (error) {
-                    // Private browsing or locked storage should not block sign in.
+                    // Silently fail
                 }
             },
 
@@ -152,30 +150,10 @@
                 }
             },
 
-            findMockUser: function () {
-                var users = window.clockItMockUsers || [];
-                var email = normalizeEmail(this.email);
-                var employeeId = String(this.employeeId || '').trim().toLowerCase();
-
-                for (var i = 0; i < users.length; i += 1) {
-                    var user = users[i];
-                    if (this.loginMethod === 'email' && normalizeEmail(user.email) === email && String(user.password || '') === String(this.password || '')) {
-                        return user;
-                    }
-
-                    if (this.loginMethod === 'employeeId' && String(user.employeeId || '').trim().toLowerCase() === employeeId) {
-                        return user;
-                    }
-                }
-
-                return null;
-            },
-
-            redirectForUser: function (user, fallbackRedirect) {
+            redirectForUser: function (user) {
+                var role = String((user && user.role) || 'staff').toLowerCase();
                 var config = pageConfig();
-                var role = String((user && user.role) || '').toLowerCase();
-                var target = fallbackRedirect || (role === 'admin' ? config.adminRoute : config.staffRoute);
-
+                var target = role === 'admin' ? config.adminRoute : config.staffRoute;
                 window.location.assign(target);
             },
 
@@ -185,29 +163,34 @@
                 }
 
                 this.loading = true;
-                this.forgotMessage = '';
+                this.errorMessage = '';
 
                 try {
                     var config = pageConfig();
+                    
+                    // Call REAL backend
                     var result = await postJson(config.loginApi, {
-                        loginMethod: this.loginMethod,
                         email: normalizeEmail(this.email),
-                        password: this.password,
-                        employeeId: String(this.employeeId || '').trim(),
-                        rememberMe: this.rememberMe
+                        password: this.password
                     });
 
-                    this.persistRememberedEmail();
-                    this.redirectForUser({ role: result.role }, result.redirect);
-                } catch (error) {
-                    // Static-file demos still work if the placeholder API is unavailable.
-                    var fallbackUser = this.findMockUser();
-                    if (fallbackUser) {
-                        this.persistRememberedEmail();
-                        this.redirectForUser(fallbackUser);
-                        return;
+                    console.log('Login success:', result);
+                    
+                    // Store token and user using our Alpine store if available
+                    if (window.Alpine && Alpine.store('app')) {
+                        Alpine.store('app').token = result.token;
+                        Alpine.store('app').user = result.user;
                     }
-
+                    
+                    // Always save token to localStorage
+                    localStorage.setItem('token', result.token);
+                    this.persistRememberedEmail();
+                    
+                    // Redirect
+                    this.redirectForUser(result.user || { role: result.user?.role });
+                    
+                } catch (error) {
+                    console.error('Login error:', error);
                     this.errorMessage = error.message || 'Invalid email or password.';
                     this.loading = false;
                 }
@@ -256,7 +239,7 @@
                         email: normalizeEmail(this.forgotEmail)
                     });
                 } catch (error) {
-                    // The user sees the same message even if the demo endpoint is missing or the email is unknown.
+                    // Show same message regardless
                 }
 
                 this.forgotLoading = false;
@@ -265,21 +248,11 @@
             },
 
             socialLogin: async function (provider) {
-                // Demo: ask user which account to use for social login (this simulates
-                // the provider returning an account for the current device).
-                var picked = prompt('Demo social login - enter the email for ' + provider + ' account:');
-                if (!picked) return;
-
-                try {
-                    var result = await postJson(pageConfig().socialLoginApi, { provider: provider, email: normalizeEmail(picked) });
-                    this.redirectForUser({ role: result.role }, result.redirect);
-                } catch (err) {
-                    this.errorMessage = err.message || 'Social login failed.';
-                }
+                // Keep as is or remove
+                alert('Social login not implemented yet');
             }
         };
     };
 
-    // Backward-compatible alias for older local test pages.
     window.clockitApp = window.clockitLogin;
 }());

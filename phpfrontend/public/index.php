@@ -43,7 +43,6 @@ if (str_starts_with($path, '/index.php/')) {
 function app_url(string $path = '/'): string
 {
     global $basePath;
-
     return $basePath . '/' . ltrim($path, '/');
 }
 
@@ -60,11 +59,12 @@ function asset_url(string $assetPath = '/'): string
 function view(string $view, array $data = []): void
 {
     global $basePath;
-
     $data = ['basePath' => $basePath] + $data;
     extract($data);
 
-require __DIR__ . '/../src/views/' . $view . '.php';}
+    // FIXED PATH
+    require __DIR__ . '/../src/views/' . $view . '.php';
+}
 
 function redirect_to(string $path): never
 {
@@ -82,7 +82,7 @@ $staffUser = [
     'id' => 'staff-001',
     'name' => 'Sarah Mthembu',
     'email' => 'sarah@clockit.app',
-    'employeeId' => 'S-101',
+    'employeeId' => 'EMP001',
     'role' => 'staff',
 ];
 
@@ -128,25 +128,7 @@ function get_live_stats(): array
         $stmtEvents->execute([':start' => $todayStart, ':end' => $todayEnd]);
         $totalEvents = (int)$stmtEvents->fetchColumn();
 
-        return [
-            'currentlyOnsite' => $onsiteCount,
-            'totalStaffToday' => $totalStaffToday,
-            'pendingSync' => $pendingSync,
-            'totalEvents' => $totalEvents,
-        ];
-    } catch (\Throwable $e) {
-        return [
-            'currentlyOnsite' => 0,
-            'totalStaffToday' => 0,
-            'pendingSync' => 0,
-            'totalEvents' => 0,
-        ];
-    }
-}
-
-$stats = get_live_stats();
-
-$loginUsers = require __DIR__ . '/../src/Data/LoginMockUsers.php';
+$loginUsers = require dirname(__DIR__) . '/src/Data/LoginMockUsers.php';
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {
@@ -269,7 +251,7 @@ function current_user_or(array $fallback, ?string $role = null): array
 
 function admin_settings_file(): string
 {
-    return dirname(__DIR__) . '/phpfrontend/storage/settings_mock.json';
+    return dirname(__DIR__) . '/storage/settings_mock.json';
 }
 
 function admin_settings_read(): array
@@ -313,11 +295,7 @@ switch ($path) {
 
     case '/login':
         $title = 'Login | Clock-It';
-
-        view('login', compact(
-            'title',
-            'loginUsers'
-        ));
+        view('login', compact('title', 'loginUsers'));
         break;
 
     case '/logout':
@@ -337,7 +315,6 @@ switch ($path) {
         }
 
         session_destroy();
-
         redirect_to('/login');
         break;
 
@@ -549,7 +526,7 @@ switch ($path) {
 
         $settings = admin_settings_read();
         $retentionDays = (int) ($settings['data_retention_days'] ?? 90);
-        $purgeLog = dirname(__DIR__) . '/phpfrontend/storage/purge_log.txt';
+        $purgeLog = dirname(__DIR__) . '/storage/purge_log.txt';
         file_put_contents(
             $purgeLog,
             date('Y-m-d H:i:s') . " - Purged records older than {$retentionDays} days\n",
@@ -568,22 +545,38 @@ switch ($path) {
     |--------------------------------------------------------------------------
     */
 
-   case '/admin-dashboard/users':
-
-    require_once dirname(__DIR__) . '/phpfrontend/src/helpers/user-helper.php';
-    require_once dirname(__DIR__) . '/phpfrontend/src/controllers/UserController.php';
-
+    case '/admin-dashboard/users':
+    require_once __DIR__ . '/../src/helpers/user-helper.php';
+    // ❌ REMOVE THIS LINE: require_once __DIR__ . '/../src/controllers/UserController.php';
+    
     $title = 'User Management';
-    $user = current_user_or($adminUser, 'admin');
+    $user = get_logged_in_user();
     $isAdminDashboard = true;
+    
+    // Fetch real users from API
+    $apiUsers = fetch_users_from_api();
+    $allUsers = array_map('transform_user', $apiUsers);
+    
+    // Search filtering
+    $query = $_GET['q'] ?? '';
+    if ($query !== '') {
+        $queryLower = strtolower($query);
+        $filtered = array_filter($allUsers, function($u) use ($queryLower) {
+            return str_contains(strtolower($u['name']), $queryLower)
+                || str_contains(strtolower($u['email']), $queryLower)
+                || str_contains(strtolower($u['employeeId']), $queryLower);
+        });
+    } else {
+        $filtered = $allUsers;
+    }
 
     view('admin/usermanagement', compact(
         'title',
         'user',
         'stats',
         'isAdminDashboard',
-        'users',
-        'filtered'
+        'filtered',
+        'query'
     ));
     break;
 
@@ -765,12 +758,22 @@ switch ($path) {
     | 404
     |--------------------------------------------------------------------------
     */
+    case '/api/admin/users/reset-password':
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        login_json_response(['error' => 'Method not allowed'], 405);
+    }
+
+    $password = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8);
+
+    login_json_response([
+        'success' => true,
+        'password' => $password
+    ]);
+
 
     default:
         http_response_code(404);
-
         $title = '404 Not Found';
-
         view('404', compact('title'));
         break;
 }

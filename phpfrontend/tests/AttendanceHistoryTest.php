@@ -148,6 +148,10 @@ final class AttendanceHistoryTest extends TestCase
             __DIR__ . '/../src/views/layouts/app.php'
         );
 
+    public function testJavaScriptHasPagination(): void
+    {
+        $js = file_get_contents($js = file_get_contents($this->jsFile));
+        
         $this->assertTrue(
             str_contains($layout, 'calendar.js')
         );

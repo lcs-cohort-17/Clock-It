@@ -1,4 +1,4 @@
-<div x-show="showLeave" x-cloak class="staff-dashboard-modal" @click.self="showLeave = false; resetLeaveForm()">
+<div x-show="showLeave" x-cloak class="staff-dashboard-modal" data-staff-modal="leave" @click.self="showLeave = false; resetLeaveForm()">
 
 <div class="staff-dashboard-modal-card staff-leave-modal">
 

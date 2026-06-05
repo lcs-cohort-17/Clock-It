@@ -3,8 +3,8 @@ document.addEventListener('alpine:init', () => {
     const basePath = window.clockItBasePath || '';
 
     return {
-      onsiteStaff: [],
-      recentActivity: [],
+      onsiteStaff: Array.isArray(window.DASHBOARD_DATA?.onsiteStaff) ? window.DASHBOARD_DATA.onsiteStaff : [],
+      recentActivity: Array.isArray(window.DASHBOARD_DATA?.recentActivity) ? window.DASHBOARD_DATA.recentActivity : [],
       initialLoading: true,
       refreshing: false,
       initialized: false,
@@ -35,7 +35,9 @@ document.addEventListener('alpine:init', () => {
           this.onsiteStaff = this.normalizePayload(await response.json());
         } catch (error) {
           this.error = 'Unable to load onsite staff right now.';
-          this.onsiteStaff = [];
+          if (!this.onsiteStaff.length) {
+            this.onsiteStaff = [];
+          }
         }
       },
       async fetchRecentActivity() {
@@ -50,7 +52,9 @@ document.addEventListener('alpine:init', () => {
           this.recentActivity = this.normalizePayload(await response.json()).slice(0, 10);
         } catch (error) {
           this.error = 'Unable to load recent activity right now.';
-          this.recentActivity = [];
+          if (!this.recentActivity.length) {
+            this.recentActivity = [];
+          }
         }
       },
       async refresh() {
@@ -121,6 +125,10 @@ function dashboard() {
       this.loadAttendanceHistory();
       this.loadLeaveEvents();
       this.generateCalendar();
+      window.addEventListener(window.scanQrConfig?.storage?.eventsUpdatedEventName || 'attendance-events-updated', () => {
+        this.loadAttendanceHistory();
+        this.generateCalendar();
+      });
     },
 
     loadAttendanceHistory() {
@@ -136,6 +144,16 @@ function dashboard() {
         }
         return map;
       }, {});
+
+      try {
+        var scanEvents = JSON.parse(window.localStorage.getItem(window.scanQrConfig?.storage?.attendanceEventsKey || 'attendanceEvents') || '[]');
+        scanEvents.forEach(function (event) {
+          if (event && event.date) {
+            this.attendanceHistoryMap[event.date] = 'Present';
+          }
+        }, this);
+      } catch (_) {
+      }
     },
 
     parseDateKey(dateKey) {
@@ -389,6 +407,65 @@ function dashboard() {
     },
   };
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.Alpine) {
+    return;
+  }
+
+  var staffModals = Array.prototype.slice.call(document.querySelectorAll('[data-staff-modal]'));
+
+  function closeStaffModals() {
+    staffModals.forEach(function (modal) {
+      modal.style.display = 'none';
+      modal.setAttribute('x-cloak', '');
+    });
+  }
+
+  function openStaffModal(name) {
+    var modal = document.querySelector('[data-staff-modal="' + name + '"]');
+    if (!modal) {
+      return;
+    }
+
+    modal.removeAttribute('x-cloak');
+    modal.style.display = 'flex';
+  }
+
+  closeStaffModals();
+
+  document.querySelectorAll('[data-open-staff-modal]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      openStaffModal(button.getAttribute('data-open-staff-modal'));
+    });
+  });
+
+  staffModals.forEach(function (modal) {
+    modal.addEventListener('click', function (event) {
+      if (
+        event.target === modal ||
+        event.target.closest('.btn-close') ||
+        event.target.closest('.modal-back-button')
+      ) {
+        closeStaffModals();
+      }
+    });
+  });
+
+  var leaveForm = document.querySelector('[data-staff-modal="leave"] form');
+  leaveForm?.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var success = leaveForm.querySelector('.alert-success');
+    if (success) {
+      var successWrap = success.closest('[x-show]');
+      if (successWrap) {
+        successWrap.removeAttribute('x-cloak');
+        successWrap.style.display = 'block';
+      }
+    }
+    window.setTimeout(closeStaffModals, 1400);
+  });
+});
 
 
 
