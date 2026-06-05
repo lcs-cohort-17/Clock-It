@@ -208,13 +208,12 @@ sort($typeList);
                                     <th scope="col">Timestamp</th>
                                     <th scope="col">Device</th>
                                     <th scope="col">Sync</th>
-                                    <th scope="col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="filteredClockEvents.length === 0">
                                     <tr>
-                                        <td colspan="6" class="no-records">No records.</td>
+                                        <td colspan="5" class="no-records">No records.</td>
                                     </tr>
                                 </template>
 
@@ -234,11 +233,6 @@ sort($typeList);
                                                 }"
                                                 x-text="event.sync"
                                             ></span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-link" style="color: var(--bs-primary);" aria-label="Edit event">
-                                                <i class="bi bi-pencil" aria-hidden="true"></i>
-                                            </button>
                                         </td>
                                     </tr>
                                 </template>

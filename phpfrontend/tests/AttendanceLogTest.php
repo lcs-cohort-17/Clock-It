@@ -78,13 +78,13 @@ final class AttendanceLogTest extends TestCase
         );
     }
 
-    public function testManualEditIconExists(): void
+    public function testManualEditIconDoesNotExist(): void
     {
         $edited =
             str_contains($this->content, 'fa-pencil') ||
             str_contains($this->content, 'bi-pencil');
 
-        $this->assertTrue($edited);
+        $this->assertFalse($edited);
     }
 
     public function testCsvExportExists(): void
