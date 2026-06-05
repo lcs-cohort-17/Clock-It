@@ -11,13 +11,14 @@ ob_start();
                 <div class="profile-page-inner">
                     <div class="profile-page-header mb-4">
                         <h1 class="staff-history-title staff-page-title mb-1">Profile</h1>
-                        <p class="staff-page-subtitle mb-0">Manage your account details.</p>
+                        <p class="staff-page-subtitle mb-0">Manage your account, security, and local app data.</p>
                     </div>
 
                     <!-- Messages -->
                     <div x-show="successMessage" x-transition class="alert alert-success mb-3" x-text="successMessage"></div>
                     <div x-show="errorMessage" x-transition class="alert alert-danger mb-3" x-text="errorMessage"></div>
 
+                    <!-- Personal Details Card -->
                     <div class="page-card profile-card mb-4">
                         <div class="profile-identity d-flex align-items-center gap-3 mb-4">
                             <div class="profile-avatar" x-text="initials"></div>
@@ -74,6 +75,73 @@ ob_start();
                             </button>
                         </form>
                     </div>
+
+                    <!-- Change Password Card -->
+                    <div class="page-card profile-card mb-4">
+                        <div class="profile-section-heading">
+                            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                            <div>
+                                <h2 class="staff-section-title mb-1">Change password</h2>
+                                <p class="staff-section-subtitle mb-0">Update your password securely.</p>
+                            </div>
+                        </div>
+
+                        <form class="password-form mt-4" @submit.prevent="changePassword">
+                            <div class="mb-3">
+                                <label class="form-label" for="current-password">Current password</label>
+                                <div class="input-group">
+                                    <input id="current-password" :type="showCurrent ? 'text' : 'password'" class="form-control" x-model="currentPassword" required>
+                                    <button class="btn btn-outline-secondary" type="button" @click="showCurrent = !showCurrent" aria-label="Toggle current password visibility">
+                                        <i :class="showCurrent ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="new-password">New password</label>
+                                <div class="input-group">
+                                    <input id="new-password" :type="showNew ? 'text' : 'password'" class="form-control" x-model="newPassword" minlength="8" required>
+                                    <button class="btn btn-outline-secondary" type="button" @click="showNew = !showNew" aria-label="Toggle new password visibility">
+                                        <i :class="showNew ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                    </button>
+                                </div>
+                                <small class="staff-section-subtitle">Minimum 8 characters.</small>
+                                <div class="progress mt-2" aria-label="Password strength">
+                                    <div class="progress-bar" :class="passwordStrengthClass()" :style="{ width: passwordStrength() + '%' }"></div>
+                                </div>
+                                <small :class="passwordStrengthTextClass()" x-text="passwordStrengthLabel()"></small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="confirm-password">Confirm new password</label>
+                                <div class="input-group">
+                                    <input id="confirm-password" :type="showConfirm ? 'text' : 'password'" class="form-control" x-model="confirmPassword" required>
+                                    <button class="btn btn-outline-secondary" type="button" @click="showConfirm = !showConfirm" aria-label="Toggle password confirmation visibility">
+                                        <i :class="showConfirm ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                    </button>
+                                </div>
+                                <small class="text-danger" x-show="confirmPassword && newPassword !== confirmPassword">Passwords do not match.</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-main" :disabled="passwordStrength() < 40 || newPassword !== confirmPassword">Update password</button>
+                        </form>
+                    </div>
+
+                    <!-- Support & Data Card (kept simple) -->
+                    <div class="page-card profile-card">
+                        <div class="profile-section-heading">
+                            <i class="bi bi-life-preserver" aria-hidden="true"></i>
+                            <div>
+                                <h2 class="staff-section-title mb-1">Support &amp; data</h2>
+                                <p class="staff-section-subtitle mb-0">Get help or manage local app data.</p>
+                            </div>
+                        </div>
+                        <div class="profile-support-grid mt-4">
+                            <a href="https://outlook.office.com/mail/deeplink/compose?to=admin@clockit.app" target="_blank" rel="noopener noreferrer" class="profile-support-action"><i class="bi bi-envelope"></i><span>Contact admin</span></a>
+                            <div class="profile-support-action"><i class="bi bi-info-circle"></i><span>App version</span><small>v1.0.0</small></div>
+                            <button type="button" class="profile-support-action profile-support-danger" @click="clearCache()"><i class="bi bi-trash"></i><span>Clear cache</span></button>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
@@ -85,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof Alpine === 'undefined') return;
 
     Alpine.data('staffProfile', () => ({
+        // Personal details
         profile: {
             first_name: '',
             last_name: '',
@@ -96,6 +165,16 @@ document.addEventListener('DOMContentLoaded', function() {
         initials: '',
         editing: false,
         saving: false,
+
+        // Password change
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+        showCurrent: false,
+        showNew: false,
+        showConfirm: false,
+
+        // Messages
         successMessage: '',
         errorMessage: '',
 
@@ -119,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.updateDisplay();
         },
 
+        // ---- Personal details helpers ----
         updateDisplay() {
             const first = this.profile.first_name || '';
             const last = this.profile.last_name || '';
@@ -130,12 +210,12 @@ document.addEventListener('DOMContentLoaded', function() {
             this.saving = true;
             this.errorMessage = '';
             try {
-                const response = await api.patch('/api/user/profile', {
+                await api.patch('/api/user/profile', {
                     first_name: this.profile.first_name,
                     last_name: this.profile.last_name,
                     email: this.profile.email
                 });
-                // Update the store's user object so sidebar also updates
+                // Update the store so the sidebar reflects changes
                 const store = Alpine.store('app');
                 if (store.user) {
                     store.user.first_name = this.profile.first_name;
@@ -150,6 +230,77 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.errorMessage = error.message || 'Failed to update profile.';
             } finally {
                 this.saving = false;
+            }
+        },
+
+        // ---- Password helpers ----
+        passwordStrength() {
+            const val = this.newPassword || '';
+            let score = val.length >= 8 ? 30 : 0;
+            if (/[a-z]/.test(val)) score += 15;
+            if (/[A-Z]/.test(val)) score += 20;
+            if (/[0-9]/.test(val)) score += 20;
+            if (/[^A-Za-z0-9]/.test(val)) score += 15;
+            return Math.min(100, score);
+        },
+        passwordStrengthLabel() {
+            const s = this.passwordStrength();
+            return s < 40 ? 'Weak' : s < 70 ? 'Medium' : 'Strong';
+        },
+        passwordStrengthClass() {
+            const label = this.passwordStrengthLabel();
+            return label === 'Weak' ? 'bg-danger' : label === 'Medium' ? 'bg-warning' : 'bg-success';
+        },
+        passwordStrengthTextClass() {
+            const label = this.passwordStrengthLabel();
+            return label === 'Weak' ? 'text-danger' : label === 'Medium' ? 'text-warning' : 'text-success';
+        },
+
+        async changePassword() {
+            if (this.newPassword !== this.confirmPassword) {
+                this.errorMessage = 'Passwords do not match.';
+                return;
+            }
+            if (this.passwordStrength() < 40) {
+                this.errorMessage = 'Password is too weak.';
+                return;
+            }
+            this.saving = true;
+            this.errorMessage = '';
+            try {
+                await api.patch('/api/user/update-password', {
+                    old_password: this.currentPassword,
+                    new_password: this.newPassword,
+                    email: this.profile.email          // backend needs the user's email
+                });
+                this.successMessage = 'Password updated successfully!';
+                this.currentPassword = '';
+                this.newPassword = '';
+                this.confirmPassword = '';
+                setTimeout(() => this.successMessage = '', 3000);
+            } catch (error) {
+                this.errorMessage = error.message || 'Failed to update password.';
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async clearCache() {
+            if (!confirm('Clear all cached data?')) return;
+            localStorage.clear();
+            sessionStorage.clear();
+            if (window.caches) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+            }
+            try {
+                await api.post('/api/user/cache/clear', {});
+                this.successMessage = 'Cache cleared.';
+                setTimeout(() => this.successMessage = '', 2000);
+            } catch (e) {
+                // even if the API call fails, the local cache is cleared
+                this.successMessage = 'Local cache cleared.';
+                setTimeout(() => this.successMessage = '', 2000);
             }
         }
     }));
