@@ -207,7 +207,7 @@ ob_start();
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ text: qr.text })
+                        body: JSON.stringify({ text: qr.code })
                     });
 
                     const result = await response.json();
@@ -217,7 +217,7 @@ ob_start();
 
                     return result.imageUrl;
                 } catch (error) {
-                    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr.text)}`;
+                    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr.code)}`;
                 }
             },
 
