@@ -239,7 +239,7 @@ function dashboard() {
 
       var dayOfWeek = date.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) {
-        return { type: 'attendance', status: 'Absent', label: 'Absent' };
+        return null;
       }
 
       return { type: 'attendance', status: 'Present', label: 'Present' };
@@ -364,8 +364,10 @@ function dashboard() {
     },
 
     saveLeaveRequest() {
+      var employeeName = (window.ATTENDANCE_DATA && window.ATTENDANCE_DATA.employeeName) || 'Staff Member';
       var request = {
         id: Date.now(),
+        employee_name: employeeName,
         type: this.leaveRequestType,
         startDate: this.leaveRequestStartDate,
         endDate: this.leaveRequestEndDate,

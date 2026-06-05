@@ -29,7 +29,8 @@ ob_start();
 <script>
     window.ATTENDANCE_DATA = {
         history: <?= json_encode($attendanceHistory, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-        currentEmployeeId: <?= json_encode($loggedInEmployeeId) ?>
+        currentEmployeeId: <?= json_encode($loggedInEmployeeId) ?>,
+        employeeName: <?= json_encode($currentUser['name'] ?? '') ?>
     };
 </script>
 

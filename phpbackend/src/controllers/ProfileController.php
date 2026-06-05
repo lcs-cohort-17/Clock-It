@@ -166,11 +166,26 @@ public function loginProfile(array $body): void
 
         $first_name = $user['first_name'] ? $this->capitalizeFirstName($user['first_name']) : null;
 
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['current_user'] = [
+            'id'         => $user['user_id'],
+            'name'       => ($first_name ? $first_name : '') . ($user['last_name'] ? ' ' . $user['last_name'] : ''),
+            'email'      => $user['email'],
+            'employeeId' => $user['employee_id'],
+            'role'       => $user['role'],
+        ];
+
+        // Check if user must change their password on first login
+        $mustChangePassword = (int)($user['must_change_password'] ?? 0) === 1;
+
         $this->json(200, [
-            'success'    => true,
-            'token'      => $token,
-            'first_name' => $first_name,
-            'user'       => [
+            'success'              => true,
+            'token'                => $token,
+            'first_name'           => $first_name,
+            'must_change_password' => $mustChangePassword,
+            'user'                 => [
                 'user_id'     => $user['user_id'],
                 'first_name'  => $first_name,
                 'last_name'   => $user['last_name'],
@@ -481,7 +496,7 @@ public function resetPasswordWithToken(array $body): void
             return;
         }
         
-        $result = $this->profileModel->resetPasswordDb($token, $newPassword);
+        $result = $this->profileModel->resetPasswordWithTokenDb($token, $newPassword);
         
         if (!$result->isSuccess()) {
             $this->json(400, $result->toArray());

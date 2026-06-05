@@ -139,6 +139,13 @@ window.recordAttendanceScan = function recordAttendanceScan(type, scannedAt = ne
   localStorage.setItem(attendanceEventsKey, JSON.stringify([...events, event]));
   window.dispatchEvent(new CustomEvent(eventsUpdatedEventName, { detail: event }));
 
+  // Post to live database
+  fetch((window.clockItBasePath || '') + '/api/attendance/scan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: type })
+  }).catch(err => console.error('Failed to sync to database:', err));
+
   return event;
 };
 
@@ -153,13 +160,25 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('scanQrCard', () => ({
     config: window.scanQrConfig,
     scanner: null,
+    modalInstance: null,
     isScanning: false,
+    isStarting: false,
+    isProcessing: false,
     error: '',
     result: '',
+    cameras: [],
+    activeCameraId: '',
+    decodedQrValue: '',
+    scannedAt: null,
+    modalTitle: '',
+    modalMessage: '',
+    modalVariant: 'success',
 
     async startScanner() {
       this.error = '';
       this.result = '';
+      this.cameras = [];
+      this.activeCameraId = '';
 
       if (!navigator.mediaDevices?.getUserMedia) {
         this.error = this.config.messages.cameraApiUnavailable;
@@ -180,12 +199,16 @@ document.addEventListener('alpine:init', () => {
           return;
         }
 
+        this.cameras = cameras;
+        const preferredCamera = this.pickCamera(cameras);
+        this.activeCameraId = preferredCamera?.id ?? cameras[0].id;
+
         this.isScanning = true;
         await this.$nextTick();
         this.scanner = new Html5Qrcode(this.$refs.reader.id);
-        const preferredCamera = this.pickCamera(cameras);
-        await this.startWithCamera(preferredCamera?.id ?? cameras[0].id);
+        await this.startWithCamera(this.activeCameraId);
       } catch (error) {
+        this.error = error.message || 'Failed to access camera';
         await this.stopScanner();
       }
     },
@@ -201,12 +224,31 @@ document.addEventListener('alpine:init', () => {
       return this.scanner.start(
         camera,
         {
-          fps: this.config.scanner.fps,
-          qrbox: this.config.scanner.qrbox,
+          fps: 15,
+          qrbox: (width, height) => {
+            const minEdge = Math.min(width, height);
+            const qrboxSize = Math.floor(minEdge * 0.75); // Enforce dynamic qrbox based on frame size
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          },
         },
         (decodedText) => this.handleScanSuccess(decodedText),
         () => {}
       );
+    },
+
+    async switchCamera(cameraId) {
+      if (this.scanner && this.activeCameraId !== cameraId) {
+        try {
+          await this.scanner.stop();
+          this.activeCameraId = cameraId;
+          await this.startWithCamera(cameraId);
+        } catch (error) {
+          this.error = 'Failed to switch camera: ' + error.message;
+        }
+      }
     },
 
     async stopScanner() {
@@ -220,32 +262,65 @@ document.addEventListener('alpine:init', () => {
 
       this.scanner = null;
       this.isScanning = false;
+      this.activeCameraId = '';
     },
 
     async handleScanSuccess(decodedText) {
+      if (this.isProcessing) {
+        return;
+      }
+
+      this.isProcessing = true;
+
       const scanType = window.getScanType(decodedText);
-      if (!scanType) {
-        this.error = this.config.messages.invalidQrCode;
+      this.decodedQrValue = decodedText;
+      this.scannedAt = new Date();
+
+      try {
+        if (scanType) {
+          // Valid CLOCK_IN or CLOCK_OUT
+          const response = await window.mockAttendanceApi(decodedText);
+          this.error = '';
+          this.result = response.status;
+          window.recordAttendanceScan(scanType);
+          await this.stopScanner();
+          await this.showFeedbackModal(response.title, response.message, response.variant, decodedText, this.scannedAt);
+        } else {
+          // Any other QR code - display the data
+          this.error = '';
+          this.result = `Scanned: ${decodedText}`;
+          await this.stopScanner();
+          await this.showFeedbackModal('QR Code Scanned', `Data: ${decodedText}`, 'info', decodedText, this.scannedAt);
+        }
+      } catch (error) {
+        this.error = error?.message ?? this.config.messages.invalidQrCode;
         this.result = '';
         await this.stopScanner();
-        return;
+        await this.showFeedbackModal(error?.title ?? 'Scan Error', this.error, error?.variant ?? 'danger', decodedText);
+      } finally {
+        this.isProcessing = false;
       }
-
-      this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(decodedText)}`;
-      window.recordAttendanceScan(scanType);
-      await this.stopScanner();
-    },
+    }
 
     handleDemoScan(code) {
-      const scanType = window.getScanType(code);
-      if (!scanType) {
+      void this.handleScanSuccess(code);
+    },
+
+    async showFeedbackModal(title, message, variant = 'success', qrValue = '', scannedAt = null) {
+      this.modalTitle = title;
+      this.modalMessage = message;
+      this.modalVariant = variant;
+      this.decodedQrValue = qrValue || this.decodedQrValue;
+      this.scannedAt = scannedAt || this.scannedAt || new Date();
+
+      await this.$nextTick();
+
+      if (typeof bootstrap === 'undefined' || !this.$refs.feedbackModal) {
         return;
       }
 
-      this.error = '';
-      this.result = `${this.config.messages.scanResultPrefix}${window.normalizeScanValue(code)}`;
-      window.recordAttendanceScan(scanType);
+      this.modalInstance ??= bootstrap.Modal.getOrCreateInstance(this.$refs.feedbackModal);
+      this.modalInstance.show();
     },
 
     init() {

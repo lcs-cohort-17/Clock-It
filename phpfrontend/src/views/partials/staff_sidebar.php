@@ -14,7 +14,7 @@ function staffNavLinkClass(string $route, string $currentPath): string
 }
 ?>
 
-<aside id="sidebar" class="bg-dark text-white vh-100 p-3 d-flex flex-column">
+<aside id="sidebar" class="bg-dark text-white vh-100 p-3 d-flex flex-column sidebar-collapsed">
     <div class="mb-4 sidebar-header">
         <div class="sidebar-brand">
             <h2 class="fw-bold mb-1 sidebar-brand-text">Clock It</h2>

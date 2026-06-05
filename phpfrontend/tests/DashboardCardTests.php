@@ -9,7 +9,7 @@ class DashboardCardTests extends TestCase
     protected function setUp(): void
     {
         $this->content = file_get_contents(
-            __DIR__ . '/../phpfrontend/src/views/partials/dashboard-cards.php'
+            __DIR__ . '/../src/views/partials/dashboard-cards.php'
         );
     }
 

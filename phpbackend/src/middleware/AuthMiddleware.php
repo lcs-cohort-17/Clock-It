@@ -19,10 +19,10 @@ class AuthMiddleware
     private string $jwtSecret;
     private ?PDO $db = null;
 
-    // Update constructor to accept database connection
-    public function __construct(string $jwtSecret, ?PDO $db = null)
+    // Update constructor to accept database connection and make arguments optional
+    public function __construct(string $jwtSecret = '', ?PDO $db = null)
     {
-        $this->jwtSecret = $jwtSecret;
+        $this->jwtSecret = $jwtSecret ?: ($_ENV['JWT_SECRET'] ?? 'your-secret-key-change-this');
         $this->db = $db;
     }
 
@@ -236,9 +236,11 @@ class AuthMiddleware
             return [
                 'user' => [
                     'user_id'     => $decodedArray['user_id'] ?? $decodedArray['userId'] ?? null,
+                    'userId'      => $decodedArray['user_id'] ?? $decodedArray['userId'] ?? null,
                     'email'       => $decodedArray['email'] ?? null,
                     'role'        => $decodedArray['role'] ?? null,
-                    'employee_id' => $decodedArray['employee_id'] ?? null,
+                    'employee_id' => $decodedArray['employee_id'] ?? $decodedArray['employeeId'] ?? null,
+                    'employeeId'  => $decodedArray['employee_id'] ?? $decodedArray['employeeId'] ?? null,
                 ],
                 'last_activity' => $lastActivity,
             ];
@@ -248,7 +250,7 @@ class AuthMiddleware
             return ['error' => 'Token has expired', 'status' => 403];
         } catch (SignatureInvalidException $e) {
             error_log("JWT Invalid Signature: " . $e->getMessage());
-            return ['error' => 'Invalid token signature', 'status' => 403];
+            return ['error' => 'Invalid token', 'status' => 403];
         } catch (Exception $e) {
             error_log("JWT Decode Error: " . $e->getMessage());
             return ['error' => 'Invalid token', 'status' => 403];

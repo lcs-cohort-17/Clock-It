@@ -94,18 +94,72 @@ $adminUser = [
     'role' => 'admin',
 ];
 
-$stats = [
-    'currentlyOnsite' => 2,
-    'totalStaffToday' => 15,
-    'pendingSync' => 0,
-    'totalEvents' => 42,
-];
+function get_live_stats(): array
+{
+    try {
+        require_once __DIR__ . '/../src/bootstrap.php';
+        require_once __DIR__ . '/../../phpbackend/src/config/Database.php';
+        $db = \Config\Database::getInstance()->getConnection();
+
+        // Currently Onsite
+        $onsiteCount = (int)$db->query("SELECT COUNT(*) FROM sessions WHERE clock_out_time IS NULL")->fetchColumn();
+
+        // Clocked in today (total distinct profiles clocked in today)
+        $todayStart = date('Y-m-d 00:00:00');
+        $todayEnd = date('Y-m-d 23:59:59');
+        
+        $stmtTotal = $db->prepare("
+            SELECT COUNT(DISTINCT profile_id) 
+            FROM attendance_logs 
+            WHERE event_type = 'in' AND event_time BETWEEN :start AND :end
+        ");
+        $stmtTotal->execute([':start' => $todayStart, ':end' => $todayEnd]);
+        $totalStaffToday = (int)$stmtTotal->fetchColumn();
+
+        // Pending Sync
+        $pendingSync = (int)$db->query("SELECT COUNT(*) FROM attendance_logs WHERE sync_status = 'pending'")->fetchColumn();
+
+        // Total Events today
+        $stmtEvents = $db->prepare("
+            SELECT COUNT(*) 
+            FROM attendance_logs 
+            WHERE event_time BETWEEN :start AND :end
+        ");
+        $stmtEvents->execute([':start' => $todayStart, ':end' => $todayEnd]);
+        $totalEvents = (int)$stmtEvents->fetchColumn();
 
 $loginUsers = require dirname(__DIR__) . '/src/Data/LoginMockUsers.php';
 
 function login_user_by_email(array $users, string $email, string $password): ?array
 {
     $normalizedEmail = strtolower(trim($email));
+
+    try {
+        require_once dirname(__DIR__, 2) . '/phpbackend/src/config/Database.php';
+        $db = \Config\Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM users WHERE LOWER(email) = :email");
+        $stmt->execute([':email' => $normalizedEmail]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row && (int)($row['is_active'] ?? 1) === 1) {
+            if (password_verify($password, $row['password'])) {
+                $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+                if ($fullName === '') {
+                    $fullName = 'Unnamed User';
+                }
+                return [
+                    'id' => (string)$row['user_id'],
+                    'name' => $fullName,
+                    'email' => $row['email'] ?? '',
+                    'employeeId' => $row['employee_id'] ?? '',
+                    'role' => strtolower($row['role'] ?? 'staff'),
+                    'status' => 'Active'
+                ];
+            }
+        }
+    } catch (\Exception $e) {
+        error_log("Database login error: " . $e->getMessage());
+    }
 
     foreach ($users as $user) {
         if (
@@ -122,6 +176,31 @@ function login_user_by_email(array $users, string $email, string $password): ?ar
 function login_user_by_employee_id(array $users, string $employeeId): ?array
 {
     $normalizedEmployeeId = strtolower(trim($employeeId));
+
+    try {
+        require_once dirname(__DIR__, 2) . '/phpbackend/src/config/Database.php';
+        $db = \Config\Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM users WHERE LOWER(employee_id) = :employee_id");
+        $stmt->execute([':employee_id' => $normalizedEmployeeId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row && (int)($row['is_active'] ?? 1) === 1) {
+            $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+            if ($fullName === '') {
+                $fullName = 'Unnamed User';
+            }
+            return [
+                'id' => (string)$row['user_id'],
+                'name' => $fullName,
+                'email' => $row['email'] ?? '',
+                'employeeId' => $row['employee_id'] ?? '',
+                'role' => strtolower($row['role'] ?? 'staff'),
+                'status' => 'Active'
+            ];
+        }
+    } catch (\Exception $e) {
+        error_log("Database login error: " . $e->getMessage());
+    }
 
     foreach ($users as $user) {
         if (strtolower((string) ($user['employeeId'] ?? '')) === $normalizedEmployeeId) {
@@ -263,6 +342,29 @@ switch ($path) {
 
         $_SESSION['current_user'] = $loginUser;
 
+        // Check if user must change their password on first login
+        $mustChange = false;
+        try {
+            require_once dirname(__DIR__) . '/../phpbackend/src/config/Database.php';
+            $db = \Config\Database::getInstance()->getConnection();
+            $chkStmt = $db->prepare("SELECT must_change_password FROM users WHERE LOWER(email) = :email");
+            $chkStmt->execute([':email' => strtolower(trim((string)($payload['email'] ?? $loginUser['email'] ?? '')))]);
+            $chkRow = $chkStmt->fetch(PDO::FETCH_ASSOC);
+            if ($chkRow && (int)$chkRow['must_change_password'] === 1) {
+                $mustChange = true;
+            }
+        } catch (\Exception $e) {
+            error_log("must_change_password check failed: " . $e->getMessage());
+        }
+
+        if ($mustChange) {
+            login_json_response([
+                'success'  => true,
+                'role'     => $loginUser['role'],
+                'redirect' => app_url('/set-password'),
+            ]);
+        }
+
         login_json_response([
             'success' => true,
             'role' => $loginUser['role'],
@@ -325,6 +427,66 @@ switch ($path) {
         login_json_response([
             'imageUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . rawurlencode($text),
         ]);
+        break;
+
+    case '/api/attendance/scan':
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            login_json_response(['error' => 'Method not allowed.'], 405);
+        }
+        $payload = login_request_data();
+        $currentUser = $_SESSION['current_user'] ?? null;
+        if (!$currentUser) {
+            login_json_response(['error' => 'Unauthorized'], 401);
+        }
+        $employeeId = $currentUser['employeeId'] ?? '';
+        
+        require_once dirname(__DIR__) . '/../phpbackend/src/config/Database.php';
+        $db = \Config\Database::getInstance()->getConnection();
+        
+        $stmt = $db->prepare("SELECT user_id FROM users WHERE employee_id = :employeeId");
+        $stmt->execute([':employeeId' => $employeeId]);
+        $userId = $stmt->fetchColumn();
+        
+        if (!$userId) {
+            $userId = 2; // fallback to Sarah
+        }
+        
+        $type = strtolower($payload['type'] ?? '');
+        $eventType = ($type === 'clock-in' || $type === 'in') ? 'in' : 'out';
+        $eventTime = date('Y-m-d H:i:s');
+        
+        $stmtLog = $db->prepare("
+            INSERT INTO attendance_logs (profile_id, event_time, event_type, sync_status, device_info, location)
+            VALUES (:profile_id, :event_time, :event_type, 'synced', 'QR Code Scanner', 'Main Office')
+        ");
+        $stmtLog->execute([
+            ':profile_id' => $userId,
+            ':event_time' => $eventTime,
+            ':event_type' => $eventType
+        ]);
+        
+        if ($eventType === 'in') {
+            $stmtSession = $db->prepare("
+                INSERT INTO sessions (profile_id, clock_in_time)
+                VALUES (:profile_id, :clock_in_time)
+            ");
+            $stmtSession->execute([
+                ':profile_id' => $userId,
+                ':clock_in_time' => $eventTime
+            ]);
+        } else {
+            $stmtSession = $db->prepare("
+                UPDATE sessions 
+                SET clock_out_time = :clock_out_time 
+                WHERE profile_id = :profile_id AND clock_out_time IS NULL
+            ");
+            $stmtSession->execute([
+                ':profile_id' => $userId,
+                ':clock_out_time' => $eventTime
+            ]);
+        }
+        
+        login_json_response(['success' => true]);
         break;
 
     case '/api/admin/settings':
@@ -449,6 +611,7 @@ switch ($path) {
         ));
         break;
 
+    case '/admin/settings':
     case '/admin-dashboard/settings':
         $title = 'Admin Settings';
         $user = current_user_or($adminUser, 'admin');
@@ -507,7 +670,7 @@ switch ($path) {
         $user = current_user_or($staffUser, 'staff');
         $isAdminDashboard = false;
 
-        view('staff/scanqrpage', compact(
+        view('staff/scanqr', compact(
             'title',
             'user',
             'isAdminDashboard'
@@ -536,6 +699,58 @@ switch ($path) {
             'user',
             'isAdminDashboard'
         ));
+        break;
+
+    case '/set-password':
+        // Forced password change on first login
+        $user = $_SESSION['current_user'] ?? null;
+        if (!is_array($user)) {
+            redirect_to('/login');
+        }
+        $title = 'Set Your Password | Clock-It';
+        view('set_password', compact('title', 'user'));
+        break;
+
+    case '/api/set-password':
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            login_json_response(['message' => 'Method not allowed.'], 405);
+        }
+        $user = $_SESSION['current_user'] ?? null;
+        if (!is_array($user)) {
+            login_json_response(['success' => false, 'message' => 'Not authenticated.'], 401);
+        }
+
+        $payload = login_request_data();
+        $newPassword     = (string)($payload['new_password'] ?? '');
+        $confirmPassword = (string)($payload['confirm_password'] ?? '');
+
+        if (strlen($newPassword) < 8) {
+            login_json_response(['success' => false, 'message' => 'Password must be at least 8 characters.'], 422);
+        }
+        if ($newPassword !== $confirmPassword) {
+            login_json_response(['success' => false, 'message' => 'Passwords do not match.'], 422);
+        }
+
+        try {
+            require_once dirname(__DIR__) . '/../phpbackend/src/config/Database.php';
+            $db = \Config\Database::getInstance()->getConnection();
+            $empId = $user['employeeId'] ?? '';
+            $stmt = $db->prepare("UPDATE users SET password = :password, must_change_password = 0 WHERE employee_id = :employee_id");
+            $stmt->execute([
+                'password'    => password_hash($newPassword, PASSWORD_BCRYPT),
+                'employee_id' => $empId,
+            ]);
+            // Also update the session's password key if stored
+            $passwordSessionKey = 'password_hash_' . $empId;
+            $_SESSION[$passwordSessionKey] = password_hash($newPassword, PASSWORD_DEFAULT);
+
+            login_json_response([
+                'success'  => true,
+                'redirect' => app_url(dashboard_path_for($user)),
+            ]);
+        } catch (\Exception $e) {
+            login_json_response(['success' => false, 'message' => 'Failed to update password: ' . $e->getMessage()], 500);
+        }
         break;
 
     /*

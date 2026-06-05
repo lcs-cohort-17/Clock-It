@@ -16,8 +16,11 @@ $EMPLOYEES = [
 ];
 
 function getRandomDate($daysBack) {
-    $date = new DateTime();
-    $date->modify('-' . rand(0, $daysBack) . ' days');
+    do {
+        $date = new DateTime();
+        $date->modify('-' . rand(0, $daysBack) . ' days');
+        $dayOfWeek = (int)$date->format('N'); // 1 (Mon) - 7 (Sun)
+    } while ($dayOfWeek === 6 || $dayOfWeek === 7);
     return $date->format('Y-m-d');
 }
 

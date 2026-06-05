@@ -39,10 +39,10 @@ $displayEmail = $user['email'] ?? '';
         </li>
 
         <li class="nav-item">
-            <a href="<?= e(app_url('/admin-dashboard/qr-generator')) ?>"
-               class="<?= navLinkClass('/admin-dashboard/qr-generator', $currentPath) ?>">
-                <i class="bi bi-qr-code me-2" aria-hidden="true"></i>
-                QR Generator
+            <a href="<?= e(app_url('/admin-dashboard/settings')) ?>"
+               class="<?= navLinkClass('/admin-dashboard/settings', $currentPath) ?>">
+                <i class="bi bi-gear me-2" aria-hidden="true"></i>
+                Settings
             </a>
         </li>
     </ul>

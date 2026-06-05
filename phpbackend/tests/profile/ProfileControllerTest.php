@@ -3,7 +3,7 @@
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Controllers\ProfileController;
-use Models\Profile;
+use Types\ProfileModelInterface;
 use Types\ApiResponse;
 
 class ProfileControllerTest extends TestCase
@@ -13,7 +13,7 @@ class ProfileControllerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->modelMock  = $this->createMock(Profile::class);
+        $this->modelMock  = $this->createMock(ProfileModelInterface::class);
         $this->controller = new ProfileController($this->modelMock);
     }
 
@@ -29,7 +29,7 @@ class ProfileControllerTest extends TestCase
     // ─── GET ALL ─────────────────────────────────────────────────
     public function test_adminGettingAllUsers_returns_200_with_all_profiles(): void
     {
-        $this->modelMock->method('adminGettingAllUsers')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('adminGettingAllUsersDb')->willReturn(ApiResponse::ok([
             ['id' => '1', 'first_name' => 'Joshua', 'employee_id' => 'S-005', 'role' => 'staff', 'is_active' => 1, 'email' => 'j@gmail.com', 'password' => 'hashed'],
             ['id' => '2', 'first_name' => 'Sarah',  'employee_id' => 'A-010', 'role' => 'admin', 'is_active' => 1, 'email' => 's@gmail.com', 'password' => 'hashed'],
         ]));
@@ -42,7 +42,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_adminGettingAllUsers_returns_400_on_model_failure(): void
     {
-        $this->modelMock->method('adminGettingAllUsers')->willReturn(ApiResponse::fail('Database error'));
+        $this->modelMock->method('adminGettingAllUsersDb')->willReturn(ApiResponse::fail('Database error'));
 
         $body = $this->capture(fn () => $this->controller->adminGettingAllUsers());
 
@@ -52,7 +52,7 @@ class ProfileControllerTest extends TestCase
     // ─── CREATE ──────────────────────────────────────────────────
     public function test_adminCreatingUser_returns_201_with_plain_password(): void
     {
-        $this->modelMock->method('adminCreatingUser')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('adminCreatingUserDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'first_name' => 'Joshua', 'last_name' => 'Jacobs',
             'employee_id' => 'S-005', 'role' => 'staff', 'is_active' => 1,
             'email' => 'j@gmail.com', 'password' => 'Xk9mP2qR'
@@ -74,12 +74,12 @@ class ProfileControllerTest extends TestCase
         $body = $this->capture(fn () => $this->controller->adminCreatingUser(['first_name' => 'Joshua']));
 
         $this->assertFalse($body['success']);
-        $this->assertEquals('All fields are required', $body['error']);
+        $this->assertEquals('All fields are required: first_name, last_name, employee_id, role, email', $body['error']);
     }
 
     public function test_adminCreatingUser_returns_400_on_model_error(): void
     {
-        $this->modelMock->method('adminCreatingUser')
+        $this->modelMock->method('adminCreatingUserDb')
             ->willReturn(ApiResponse::fail('Staff employee_id must start with S-'));
 
         $body = $this->capture(fn () => $this->controller->adminCreatingUser([
@@ -96,13 +96,13 @@ class ProfileControllerTest extends TestCase
     {
         $hashedPassword = password_hash('Xk9mP2qR', PASSWORD_BCRYPT);
 
-        $this->modelMock->method('loginProfile')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('loginProfileDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'first_name' => 'joshua', 'last_name' => 'Jacobs',
             'employee_id' => 'S-005', 'role' => 'staff', 'is_active' => 1,
             'email' => 'j@gmail.com', 'password' => $hashedPassword
         ]));
 
-        $this->modelMock->method('getProfileById')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('getProfileByIdDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'first_name' => 'joshua', 'employee_id' => 'S-005',
             'email' => 'j@gmail.com', 'role' => 'staff', 'is_active' => 1
         ]));
@@ -121,7 +121,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_loginProfile_returns_401_on_wrong_password(): void
     {
-        $this->modelMock->method('loginProfile')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('loginProfileDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'email' => 'j@gmail.com', 'is_active' => 1,
             'password' => password_hash('correctpassword', PASSWORD_BCRYPT),
             'role' => 'staff', 'first_name' => 'Joshua', 'last_name' => 'Jacobs', 'employee_id' => 'S-005'
@@ -137,7 +137,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_loginProfile_returns_401_when_email_not_found(): void
     {
-        $this->modelMock->method('loginProfile')->willReturn(ApiResponse::fail('User not found'));
+        $this->modelMock->method('loginProfileDb')->willReturn(ApiResponse::fail('User not found'));
 
         $body = $this->capture(fn () => $this->controller->loginProfile([
             'email' => 'ghost@gmail.com', 'password' => 'anything'
@@ -158,7 +158,7 @@ class ProfileControllerTest extends TestCase
     // ─── UPDATE ──────────────────────────────────────────────────
     public function test_adminUpdatingUser_returns_200_on_success(): void
     {
-        $this->modelMock->method('adminUpdatingUser')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('adminUpdatingUserDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'first_name' => 'Siza', 'last_name' => 'Mpafa',
             'employee_id' => 'S-007', 'role' => 'staff', 'is_active' => 1, 'email' => 'siza@gmail.com'
         ]));
@@ -170,7 +170,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_adminUpdatingUser_returns_400_on_model_failure(): void
     {
-        $this->modelMock->method('adminUpdatingUser')->willReturn(ApiResponse::fail('Update failed'));
+        $this->modelMock->method('adminUpdatingUserDb')->willReturn(ApiResponse::fail('Update failed'));
 
         $body = $this->capture(fn () => $this->controller->adminUpdatingUser('S-007', ['first_name' => 'Ghost']));
 
@@ -181,7 +181,7 @@ class ProfileControllerTest extends TestCase
     // ─── DELETE ──────────────────────────────────────────────────
     public function test_adminDeletingUser_returns_200_on_soft_delete(): void
     {
-        $this->modelMock->method('adminDeletingUser')
+        $this->modelMock->method('adminDeletingUserDb')
             ->willReturn(new ApiResponse(true, null, null, 'profile deleted successfully'));
 
         $body = $this->capture(fn () => $this->controller->adminDeletingUser('S-007'));
@@ -192,7 +192,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_adminDeletingUser_returns_400_on_failure(): void
     {
-        $this->modelMock->method('adminDeletingUser')->willReturn(ApiResponse::fail('Delete failed'));
+        $this->modelMock->method('adminDeletingUserDb')->willReturn(ApiResponse::fail('Delete failed'));
 
         $body = $this->capture(fn () => $this->controller->adminDeletingUser('S-007'));
 
@@ -203,7 +203,7 @@ class ProfileControllerTest extends TestCase
     // ─── RESET PASSWORD ──────────────────────────────────────────
     public function test_resetPassword_returns_200_with_plain_text_password(): void
     {
-        $this->modelMock->method('resetPassword')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('resetPasswordDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'employee_id' => 'S-007', 'password' => 'Nq7rT2mX',
             'first_name' => 'Siza', 'last_name' => 'Mpafa', 'role' => 'staff', 'is_active' => 1, 'email' => 'siza@gmail.com'
         ]));
@@ -216,7 +216,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_resetPassword_returns_400_on_failure(): void
     {
-        $this->modelMock->method('resetPassword')->willReturn(ApiResponse::fail('Reset failed'));
+        $this->modelMock->method('resetPasswordDb')->willReturn(ApiResponse::fail('Reset failed'));
 
         $body = $this->capture(fn () => $this->controller->resetPassword('S-007'));
 
@@ -229,20 +229,19 @@ class ProfileControllerTest extends TestCase
     {
         $hashedOld = password_hash('IUsW0l4r', PASSWORD_BCRYPT);
 
-        $this->modelMock->method('loginProfile')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('loginProfileDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'employee_id' => 'S-300', 'password' => $hashedOld,
             'email' => 'staff@clockit.com', 'role' => 'staff', 'is_active' => 1,
             'first_name' => 'Official', 'last_name' => 'Staff'
         ]));
 
-        $this->modelMock->method('updatePassword')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('updatePasswordDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'employee_id' => 'S-300', 'password' => '$2y$10$newhashedpassword'
         ]));
 
         $body = $this->capture(fn () => $this->controller->updatePassword(
             'S-300',
-            ['oldPassword' => 'IUsW0l4r', 'newPassword' => 'newsecurepass'],
-            ['email' => 'staff@clockit.com']
+            ['oldPassword' => 'IUsW0l4r', 'newPassword' => 'newsecurepass', 'email' => 'staff@clockit.com']
         ));
 
         $this->assertTrue($body['success']);
@@ -253,17 +252,16 @@ class ProfileControllerTest extends TestCase
     {
         $body = $this->capture(fn () => $this->controller->updatePassword(
             'S-300',
-            ['oldPassword' => 'IUsW0l4r'],
-            ['email' => 'staff@clockit.com']
+            ['oldPassword' => 'IUsW0l4r', 'email' => 'staff@clockit.com']
         ));
 
         $this->assertFalse($body['success']);
-        $this->assertEquals('Old password and new password are required', $body['error']);
+        $this->assertEquals('old_password and new_password are required', $body['error']);
     }
 
     public function test_updatePassword_returns_401_when_old_password_wrong(): void
     {
-        $this->modelMock->method('loginProfile')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('loginProfileDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'employee_id' => 'S-300', 'password' => password_hash('correctpass', PASSWORD_BCRYPT),
             'email' => 'staff@clockit.com', 'role' => 'staff', 'is_active' => 1,
             'first_name' => 'Official', 'last_name' => 'Staff'
@@ -271,8 +269,7 @@ class ProfileControllerTest extends TestCase
 
         $body = $this->capture(fn () => $this->controller->updatePassword(
             'S-300',
-            ['oldPassword' => 'wrongpassword', 'newPassword' => 'newpass'],
-            ['email' => 'staff@clockit.com']
+            ['oldPassword' => 'wrongpassword', 'newPassword' => 'newpass', 'email' => 'staff@clockit.com']
         ));
 
         $this->assertFalse($body['success']);
@@ -281,12 +278,11 @@ class ProfileControllerTest extends TestCase
 
     public function test_updatePassword_returns_404_when_user_not_found(): void
     {
-        $this->modelMock->method('loginProfile')->willReturn(ApiResponse::fail('User not found'));
+        $this->modelMock->method('loginProfileDb')->willReturn(ApiResponse::fail('User not found'));
 
         $body = $this->capture(fn () => $this->controller->updatePassword(
             'X-999',
-            ['oldPassword' => 'anything', 'newPassword' => 'newpass'],
-            ['email' => 'ghost@clockit.com']
+            ['oldPassword' => 'anything', 'newPassword' => 'newpass', 'email' => 'ghost@clockit.com']
         ));
 
         $this->assertFalse($body['success']);
@@ -296,7 +292,7 @@ class ProfileControllerTest extends TestCase
     // ─── GET BY ID ───────────────────────────────────────────────
     public function test_getProfileById_returns_200_without_password(): void
     {
-        $this->modelMock->method('getProfileById')->willReturn(ApiResponse::ok([
+        $this->modelMock->method('getProfileByIdDb')->willReturn(ApiResponse::ok([
             'id' => '1', 'first_name' => 'Sarah', 'last_name' => 'Johnson',
             'employee_id' => 'S-006', 'email' => 'sarah@company.com',
             'role' => 'staff', 'is_active' => 1, 'password' => 'hashed'
@@ -311,7 +307,7 @@ class ProfileControllerTest extends TestCase
 
     public function test_getProfileById_returns_400_when_not_found(): void
     {
-        $this->modelMock->method('getProfileById')->willReturn(ApiResponse::fail('Profile not found'));
+        $this->modelMock->method('getProfileByIdDb')->willReturn(ApiResponse::fail('Profile not found'));
 
         $body = $this->capture(fn () => $this->controller->getProfileById('X-999'));
 
@@ -320,63 +316,23 @@ class ProfileControllerTest extends TestCase
     }
   
    public function testClearCacheReturns200ForLoggedInUser(): void
-    {
-        $mockResponse = [
-            'success' => true,
-            'message' => 'Cache cleared successfully for S-005'
-        ];
-
-        $this->profileDbMock->expects($this->once())
-            ->method('clearCache')
+   {
+        $this->modelMock->expects($this->once())
+            ->method('clearCacheDb')
             ->with('S-005')
-            ->willReturn($mockResponse);
+            ->willReturn(new ApiResponse(true, null, null, 'Cache cleared successfully'));
 
-        $requestMock = $this->createMock(ServerRequestInterface::class);
-        $requestMock->expects($this->once())
-            ->method('getAttribute')
-            ->with('user')
-            ->willReturn(['employee_id' => 'S-005']);
+        $body = $this->capture(fn() => $this->controller->clearCache([], ['employee_id' => 'S-005']));
 
-        $responseMock = $this->createMock(ResponseInterface::class);
-        $responseMock->expects($this->once())
-            ->method('withStatus')
-            ->with(200)
-            ->willReturnSelf();
+        $this->assertTrue($body['success']);
+        $this->assertEquals('Cache cleared successfully', $body['message']);
+   }
 
-        $responseMock->expects($this->once())
-            ->method('withJson')
-            ->with($mockResponse)
-            ->willReturn($responseMock);
+   public function testClearCacheReturns401WhenUserNotLoggedIn(): void
+   {
+        $body = $this->capture(fn() => $this->controller->clearCache([], null));
 
-        $result = $this->controller->clearCache($requestMock, $responseMock);
-
-        $this->assertNotNull($result);
-    }
-
-    public function testClearCacheReturns401WhenUserNotLoggedIn(): void
-    {
-        $requestMock = $this->createMock(ServerRequestInterface::class);
-        $requestMock->expects($this->once())
-            ->method('getAttribute')
-            ->with('user')
-            ->willReturn(null);
-
-        $responseMock = $this->createMock(ResponseInterface::class);
-        $responseMock->expects($this->once())
-            ->method('withStatus')
-            ->with(401)
-            ->willReturnSelf();
-
-        $responseMock->expects($this->once())
-            ->method('withJson')
-            ->with([
-                'success' => false,
-                'error' => 'User must be logged in to clear cache'
-            ])
-            ->willReturn($responseMock);
-
-        $result = $this->controller->clearCache($requestMock, $responseMock);
-
-        $this->assertNotNull($result);
-    }
+        $this->assertFalse($body['success']);
+        $this->assertEquals('User must be logged in to clear cache', $body['error']);
+   }
 }

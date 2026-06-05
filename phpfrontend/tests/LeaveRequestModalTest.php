@@ -8,7 +8,7 @@ final class LeaveRequestModalTest extends TestCase
 {
     public function testLeaveModalUsesMergedResponsiveForm(): void
     {
-        $content = file_get_contents(dirname(__DIR__) . '/phpfrontend/src/views/modals/LeaveRequestModal.php');
+        $content = file_get_contents(dirname(__DIR__) . '/src/views/modals/LeaveRequestModal.php');
 
         $this->assertStringContainsString('x-show="showLeave"', $content);
         $this->assertStringContainsString('staff-dashboard-modal', $content);

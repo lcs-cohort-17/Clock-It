@@ -282,10 +282,6 @@ class ProfileModelTest extends TestCase
         $mockStatement1->expects($this->once())
             ->method('execute')
             ->willReturn(true);
-        
-        $mockStatement1->expects($this->once())
-            ->method('rowCount')
-            ->willReturn(1);
 
         // Second statement: SELECT
         $mockStatement2->expects($this->once())
@@ -323,20 +319,25 @@ class ProfileModelTest extends TestCase
 
     public function testadminUpdatingUserReturnsErrorIfEmployeeIdDoesNotExist(): void
     {
-        $mockStatement = $this->createMock(PDOStatement::class);
+        $mockStatement1 = $this->createMock(PDOStatement::class);
+        $mockStatement2 = $this->createMock(PDOStatement::class);
 
-        // Only expect ONE prepare call (for the UPDATE)
-        $this->mockDb->expects($this->once())
+        // Expect TWO prepare calls (UPDATE then SELECT)
+        $this->mockDb->expects($this->exactly(2))
             ->method('prepare')
-            ->willReturn($mockStatement);
+            ->willReturnOnConsecutiveCalls($mockStatement1, $mockStatement2);
 
-        $mockStatement->expects($this->once())
+        $mockStatement1->expects($this->once())
+            ->method('execute')
+            ->willReturn(true);
+
+        $mockStatement2->expects($this->once())
             ->method('execute')
             ->willReturn(true);
             
-        $mockStatement->expects($this->once())
-            ->method('rowCount')
-            ->willReturn(0);
+        $mockStatement2->expects($this->once())
+            ->method('fetch')
+            ->willReturn(false); // User does not exist
 
         $result = $this->model->adminUpdatingUserDb('X-999', ['first_name' => 'Ghost']);
 
@@ -710,6 +711,6 @@ class ProfileModelTest extends TestCase
         $result = $this->model->updatePasswordDb('S-300', '$2b$10$fixturehashvalue');
 
         $this->assertTrue($result['success']);
-        $this->assertMatchesRegularExpression('/^\$2[ab]\$/', $result['data']['password']);
+        $this->assertArrayNotHasKey('password', $result['data']);
     }
 }

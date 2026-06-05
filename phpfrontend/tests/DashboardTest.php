@@ -8,7 +8,7 @@ final class DashboardTest extends TestCase
 {
     public function testStaffDashboardUsesCanonicalShellAndGrid(): void
     {
-        $content = file_get_contents(dirname(__DIR__) . '/phpfrontend/src/views/staff/staff-dashboard.php');
+        $content = file_get_contents(dirname(__DIR__) . '/src/views/staff/staff-dashboard.php');
 
         $this->assertStringContainsString("partials/staff_sidebar.php", $content);
         $this->assertStringContainsString("partials/header.php", $content);
@@ -18,7 +18,7 @@ final class DashboardTest extends TestCase
 
     public function testSharedLayoutLoadsCanonicalDashboardAssets(): void
     {
-        $content = file_get_contents(dirname(__DIR__) . '/phpfrontend/src/views/layouts/app.php');
+        $content = file_get_contents(dirname(__DIR__) . '/src/views/layouts/app.php');
 
         $this->assertStringContainsString("/assets/css/dashboard.css", $content);
         $this->assertStringContainsString("/assets/js/dashboard.js", $content);

@@ -35,7 +35,7 @@ class AdminDashboardModel
         $clockIns = $this->tryFetchCount(
             "SELECT COUNT(*) AS count
              FROM attendance_logs
-             WHERE event_type = 'in'
+             WHERE event_type IN ('in', 'Clock In', 'clock-in')
                AND event_time >= '{$today['start']}'
                AND event_time < '{$today['end']}'",
             $errors
@@ -82,7 +82,7 @@ class AdminDashboardModel
                 p.first_name,
                 p.last_name
              FROM attendance_logs al
-             LEFT JOIN profiles p ON p.id = al.profile_id
+             LEFT JOIN users p ON p.user_id = al.profile_id
              ORDER BY al.event_time DESC
              LIMIT {$limit} OFFSET {$offset}"
         );
@@ -99,7 +99,7 @@ class AdminDashboardModel
                 p.first_name,
                 p.last_name
              FROM attendance_logs al
-             LEFT JOIN profiles p ON p.id = al.profile_id
+             LEFT JOIN users p ON p.user_id = al.profile_id
              ORDER BY al.event_time DESC"
         );
     }

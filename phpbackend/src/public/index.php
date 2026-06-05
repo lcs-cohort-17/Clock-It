@@ -272,6 +272,39 @@ if ($method === 'POST' && $path === '/user/cache/clear') {
 }
 
 // =============================================
+// ATTENDANCE & ADMIN DASHBOARD ROUTES
+// =============================================
+
+// GET /admin/stats, GET /admin/recent-activity, GET /admin/onsite, POST /admin/export/sheets
+if ($method === 'GET' && ($path === '/admin/stats' || $path === '/admin/recent-activity' || $path === '/admin/onsite' || $path === '/admin/export/sheets')) {
+    require_once __DIR__ . '/../routes/AdminDashboardRoutes.php';
+    require_once __DIR__ . '/../controllers/AdminDashboardController.php';
+    require_once __DIR__ . '/../models/AdminDashboardDb.php';
+    
+    $model = new AdminDashboardModel($db);
+    $controller = new AdminDashboardController($model);
+    $router = new AdminDashboardRouter($controller);
+    $response = $router->dispatch($method, $path);
+    AdminDashboardRouter::send($response);
+    exit;
+}
+
+// GET /attendance/stats, GET /attendance/recent-activity, GET /attendance/onsite
+if ($method === 'GET' && ($path === '/attendance/stats' || $path === '/attendance/recent-activity' || $path === '/attendance/onsite')) {
+    require_once __DIR__ . '/../routes/AttendanceRoutes.php';
+    require_once __DIR__ . '/../controllers/AttendanceController.php';
+    require_once __DIR__ . '/../models/AttendanceDb.php';
+    require_once __DIR__ . '/../services/AttendanceService.php';
+    
+    $model = new App\Models\AttendanceDb($db);
+    $controller = new App\Controllers\AttendanceController($model);
+    $router = new App\Routes\AttendanceRoutes($controller);
+    
+    $router->handle('/api' . $path, $method);
+    exit;
+}
+
+// =============================================
 // 404 NOT FOUND
 // =============================================
 http_response_code(404);

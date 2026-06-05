@@ -116,7 +116,7 @@ class AdminDashboardModelTest extends TestCase
         $this->assertStringContainsString('clock_out_time IS NULL', $queries[0]);
 
         $this->assertStringContainsString('FROM attendance_logs', $queries[1]);
-        $this->assertStringContainsString("event_type = 'in'", $queries[1]);
+        $this->assertStringContainsString("event_type IN ('in', 'Clock In', 'clock-in')", $queries[1]);
         $this->assertStringContainsString('event_time >=', $queries[1]);
         $this->assertStringContainsString('event_time <', $queries[1]);
 

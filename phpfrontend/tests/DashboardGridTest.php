@@ -11,7 +11,7 @@ final class DashboardGridTest extends TestCase
     protected function setUp(): void
     {
         $this->content = file_get_contents(
-            dirname(__DIR__) . '/phpfrontend/src/views/partials/DashboardGrid.php'
+            dirname(__DIR__) . '/src/views/partials/DashboardGrid.php'
         );
     }
 

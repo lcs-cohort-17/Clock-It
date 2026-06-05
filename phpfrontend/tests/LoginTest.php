@@ -14,7 +14,7 @@ final class LoginTest extends TestCase
         ob_start();
 
         try {
-            require __DIR__ . '/../phpfrontend/src/views/login.php';
+            require __DIR__ . '/../src/views/login.php';
 
             return (string) ob_get_clean();
         } catch (Throwable $throwable) {
@@ -76,7 +76,7 @@ final class LoginTest extends TestCase
     {
         $html = $this->renderLoginPage();
         $router = file_get_contents(__DIR__ . '/../public/index.php');
-        $mockUsers = require __DIR__ . '/../phpfrontend/src/data/LoginMockUsers.php';
+        $mockUsers = require __DIR__ . '/../src/Data/LoginMockUsers.php';
 
         $this->assertStringContainsString('taaraa@clockit.com', $html);
         $this->assertStringContainsString('admin123', $html);

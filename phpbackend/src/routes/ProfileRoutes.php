@@ -2,8 +2,8 @@
 
 namespace App\Routes;
 
-use App\Controllers\ProfileController;
-use App\Middleware\AuthMiddleware;
+use Controllers\ProfileController;
+use Middleware\AuthMiddleware;
 
 class ProfileRoutes
 {
@@ -25,19 +25,19 @@ class ProfileRoutes
         $this->app->post('/profiles/login', [$this->profileController, 'loginProfile']);
 
         // Protected routes
-        $this->app->get('/', [$this->profileController, 'adminGettingAllUsers']);
+        $this->app->get('/profiles', [$this->profileController, 'adminGettingAllUsers']);
         $this->app->add(new AuthMiddleware());
 
         $this->app->get('/profiles/{employee_id}', [$this->profileController, 'getProfileById']);
         $this->app->add(new AuthMiddleware());
 
-        $this->app->post('/', [$this->profileController, 'adminCreatingUser']);
+        $this->app->post('/profiles', [$this->profileController, 'adminCreatingUser']);
         $this->app->add(new AuthMiddleware());
 
-        $this->app->patch('/{id}', [$this->profileController, 'adminUpdatingUser']);
+        $this->app->patch('/profiles/{employee_id}', [$this->profileController, 'adminUpdatingUser']);
         $this->app->add(new AuthMiddleware());
 
-        $this->app->delete('/{id}', [$this->profileController, 'adminDeletingUser']);
+        $this->app->delete('/profiles/{employee_id}', [$this->profileController, 'adminDeletingUser']);
         $this->app->add(new AuthMiddleware());
 
         $this->app->patch('/profiles/{employee_id}/update-password', [$this->profileController, 'updatePassword']);

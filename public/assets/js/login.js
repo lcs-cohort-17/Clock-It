@@ -198,7 +198,14 @@
                     });
 
                     this.persistRememberedEmail();
-                    this.redirectForUser({ role: result.role }, result.redirect);
+
+                    // If the user must change their password on first login, redirect to the set-password page
+                    if (result.must_change_password) {
+                        window.location.assign('/set-password');
+                        return;
+                    }
+
+                    this.redirectForUser({ role: result.user ? result.user.role : result.role }, result.redirect);
                 } catch (error) {
                     // Static-file demos still work if the placeholder API is unavailable.
                     var fallbackUser = this.findMockUser();
@@ -208,7 +215,7 @@
                         return;
                     }
 
-                    this.errorMessage = 'Invalid email or password.';
+                    this.errorMessage = error.message || 'Invalid email or password.';
                     this.loading = false;
                 }
             },

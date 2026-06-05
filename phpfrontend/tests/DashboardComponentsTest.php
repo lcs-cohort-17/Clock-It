@@ -50,10 +50,11 @@ final class DashboardComponentsTest extends TestCase
 
     private function renderComponent(string $component, array $variables = []): string
     {
+        require_once __DIR__ . '/../src/bootstrap.php';
         extract($variables, EXTR_SKIP);
 
         ob_start();
-        require __DIR__ . '/src/views/partials/' . $component;
+        require __DIR__ . '/../src/views/partials/' . $component;
 
         return (string) ob_get_clean();
     }

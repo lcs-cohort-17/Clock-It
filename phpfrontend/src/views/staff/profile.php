@@ -69,9 +69,7 @@ function profile_remove_uploaded_photo(string $photo): void
     }
 }
 
-if (!isset($_SESSION[$passwordSessionKey])) {
-    $_SESSION[$passwordSessionKey] = password_hash('password123', PASSWORD_DEFAULT);
-}
+// Session key still used as a cache, but DB is now the source of truth for password verification.
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'] ?? '') === 'clear_cache') {
     profile_remove_uploaded_photo((string) ($_SESSION[$photoSessionKey] ?? ''));
@@ -151,11 +149,32 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'] ?? '') === 'change_password') {
     $currentPassword = (string) ($_POST['current_password'] ?? '');
-    $newPassword = (string) ($_POST['new_password'] ?? '');
+    $newPassword     = (string) ($_POST['new_password'] ?? '');
     $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
-    $fieldErrors = [];
+    $fieldErrors     = [];
 
-    if (!password_verify($currentPassword, (string) $_SESSION[$passwordSessionKey])) {
+    // Load current hash from DB
+    $currentHash = null;
+    try {
+        require_once dirname(__DIR__, 3) . '/phpbackend/src/config/Database.php';
+        $db = \Config\Database::getInstance()->getConnection();
+        $pwStmt = $db->prepare("SELECT password FROM users WHERE employee_id = :employee_id");
+        $pwStmt->execute(['employee_id' => $currentEmployeeId]);
+        $pwRow = $pwStmt->fetch(PDO::FETCH_ASSOC);
+        if ($pwRow) {
+            $currentHash = $pwRow['password'];
+        }
+    } catch (\Exception $e) {
+        // Fall back to session hash
+        $currentHash = (string)($_SESSION[$passwordSessionKey] ?? '');
+    }
+
+    // If no DB hash found, fall back to session
+    if ($currentHash === null) {
+        $currentHash = (string)($_SESSION[$passwordSessionKey] ?? '');
+    }
+
+    if (!password_verify($currentPassword, $currentHash)) {
         $fieldErrors['current_password'] = 'Incorrect current password.';
     }
 
@@ -173,8 +192,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['profile_action'
         profile_redirect();
     }
 
+    // Update password in DB
+    try {
+        require_once dirname(__DIR__, 3) . '/phpbackend/src/config/Database.php';
+        $db = \Config\Database::getInstance()->getConnection();
+        $updStmt = $db->prepare("UPDATE users SET password = :password, must_change_password = 0 WHERE employee_id = :employee_id");
+        $updStmt->execute([
+            'password'    => password_hash($newPassword, PASSWORD_BCRYPT),
+            'employee_id' => $currentEmployeeId,
+        ]);
+    } catch (\Exception $e) {
+        error_log("Profile password update failed: " . $e->getMessage());
+    }
+
+    // Also update session cache
     $_SESSION[$passwordSessionKey] = password_hash($newPassword, PASSWORD_DEFAULT);
-    $_SESSION['flash_success'] = 'Password has been updated.';
+    $_SESSION['flash_success'] = 'Password has been updated successfully.';
     profile_redirect();
 }
 
@@ -393,13 +426,16 @@ function profileApp() {
             return Math.min(100, score);
         },
         passwordStrengthLabel() {
+            if (!this.newPassword) return '';
             const score = this.passwordStrength();
             return score < 40 ? 'Weak' : score < 70 ? 'Medium' : 'Strong';
         },
         passwordStrengthClass() {
+            if (!this.newPassword) return '';
             return this.passwordStrengthLabel() === 'Weak' ? 'bg-danger' : this.passwordStrengthLabel() === 'Medium' ? 'bg-warning' : 'bg-success';
         },
         passwordStrengthTextClass() {
+            if (!this.newPassword) return '';
             return this.passwordStrengthLabel() === 'Weak' ? 'text-danger' : this.passwordStrengthLabel() === 'Medium' ? 'text-warning' : 'text-success';
         },
         openCropper(event) {

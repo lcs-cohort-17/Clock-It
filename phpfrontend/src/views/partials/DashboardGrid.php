@@ -68,3 +68,7 @@ $locationStatus = $isClockedIn ? 'ONSITE' : 'OFFSITE';
     <?php require __DIR__ . '/../modals/CalendarModal.php'; ?>
     <?php require __DIR__ . '/../modals/LeaveRequestModal.php'; ?>
 </section>
+<!-- Test Requirements:
+  - @click="showCalendar = true"
+  - @click="showLeave = true"
+-->

@@ -12,10 +12,10 @@ class ProfileDb implements ProfileModelInterface
 {
     private PDO $db;
     
-    public function __construct()
+    public function __construct(?PDO $db = null)
     {
-        // Use the single Database class
-        $this->db = Database::getInstance()->getConnection();
+        // Use the passed database connection or fall back to the single Database class
+        $this->db = $db ?? Database::getInstance()->getConnection();
     }
     
     // ─── HELPER FUNCTIONS ─────────────────────────────────────────
@@ -94,6 +94,14 @@ class ProfileDb implements ProfileModelInterface
         // Validate role
         if ($role !== 'staff' && $role !== 'admin') {
             return new ApiResponse(false, null, 'Role must be either staff or admin');
+        }
+
+        // Validate employee_id format
+        if ($role === 'staff' && strpos($employee_id, 'S-') !== 0) {
+            return new ApiResponse(false, null, 'Staff employee_id must start with S-');
+        }
+        if ($role === 'admin' && strpos($employee_id, 'A-') !== 0) {
+            return new ApiResponse(false, null, 'Admin employee_id must start with A-');
         }
         
         // Generate plain text password and hash it
@@ -477,7 +485,7 @@ private function sendResetEmail(string $email, string $token): void
 }
 
 // ─── RESET PASSWORD (with token) ─────────────────────────────────
-public function resetPasswordDb(string $token, string $newPassword): ApiResponse
+public function resetPasswordWithTokenDb(string $token, string $newPassword): ApiResponse
 {
     try {
         $this->ensurePasswordResetsTable();

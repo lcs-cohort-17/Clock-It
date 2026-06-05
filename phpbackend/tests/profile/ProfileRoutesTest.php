@@ -5,7 +5,7 @@ namespace Tests\Profile;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use App\Routes\ProfileRoutes;
-use App\Controllers\ProfileController;
+use Controllers\ProfileController;
 
 class TestApp
 {
