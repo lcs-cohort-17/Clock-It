@@ -8,7 +8,7 @@ final class CalendarModalTest extends TestCase
 {
     public function testCalendarModalUsesMergedAlpineStateAndBootstrapIcons(): void
     {
-        $content = file_get_contents(dirname(__DIR__) . '/phpfrontend/src/views/modals/CalendarModal.php');
+        $content = file_get_contents(dirname(__DIR__) . '/src/views/modals/CalendarModal.php');
 
         $this->assertStringContainsString('x-show="showCalendar"', $content);
         $this->assertStringContainsString('staff-dashboard-modal', $content);

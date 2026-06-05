@@ -208,7 +208,7 @@
                         return;
                     }
 
-                    this.errorMessage = 'Invalid email or password.';
+                    this.errorMessage = error.message || 'Invalid email or password.';
                     this.loading = false;
                 }
             },

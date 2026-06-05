@@ -56,9 +56,9 @@ function toggleSidebar() {
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
     
-    // Restore desktop sidebar state from localStorage
+    // Restore desktop sidebar state from localStorage, default to collapsed (hidden)
     if (window.innerWidth >= 992) {
-        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        const isCollapsed = localStorage.getItem('sidebarCollapsed') !== 'false';
         if (isCollapsed) {
             sidebar.classList.add('sidebar-collapsed');
             document.body.classList.add('sidebar-collapsed');

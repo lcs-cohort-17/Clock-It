@@ -18,12 +18,9 @@ ob_start();
                     <p class="text-muted mb-0">Create, preview, and save active QR codes for staff clock-in and clock-out.</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-main px-4" @click="generateQr('clock-in')" :disabled="generatingQr" type="button">
+                    <button class="btn btn-main px-4" @click="openGenerateModal()" :disabled="generatingQr" type="button">
                         <i class="bi bi-qr-code me-2" aria-hidden="true"></i>
                         <span x-text="generatingQr ? 'Generating...' : 'Generate QR Code'"></span>
-                    </button>
-                    <button class="btn btn-outline-secondary px-4" @click="openGenerateModal()" :disabled="generatingQr" type="button">
-                        Choose Type
                     </button>
                 </div>
             </div>
@@ -111,40 +108,56 @@ ob_start();
                 </div>
             </div>
 
-            <div class="modal fade show user-form-modal" x-show="showTypeModal" x-cloak tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="generateQrTitle">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="modal-back-button" aria-label="Back" title="Back" @click="closeGenerateModal()">
-                                <i class="bi bi-arrow-left" aria-hidden="true"></i>
-                            </button>
-                            <h5 class="modal-title flex-grow-1" id="generateQrTitle">Generate QR Code</h5>
-                            <button type="button" class="btn-close" aria-label="Close" @click="closeGenerateModal()"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <button class="btn btn-outline-success w-100" @click="generateQr('clock-in')" type="button">
-                                        <i class="bi bi-box-arrow-in-right me-2"></i>Clock In
-                                    </button>
-                                </div>
-                                <div class="col-sm-6">
-                                    <button class="btn btn-outline-warning w-100" @click="generateQr('clock-out')" type="button">
-                                        <i class="bi bi-box-arrow-right me-2"></i>Clock Out
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-backdrop fade show" x-show="showTypeModal" x-cloak></div>
         </main>
+    </div>
+</div>
+
+<!-- QR Type Selection Modal — placed outside app-shell to escape overflow:hidden -->
+<div class="qr-type-modal-overlay" x-data x-show="$store.qrModal.show" x-cloak role="dialog" aria-modal="true" aria-labelledby="qrModalTitle" @keydown.escape.window="$store.qrModal.close()">
+    <div class="qr-type-modal-card">
+        <div class="qr-type-modal-header">
+            <h5 class="qr-type-modal-title" id="qrModalTitle">
+                <i class="bi bi-qr-code me-2"></i>Generate QR Code
+            </h5>
+            <button type="button" class="qr-type-modal-close" aria-label="Close" @click="$store.qrModal.close()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <p class="qr-type-modal-lead">Select the type of QR code to generate:</p>
+        <div class="qr-type-modal-options">
+            <button class="qr-type-option qr-type-option--in" @click="$store.qrModal.pick('clock-in')" type="button">
+                <i class="bi bi-box-arrow-in-right qr-type-option-icon"></i>
+                <span class="qr-type-option-label">Clock In</span>
+            </button>
+            <button class="qr-type-option qr-type-option--out" @click="$store.qrModal.pick('clock-out')" type="button">
+                <i class="bi bi-box-arrow-right qr-type-option-icon"></i>
+                <span class="qr-type-option-label">Clock Out</span>
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
     document.addEventListener('alpine:init', () => {
+        // Shared store so the modal (outside app-shell) can talk to qrGenerator
+        Alpine.store('qrModal', {
+            show: false,
+            _callback: null,
+            open(callback) {
+                this._callback = callback;
+                this.show = true;
+            },
+            close() {
+                this.show = false;
+                this._callback = null;
+            },
+            pick(type) {
+                const cb = this._callback;
+                this.close();
+                if (cb) cb(type);
+            }
+        });
+
         Alpine.data('qrGenerator', () => ({
             showTypeModal: false,
             activeQr: null,
@@ -155,11 +168,11 @@ ob_start();
             generatingQr: false,
 
             openGenerateModal() {
-                this.showTypeModal = true;
+                Alpine.store('qrModal').open((type) => this.generateQr(type));
             },
 
             closeGenerateModal() {
-                this.showTypeModal = false;
+                Alpine.store('qrModal').close();
             },
 
             typeLabel(type) {
@@ -217,8 +230,8 @@ ob_start();
                     id: this.nextQrId++,
                     type,
                     createdAt: now.toISOString(),
-                    expiresAt: new Date(now.getTime() + 60000).toISOString(),
-                    secondsLeft: 60,
+                    expiresAt: new Date(now.getTime() + 30000).toISOString(),
+                    secondsLeft: 30,
                     code: this.buildQrCode(type),
                     text: ''
                 };

@@ -46,31 +46,24 @@ $isStandalone = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
         class="btn scan-open-btn btn-lg px-4 mb-3"
         x-text="config.ui.openCameraLabel"
       ></button>
-
-      <hr class="my-4">
-
-      <div class="text-center">
-        <p x-text="config.ui.demoHint" class="scan-muted"></p>
-        <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
-          <button
-            type="button"
-            @click="handleDemoScan(config.codes.clockIn)"
-            class="btn scan-demo-btn btn-lg"
-            x-text="config.ui.demoClockInLabel"
-          ></button>
-
-          <button
-            type="button"
-            @click="handleDemoScan(config.codes.clockOut)"
-            class="btn scan-demo-btn btn-lg"
-            x-text="config.ui.demoClockOutLabel"
-          ></button>
-        </div>
-      </div>
     </div>
 
     <div x-show="isScanning" x-cloak class="text-center">
       <div id="reader" x-ref="reader" class="mx-auto"></div>
+      
+      <div x-show="cameras.length > 1" class="mt-3 mx-auto" style="max-width: 280px;">
+        <label for="camera-select" class="form-label text-muted small mb-1">Switch Camera:</label>
+        <select
+          id="camera-select"
+          class="form-select form-select-sm"
+          @change="switchCamera($event.target.value)"
+        >
+          <template x-for="cam in cameras" :key="cam.id">
+            <option :value="cam.id" x-text="cam.label || 'Camera ' + cam.id" :selected="cam.id === activeCameraId"></option>
+          </template>
+        </select>
+      </div>
+
       <button
         type="button"
         @click="stopScanner"

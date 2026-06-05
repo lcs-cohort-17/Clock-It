@@ -2,7 +2,7 @@
 
 namespace Tests\Middleware;
 
-use App\Middleware\AuthMiddleware;
+use Middleware\AuthMiddleware;
 use Firebase\JWT\JWT;
 use PHPUnit\Framework\TestCase;
 

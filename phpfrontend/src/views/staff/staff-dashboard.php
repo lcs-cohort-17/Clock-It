@@ -15,13 +15,83 @@ if (is_string($loggedInEmployeeId) && $loggedInEmployeeId !== '') {
     ));
 }
 
+// Query real session records from the SQLite database
+try {
+    require_once dirname(__DIR__, 4) . '/phpbackend/src/config/Database.php';
+    $db = \Config\Database::getInstance()->getConnection();
+    
+    // Find the user's user_id from their employee_id or email
+    $userQuery = $db->prepare("SELECT user_id, first_name, last_name, employee_id, role FROM users WHERE employee_id = :empId OR email = :email");
+    $userQuery->execute([
+        ':empId' => $currentUser['employeeId'] ?? '',
+        ':email' => $currentUser['email'] ?? ''
+    ]);
+    $dbUser = $userQuery->fetch(\PDO::FETCH_ASSOC);
+    
+    if ($dbUser) {
+        $profileId = $dbUser['user_id'];
+        $fullName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: $dbUser['email'];
+        
+        $sessionQuery = $db->prepare("
+            SELECT * 
+            FROM sessions 
+            WHERE profile_id = :profileId 
+            ORDER BY clock_in_time DESC
+        ");
+        $sessionQuery->execute([':profileId' => $profileId]);
+        $dbSessions = $sessionQuery->fetchAll(\PDO::FETCH_ASSOC);
+        
+        $dbAttendance = [];
+        foreach ($dbSessions as $session) {
+            $clockIn = new \DateTime($session['clock_in_time']);
+            $clockOut = !empty($session['clock_out_time']) ? new \DateTime($session['clock_out_time']) : null;
+            
+            $dateStr = $clockIn->format('Y-m-d');
+            $inTime = $clockIn->format('H:i');
+            $outTime = $clockOut ? $clockOut->format('H:i') : '--:--';
+            
+            // Calculate working hours
+            $hours = 0.0;
+            if ($clockOut) {
+                $diff = $clockIn->diff($clockOut);
+                $hours = round($diff->h + ($diff->i / 60) + ($diff->s / 3600), 1);
+            }
+            
+            // Determine status
+            $status = 'Present';
+            if ((int)$clockIn->format('H') >= 9 && (int)$clockIn->format('i') > 0) {
+                $status = 'Late';
+            } elseif ($clockOut && $hours < 5.0) {
+                $status = 'Half Day';
+            }
+            
+            $dbAttendance[] = [
+                'id' => 'DB-ATT-' . $session['id'],
+                'employeeName' => $fullName,
+                'employeeId' => $dbUser['employee_id'],
+                'date' => $dateStr,
+                'checkInTime' => $inTime,
+                'checkOutTime' => $outTime,
+                'status' => $status,
+                'workingHours' => $hours,
+                'department' => 'Staff'
+            ];
+        }
+        
+        $attendanceHistory = array_merge($dbAttendance, $attendanceHistory);
+    }
+} catch (\Exception $e) {
+    error_log("Failed to load real sessions for dashboard: " . $e->getMessage());
+}
+
 ob_start();
 ?>
 
 <script>
     window.ATTENDANCE_DATA = {
         history: <?= json_encode($attendanceHistory, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-        currentEmployeeId: <?= json_encode($loggedInEmployeeId) ?>
+        currentEmployeeId: <?= json_encode($loggedInEmployeeId) ?>,
+        employeeName: <?= json_encode($currentUser['name'] ?? '') ?>
     };
 </script>
 

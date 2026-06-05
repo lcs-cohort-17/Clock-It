@@ -27,7 +27,12 @@ declare(strict_types=1);
 
       <i class="bi bi-arrow-up-right quick-action-arrow" aria-hidden="true"></i>
 
-      <h2 class="h5 quick-action-title"><?= e($label) ?></h2>
+      <h2 class="h5 quick-action-title">
+        <?= e($label) ?>
+        <?php if ($label === 'Sheets'): ?>
+          <span class="badge bg-secondary"><?= $sheetsConnected ? 'Connected' : 'Not connected' ?></span>
+        <?php endif; ?>
+      </h2>
       <p class="quick-action-description mb-0">
         <?php if ($label === 'QR Generator'): ?>
           Create and manage clock-in QR codes

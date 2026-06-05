@@ -17,10 +17,15 @@ $employees = [
     ['name' => 'Aiden Damon', 'id' => 'EMP012', 'department' => 'Accounting'],
 ];
 $statuses = ['Present', 'Present', 'Late', 'Present', 'Absent', 'Half Day', 'Holiday'];
-$today = new DateTimeImmutable('today');
+$currentDate = new DateTimeImmutable('today');
 $records = [];
 
 for ($index = 0; $index < 65; $index++) {
+    // Modify date to find the previous weekday
+    while (in_array((int)$currentDate->format('N'), [6, 7], true)) {
+        $currentDate = $currentDate->modify('-1 day');
+    }
+
     $employee = $employees[$index % count($employees)];
     $status = $statuses[$index % count($statuses)];
     $hours = match ($status) {
@@ -38,12 +43,14 @@ for ($index = 0; $index < 65; $index++) {
         'employeeName' => $employee['name'],
         'employeeId' => $employee['id'],
         'department' => $employee['department'],
-        'date' => $today->modify("-{$index} days")->format('Y-m-d'),
+        'date' => $currentDate->format('Y-m-d'),
         'checkInTime' => $hasClockTimes ? sprintf('%02d:%02d', $checkInHour, $checkInMinute) : '--:--',
         'checkOutTime' => $hasClockTimes ? ($status === 'Half Day' ? '12:30' : sprintf('17:%02d', ($index * 3) % 60)) : '--:--',
         'status' => $status,
         'workingHours' => $hours,
     ];
+
+    $currentDate = $currentDate->modify('-1 day');
 }
 
 return $records;

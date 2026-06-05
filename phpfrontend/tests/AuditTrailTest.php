@@ -9,7 +9,7 @@ class AuditTrailTest extends TestCase
     protected function setUp(): void
     {
         $this->content = file_get_contents(
-            __DIR__ . '/../phpfrontend/src/views/admin/attendance_log.php'
+            __DIR__ . '/../src/views/admin/attendance_log.php'
         );
     }
 

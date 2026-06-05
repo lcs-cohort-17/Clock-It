@@ -44,7 +44,7 @@ public function __construct(?PDO $db = null)
         $clockInsToday = $this->db->prepare("
             SELECT COUNT(*) as count 
             FROM attendance_logs 
-            WHERE event_type = 'in'
+            WHERE event_type IN ('in', 'Clock In', 'clock-in')
             AND event_time >= :start 
             AND event_time < :end
         ");
@@ -95,7 +95,7 @@ public function __construct(?PDO $db = null)
                 p.first_name,
                 p.last_name
             FROM attendance_logs al
-            LEFT JOIN profiles p ON al.profile_id = p.id
+            LEFT JOIN users p ON al.profile_id = p.user_id
             ORDER BY al.event_time DESC
             LIMIT :limit OFFSET :offset
         ");
@@ -119,7 +119,7 @@ public function __construct(?PDO $db = null)
                 p.first_name,
                 p.last_name
             FROM attendance_logs al
-            LEFT JOIN profiles p ON al.profile_id = p.id
+            LEFT JOIN users p ON al.profile_id = p.user_id
             ORDER BY al.event_time DESC
         ");
 

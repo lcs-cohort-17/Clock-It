@@ -26,6 +26,15 @@ class AttendanceRepository
         return $this->data['attendanceLogs'];
     }
 
+    public function quickActions(): array
+    {
+        return [
+            ['label' => 'QR Generator', 'href' => '/qr-generator', 'variant' => 'light'],
+            ['label' => 'Attendance Logs', 'href' => '/attendance-logs', 'variant' => 'light'],
+            ['label' => 'Sheets', 'href' => '/sheets', 'variant' => 'light'],
+        ];
+    }
+
     private array $clockEvents = [
     [
         'id'        => 1,

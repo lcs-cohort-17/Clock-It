@@ -12,10 +12,10 @@ class ProfileDb implements ProfileModelInterface
 {
     private PDO $db;
     
-    public function __construct()
+    public function __construct(?PDO $db = null)
     {
-        // Use the single Database class
-        $this->db = Database::getInstance()->getConnection();
+        // Use the passed database connection or fall back to the single Database class
+        $this->db = $db ?? Database::getInstance()->getConnection();
     }
     
     // ─── HELPER FUNCTIONS ─────────────────────────────────────────
@@ -94,6 +94,14 @@ class ProfileDb implements ProfileModelInterface
         // Validate role
         if ($role !== 'staff' && $role !== 'admin') {
             return new ApiResponse(false, null, 'Role must be either staff or admin');
+        }
+
+        // Validate employee_id format
+        if ($role === 'staff' && strpos($employee_id, 'S-') !== 0) {
+            return new ApiResponse(false, null, 'Staff employee_id must start with S-');
+        }
+        if ($role === 'admin' && strpos($employee_id, 'A-') !== 0) {
+            return new ApiResponse(false, null, 'Admin employee_id must start with A-');
         }
         
         // Generate plain text password and hash it
@@ -295,35 +303,33 @@ class ProfileDb implements ProfileModelInterface
         }
     }
     
-    // ─── RESET PASSWORD (Admin) ────────────────────────────────────
-    
-    // public function resetPasswordDb(string $employee_id): ApiResponse
-    // {
-    //     try {
-    //         $newPassword = $this->generatePassword();
-    //         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+    public function resetPasswordDb(string $employee_id): ApiResponse
+    {
+        try {
+            $newPassword = $this->generatePassword();
+            $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
-    //         // CHANGED: profiles -> users
-    //         $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE employee_id = :employee_id");
-    //         $stmt->execute(['password' => $hashedPassword, 'employee_id' => $employee_id]);
+            // CHANGED: profiles -> users
+            $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE employee_id = :employee_id");
+            $stmt->execute(['password' => $hashedPassword, 'employee_id' => $employee_id]);
             
-    //         if ($stmt->rowCount() === 0) {
-    //             return new ApiResponse(false, null, 'Profile not found');
-    //         }
+            if ($stmt->rowCount() === 0) {
+                return new ApiResponse(false, null, 'Profile not found');
+            }
             
-    //         // Get updated record - CHANGED: profiles -> users
-    //         $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
-    //         $stmt2->execute(['employee_id' => $employee_id]);
-    //         $data = $stmt2->fetch(PDO::FETCH_ASSOC);
+            // Get updated record - CHANGED: profiles -> users
+            $stmt2 = $this->db->prepare("SELECT * FROM users WHERE employee_id = :employee_id");
+            $stmt2->execute(['employee_id' => $employee_id]);
+            $data = $stmt2->fetch(PDO::FETCH_ASSOC);
             
-    //         // Return plain text password (not hashed)
-    //         $data['password'] = $newPassword;
+            // Return plain text password (not hashed)
+            $data['password'] = $newPassword;
             
-    //         return new ApiResponse(true, $data);
-    //     } catch (PDOException $error) {
-    //         return new ApiResponse(false, null, $error->getMessage());
-    //     }
-    // }
+            return new ApiResponse(true, $data);
+        } catch (PDOException $error) {
+            return new ApiResponse(false, null, $error->getMessage());
+        }
+    }
     
     // ─── UPDATE OWN PASSWORD (Staff) ───────────────────────────────
     
@@ -477,7 +483,7 @@ private function sendResetEmail(string $email, string $token): void
 }
 
 // ─── RESET PASSWORD (with token) ─────────────────────────────────
-public function resetPasswordDb(string $token, string $newPassword): ApiResponse
+public function resetPasswordWithTokenDb(string $token, string $newPassword): ApiResponse
 {
     try {
         $this->ensurePasswordResetsTable();

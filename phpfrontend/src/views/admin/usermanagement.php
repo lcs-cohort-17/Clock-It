@@ -60,6 +60,14 @@ ob_start(); ?>
         <?php unset($_SESSION['flash_success']); ?>
     <?php endif; ?>
 
+    <?php if (isset($_SESSION['flash_error'])): ?>
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="status">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <?= e($_SESSION['flash_error']) ?>
+        </div>
+        <?php unset($_SESSION['flash_error']); ?>
+    <?php endif; ?>
+
     <!-- SEARCH -->
 
     <form method="GET" action="<?= e(app_url('/admin-dashboard/users')) ?>"

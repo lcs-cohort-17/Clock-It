@@ -4,54 +4,88 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['users'])) {
-    $_SESSION['users'] = require __DIR__ . '/../data/MockUsers.php';
+require_once dirname(__DIR__) . '/helpers/user-helper.php';
+
+require_once dirname(__DIR__, 3) . '/phpbackend/src/config/Database.php';
+
+try {
+    $db = \Config\Database::getInstance()->getConnection();
+} catch (\Exception $e) {
+    die("Database connection failed: " . $e->getMessage());
 }
 
-$users = &$_SESSION['users'];
+// Load users from DB and map to frontend shape
+if (!function_exists('getDatabaseUsers')) {
+    function getDatabaseUsers($db) {
+        $stmt = $db->query("SELECT * FROM users ORDER BY created_at DESC");
+        $dbUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$hasLegacyDemoIds = array_filter($users, static function (array $user): bool {
-    $employeeId = (string) ($user['employeeId'] ?? '');
-    return str_starts_with($employeeId, 'S-') || str_starts_with($employeeId, 'A-');
-});
-
-if ($hasLegacyDemoIds !== []) {
-    $_SESSION['users'] = require __DIR__ . '/../data/MockUsers.php';
-    $users = &$_SESSION['users'];
+        $users = [];
+        foreach ($dbUsers as $row) {
+            $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+            if ($fullName === '') {
+                $fullName = 'Unnamed User';
+            }
+            
+            $role = ucfirst(strtolower($row['role'] ?? 'staff'));
+            $status = ((int)($row['is_active'] ?? 1) === 1) ? 'Active' : 'Inactive';
+            
+            $users[] = [
+                'id' => (string)$row['user_id'],
+                'name' => $fullName,
+                'email' => $row['email'] ?? '',
+                'employeeId' => $row['employee_id'] ?? '',
+                'role' => $role,
+                'status' => $status,
+                'password' => $row['password'] ?? ''
+            ];
+        }
+        return $users;
+    }
 }
 
-
+$users = getDatabaseUsers($db);
 
 /* -----------------------------
    ADD USER
 ------------------------------*/
 
 if (isset($_POST['add_user'])) {
-
     $password = generatePassword();
+    $role = $_POST['role'] ?? 'Staff';
+    $name = $_POST['name'] ?? '';
+    $email = $_POST['email'] ?? '';
 
-  $users[] = [
+    // Split name into first and last
+    $parts = explode(' ', trim($name), 2);
+    $firstName = $parts[0] ?? '';
+    $lastName = $parts[1] ?? '';
 
-        "id" => uniqid(),
+    $employeeId = generateEmployeeId($role, $users);
 
-        "name" => $_POST['name'],
+    try {
+        $insertStmt = $db->prepare("
+            INSERT INTO users (first_name, last_name, employee_id, role, is_active, email, password, must_change_password)
+            VALUES (:first_name, :last_name, :employee_id, :role, 1, :email, :password, 1)
+        ");
+        $insertStmt->execute([
+            'first_name' => $firstName,
+            'last_name'  => $lastName,
+            'employee_id'=> $employeeId,
+            'role'       => strtolower($role),
+            'email'      => $email,
+            'password'   => password_hash($password, PASSWORD_BCRYPT)
+        ]);
 
-        "email" => $_POST['email'],
-
-        "employeeId" => generateEmployeeId(
-            $_POST['role'],
-            $users
-        ),
-
-        "role" => $_POST['role'],
-
-        "status" => "Active",
-
-        "password" => $password
-    ];
-
-    $_SESSION['generated_password'] = $password;
-    $_SESSION['flash_success'] = 'User has been added successfully.';
+        $_SESSION['generated_password'] = $password;
+        $_SESSION['flash_success'] = 'User has been added successfully.';
+    } catch (\PDOException $e) {
+        if ($e->getCode() === '23000' || strpos($e->getMessage(), 'UNIQUE constraint failed') !== false) {
+            $_SESSION['flash_error'] = 'Failed to add user: A user with this email address already exists.';
+        } else {
+            $_SESSION['flash_error'] = 'Failed to add user: ' . $e->getMessage();
+        }
+    }
 
     redirect_to('/admin-dashboard/users');
 }
@@ -61,20 +95,41 @@ if (isset($_POST['add_user'])) {
 ------------------------------*/
 
 if (isset($_POST['edit_user'])) {
+    $id = $_POST['id'] ?? '';
+    $name = $_POST['name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $role = $_POST['role'] ?? 'Staff';
 
-    foreach ($users as &$u) {
+    // Split name into first and last
+    $parts = explode(' ', trim($name), 2);
+    $firstName = $parts[0] ?? '';
+    $lastName = $parts[1] ?? '';
 
-        if ($u['id'] === $_POST['id']) {
+    try {
+        $updateStmt = $db->prepare("
+            UPDATE users
+            SET first_name = :first_name,
+                last_name = :last_name,
+                email = :email,
+                role = :role
+            WHERE user_id = :id
+        ");
+        $updateStmt->execute([
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $email,
+            'role' => strtolower($role),
+            'id' => $id
+        ]);
 
-            $u['name'] = $_POST['name'];
-
-            $u['email'] = $_POST['email'];
-
-            $u['role'] = $_POST['role'];
+        $_SESSION['flash_success'] = 'User details have been updated.';
+    } catch (\PDOException $e) {
+        if ($e->getCode() === '23000' || strpos($e->getMessage(), 'UNIQUE constraint failed') !== false) {
+            $_SESSION['flash_error'] = 'Failed to update user: A user with this email address already exists.';
+        } else {
+            $_SESSION['flash_error'] = 'Failed to update user: ' . $e->getMessage();
         }
     }
-
-    $_SESSION['flash_success'] = 'User details have been updated.';
 
     redirect_to('/admin-dashboard/users');
 }
@@ -84,19 +139,21 @@ if (isset($_POST['edit_user'])) {
 ------------------------------*/
 
 if (isset($_POST['toggle_status'])) {
+    $id = $_POST['id'] ?? '';
 
-    foreach ($users as &$u) {
+    $statusStmt = $db->prepare("SELECT is_active FROM users WHERE user_id = :id");
+    $statusStmt->execute(['id' => $id]);
+    $currentActive = $statusStmt->fetchColumn();
 
-        if ($u['id'] === $_POST['id']) {
-
-            $u['status'] =
-                $u['status'] === "Active"
-                ? "Inactive"
-                : "Active";
-        }
+    if ($currentActive !== false) {
+        $newActive = ((int)$currentActive === 1) ? 0 : 1;
+        $updateStmt = $db->prepare("UPDATE users SET is_active = :is_active WHERE user_id = :id");
+        $updateStmt->execute([
+            'is_active' => $newActive,
+            'id' => $id
+        ]);
+        $_SESSION['flash_success'] = 'User status has been updated.';
     }
-
-    $_SESSION['flash_success'] = 'User status has been updated.';
 
     redirect_to('/admin-dashboard/users');
 }
@@ -106,18 +163,18 @@ if (isset($_POST['toggle_status'])) {
 ------------------------------*/
 
 if (isset($_POST['reset_password'])) {
+    $id = $_POST['id'] ?? '';
+    $newPassword = generatePassword();
 
-    foreach ($users as &$u) {
+    // Set must_change_password = 1 so the user is forced to change on next login
+    $updateStmt = $db->prepare("UPDATE users SET password = :password, must_change_password = 1 WHERE user_id = :id");
+    $updateStmt->execute([
+        'password' => password_hash($newPassword, PASSWORD_BCRYPT),
+        'id' => $id
+    ]);
 
-        if ($u['id'] === $_POST['id']) {
-
-            $newPassword = generatePassword();
-
-            $u['password'] = $newPassword;
-
-            $_SESSION['generated_password'] = $newPassword;
-        }
-    }
+    $_SESSION['generated_password'] = $newPassword;
+    $_SESSION['flash_success'] = 'Password has been reset.';
 
     redirect_to('/admin-dashboard/users');
 }
@@ -129,19 +186,15 @@ if (isset($_POST['reset_password'])) {
 $query = strtolower($_GET['q'] ?? '');
 
 $filtered = array_filter($users, function ($u) use ($query) {
-
     return !$query ||
-
         str_contains(
             strtolower($u['name']),
             $query
         ) ||
-
         str_contains(
             strtolower($u['email']),
             $query
         ) ||
-
         str_contains(
             strtolower($u['employeeId']),
             $query
