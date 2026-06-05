@@ -543,6 +543,18 @@ switch ($path) {
     | 404
     |--------------------------------------------------------------------------
     */
+    case '/api/admin/users/reset-password':
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        login_json_response(['error' => 'Method not allowed'], 405);
+    }
+
+    $password = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8);
+
+    login_json_response([
+        'success' => true,
+        'password' => $password
+    ]);
+
 
     default:
         http_response_code(404);

@@ -37,7 +37,6 @@ $displayEmail = $user['email'] ?? '';
                 <i class="bi bi-gear me-2"></i> Settings
             </a>
         </li>
-<<<<<<< HEAD
 
         <li class="nav-item">
             <a href="<?= e(app_url('/admin-dashboard/qr-generator')) ?>"
@@ -46,9 +45,6 @@ $displayEmail = $user['email'] ?? '';
                 QR Generator
             </a>
         </li>
-
-=======
->>>>>>> 579e75d1125dd71394d1c92fa188610e28ed1ede
     </ul>
     <div class="mt-auto pt-4">
         <h6 id="sidebar-name"><?= htmlspecialchars($displayName) ?></h6>
