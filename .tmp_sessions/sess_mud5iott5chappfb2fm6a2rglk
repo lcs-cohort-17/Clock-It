@@ -1,0 +1,1 @@
+current_user|a:8:{s:2:"id";s:1:"2";s:4:"name";s:14:"Shaheed Karlie";s:5:"email";s:19:"shaheed@clockit.com";s:8:"password";s:8:"staff123";s:4:"role";s:5:"staff";s:10:"employeeId";s:6:"EMP001";s:10:"department";s:11:"Engineering";s:14:"microsoftEmail";s:19:"shaheed@clockit.com";}password_hash_EMP001|s:60:"$2y$10$hF2UgjopXJeGh4Da7ez2huMhNm3xIvP1Com3vj7.IoIOedSascGOq";

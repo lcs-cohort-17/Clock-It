@@ -200,19 +200,8 @@ bun.lockb
 *.orig
 *~
 
-# ============================================
-# EXTRA COMPOSER & PHP ITEMS
-# ============================================
+vendor/
 
-# Blocks Composer cache and system files
-.composer/
-auth.json
-
-# Blocks Composer development tools
-vendor/bin/
-.phpunit.result.cache
-
-# Blocks common PHP framework logs and caches
-/storage/logs/
-/storage/framework/views/
-/bootstrap/cache/
+# Runtime profile uploads
+/public/uploads/profiles/*
+!/public/uploads/profiles/.gitkeep
