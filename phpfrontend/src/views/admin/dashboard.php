@@ -1,11 +1,5 @@
 <?php
-/**
- * Admin Dashboard Page
- * Main dashboard with overview and stats
- */
-if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
-
-// Verify admin access
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ' . route_url('/login'));
     exit;
@@ -16,145 +10,328 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Clock-It</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title><?= $title ?? 'Admin Dashboard' ?></title>
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="<?= asset_url('js/utilities.js') ?>"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="<?= asset_url('js/app.js') ?>"></script>
+    <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body x-data="{ 
-    sidebarOpen: true, 
-    stats: {
-        totalEmployees: 45,
-        presentToday: 38,
-        absentToday: 7,
-        totalScans: 342
-    },
-    recentEvents: []
-}" @init="window.themeManager.initTheme()">
-    
-    <div style="display: flex;">
-        <!-- Admin Sidebar -->
-        <aside class="app-sidebar" :style="{ width: sidebarOpen ? '16rem' : '0' }">
-            <div>
-                <h1>Clock-It</h1>
-                <p>Admin Panel</p>
+<body>
+
+<script>window.themeManager.initTheme();</script>
+<div x-data="dashboardApp()" x-init="init()" @keydown.escape="sidebarOpen = false" x-cloak>
+    <div class="app-layout">
+        <?php $activePage = 'dashboard'; include __DIR__ . '/../partials/admin-sidebar.php'; ?>
+        
+        <main class="main-content">
+            <?php include __DIR__ . '/../partials/top-nav.php'; ?>
+            
+            <div class="page-content">
+                <div class="page-header">
+                    <div>
+                        <h1>Admin Dashboard</h1>
+                        <p>Live overview of your team's attendance.</p>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-outline" @click="syncData()" :disabled="isSyncing">
+                            <span x-text="isSyncing ? 'Syncing...' : 'Sync now'"></span>
+                        </button>
+                        <button class="btn-primary" @click="exportData()">Export to Sheets</button>
+                    </div>
+                </div>
+
+                <div x-show="isLoading" class="stats-grid">
+                    <template x-for="i in 4">
+                        <div class="metric-card animate-pulse"><div class="skeleton-icon"></div><div class="skeleton-line"></div></div>
+                    </template>
+                </div>
+
+                <div x-show="!isLoading">
+                    <div class="stats-grid">
+                        <!-- Currently Onsite - Location Pin/Map Marker Icon -->
+                        <div class="metric-card">
+                            <div class="metric-top">
+                                <div class="stat-icon icon-olive">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                </div>
+                                <div class="live-badge">
+                                    <div class="live-dot"></div>
+                                    <span class="live-text">Live</span>
+                                </div>
+                            </div>
+                            <div class="stat-value" x-text="stats.currentlyOnsite"></div>
+                            <div class="stat-label">Currently onsite</div>
+                            <div class="stat-subtitle">Live count, updates within seconds</div>
+                        </div>
+                        
+                        <!-- Total Clocked In Today - Calendar Icon -->
+                        <div class="metric-card">
+                            <div class="metric-top">
+                                <div class="stat-icon icon-olive">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="stat-value" x-text="stats.totalClockedInToday"></div>
+                            <div class="stat-label">Total clocked in today</div>
+                            <div class="stat-subtitle" x-text="weekday"></div>
+                        </div>
+                        
+                        <!-- Pending Sync - Cloud/Upload Icon -->
+                        <div class="metric-card">
+                            <div class="metric-top">
+                                <div class="stat-icon icon-olive">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                                        <path d="m9 15 3-3 3 3"/>
+                                        <path d="M12 12v6"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="stat-value" x-text="stats.pendingSync"></div>
+                            <div class="stat-label">Pending sync</div>
+                            <div class="stat-subtitle" x-text="stats.pendingSync > 0 ? 'Needs sync' : 'All synced'"></div>
+                        </div>
+                        
+                        <!-- Total Events Today - Trending Up/Activity Icon -->
+                        <div class="metric-card">
+                            <div class="metric-top">
+                                <div class="stat-icon icon-olive">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 2 17"/>
+                                        <polyline points="17 6 23 6 23 12"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="stat-value" x-text="stats.totalEventsToday"></div>
+                            <div class="stat-label">Total events today</div>
+                            <div class="stat-subtitle">In + Out</div>
+                        </div>
+                    </div>
+
+                    <!-- Feature Cards -->
+                    <div class="feature-grid">
+                        <!-- QR Generator - QR Code Icon -->
+                        <div class="feature-card" onclick="window.location.href='<?= route_url('/admin-dashboard/qr-generator') ?>'">
+                            <div class="feature-top">
+                                <div class="feature-icon icon-olive">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="7" height="7"/>
+                                        <rect x="14" y="3" width="7" height="7"/>
+                                        <rect x="14" y="14" width="7" height="7"/>
+                                        <rect x="3" y="14" width="7" height="7"/>
+                                    </svg>
+                                </div>
+                                <div class="arrow-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3>QR Generator</h3>
+                            <p>Create and manage clock-in QR codes</p>
+                        </div>
+                        
+                        <!-- Attendance Logs - List/Document Icon -->
+                        <div class="feature-card" onclick="window.location.href='<?= route_url('/admin-dashboard/attendance') ?>'">
+                            <div class="feature-top">
+                                <div class="feature-icon icon-olive">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="8" y1="6" x2="21" y2="6"/>
+                                        <line x1="8" y1="12" x2="21" y2="12"/>
+                                        <line x1="8" y1="18" x2="21" y2="18"/>
+                                        <line x1="3" y1="6" x2="3.01" y2="6"/>
+                                        <line x1="3" y1="12" x2="3.01" y2="12"/>
+                                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                                    </svg>
+                                </div>
+                                <div class="arrow-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3>Attendance Logs</h3>
+                            <p>All clock events with full audit trail</p>
+                        </div>
+                        
+                        <!-- Settings - Settings/Gear Icon -->
+                        <div class="feature-card" onclick="window.location.href='<?= route_url('/admin-dashboard/settings') ?>'">
+                            <div class="feature-top">
+                                <div class="feature-icon icon-olive">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                    </svg>
+                                </div>
+                                <div class="arrow-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3>Settings</h3>
+                            <p>Manage users and integration</p>
+                        </div>
+                    </div>
+
+                    <div class="large-card">
+                        <div class="section-header">
+                            <div class="section-header-left">
+                                <h3>Currently onsite</h3>
+                                <p>Live count, updates within seconds</p>
+                            </div>
+                            <div class="live-indicator">
+                                <div class="live-dot"></div>
+                                <span class="live-text">Live</span>
+                            </div>
+                        </div>
+                        <div x-show="onsiteStaff.length === 0" class="empty-state">No staff currently onsite.</div>
+                        <div class="staff-list" x-show="onsiteStaff.length > 0">
+                            <template x-for="person in onsiteStaff" :key="person.id">
+                                <div class="staff-item">
+                                    <div class="staff-left">
+                                        <div class="staff-avatar" x-text="getInitials(person.name)"></div>
+                                        <div class="staff-info">
+                                            <div class="staff-name" x-text="person.name"></div>
+                                            <div class="staff-id" x-text="person.role"></div>
+                                        </div>
+                                    </div>
+                                    <div class="staff-right">
+                                        <div class="status-pill">
+                                            <div class="status-dot"></div>
+                                            Onsite
+                                        </div>
+                                        <div class="staff-time">since <span x-text="formatTime(person.sign_in_time)"></span></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="large-card">
+                        <div class="section-header">
+                            <h3 class="section-title">Recent Activity</h3>
+                            <button class="view-all-btn" onclick="window.location.href='<?= route_url('/admin-dashboard/attendance') ?>'">View all →</button>
+                        </div>
+                        <div x-show="recentEvents.length === 0" class="empty-state">No recent activity.</div>
+                        <div class="activity-list" x-show="recentEvents.length > 0">
+                            <template x-for="event in recentEvents" :key="event.id">
+                                <div class="activity-item">
+                                    <div class="activity-left">
+                                        <div class="activity-indicator" :class="event.action.replace('-', '')"></div>
+                                        <div class="activity-info">
+                                            <div class="activity-name" x-text="event.name"></div>
+                                            <div class="activity-type" x-text="event.action"></div>
+                                        </div>
+                                    </div>
+                                    <div class="activity-time">
+                                        <div class="activity-time-value" x-text="formatTime(event.timestamp)"></div>
+                                        <div class="activity-date" x-text="formatDate(event.timestamp)"></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="sheets-card">
+                        <div class="sheets-content">
+                            <div class="sheets-left">
+                                <div class="sheets-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                        <polyline points="10 9 9 9 8 9"/>
+                                    </svg>
+                                </div>
+                                <div class="sheets-info">
+                                    <h3>Sheets Integration</h3>
+                                    <p>Sync attendance data to Google Sheets</p>
+                                </div>
+                            </div>
+                            <div class="sheets-right">
+                                <div class="connection-status">Not connected</div>
+                                <button class="connect-btn" onclick="alert('Connect to Google Sheets - Demo only')">Connect</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <nav class="sidebar-nav">
-                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link active">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                    <span>Dashboard</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/users') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5h-12v-2c0-1.5 3.5-2.5 6-2.5s6 1 6 2.5v2z"/></svg>
-                    <span>User Management</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/attendance') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.46.37.84-1.39-.46-.37L12 13V8h-2z"/></svg>
-                    <span>Attendance Log</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/qr-generator') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h1v4h-1v-4zm-4 4h4v1h-4v-1zm1-3h1v2h-1v-2z"/></svg>
-                    <span>QR Generator</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/settings') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l1.72-1.35c.19-.15.24-.42.12-.64l-1.63-2.83c-.12-.22-.39-.3-.61-.22l-2.03.81c-.42-.32-.86-.58-1.35-.78L15 2.5c-.04-.25-.25-.43-.5-.43h-3.26c-.25 0-.46.18-.49.43L10.88 5.5c-.48.2-.93.47-1.35.78l-2.03-.81c-.22-.09-.49 0-.61.22L5.25 8.54c-.13.22-.07.49.12.64l1.72 1.35c-.05.3-.07.62-.07.94s.02.64.07.94l-1.72 1.35c-.19.15-.24.42-.12.64l1.63 2.83c.12.22.39.3.61.22l2.03-.81c.42.32.86.58 1.35.78l.32 2.15c.03.25.25.43.5.43h3.26c.25 0 .46-.18.49-.43l.32-2.15c.48-.2.93-.47 1.35-.78l2.03.81c.22.09.49 0 .61-.22l1.63-2.83c.13-.22.07-.49-.12-.64l-1.72-1.35zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                    <span>Settings</span>
-                </a>
-            </nav>
-
-            <button class="sidebar-logout" @click="logoutUser()" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-                <span>Sign Out</span>
-            </button>
-        </aside>
-
-        <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <header class="app-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-outline-secondary" type="button">
-                        <span>☰</span>
-                    </button>
-                    <h2 style="margin: 0;">Admin Dashboard</h2>
-                </div>
-                <div style="display: flex; align-items: center; gap: 1.5rem;">
-                    <?php include __DIR__ . '/../partials/theme-toggle.php'; ?>
-                    <div style="font-size: 0.875rem; color: var(--slate-600);">
-                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Dashboard Content -->
-            <main class="dashboard-section" style="padding: 2rem;">
-                <div class="container-fluid">
-                    <!-- Stats Cards -->
-                    <div class="row mb-4">
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Employees</p>
-                                    <h3 class="card-title" x-text="stats.totalEmployees" style="color: var(--primary-navy);"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Present Today</p>
-                                    <h3 class="card-title" x-text="stats.presentToday" style="color: var(--accent-success);"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Absent Today</p>
-                                    <h3 class="card-title" x-text="stats.absentToday" style="color: #dc3545;"></h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="card bg-light border-0 shadow-sm">
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">Total Scans</p>
-                                    <h3 class="card-title" x-text="stats.totalScans" style="color: var(--secondary-blue);"></h3>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="mb-0">Recent Activity</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted">Loading recent events...</p>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
+        </main>
     </div>
+</div>
 
-    <script>
-        function logoutUser() {
-            if (confirm('Are you sure you want to sign out?')) {
-                window.location.href = '<?= route_url('/logout') ?>';
+<script>
+function dashboardApp() {
+    return {
+        sidebarOpen: false,
+        isLoading: true,
+        isSyncing: false,
+        stats: { currentlyOnsite: 0, totalClockedInToday: 0, pendingSync: 0, totalEventsToday: 0 },
+        onsiteStaff: [],
+        recentEvents: [],
+        weekday: '',
+        refreshInterval: null,
+        
+        async init() {
+            window.themeManager.initTheme();
+            this.weekday = getWeekday();
+            await this.loadDashboard();
+            this.refreshInterval = setInterval(() => this.loadDashboard(), 30000);
+        },
+        
+        async loadDashboard() {
+            try {
+                const [statsData, staffData, eventsData] = await Promise.all([
+                    fetch('api/dashboard-stats.php').then(r => r.json()),
+                    fetch('api/onsite-staff.php').then(r => r.json()),
+                    fetch('api/recent-activity.php').then(r => r.json())
+                ]);
+                this.stats = statsData.data || statsData;
+                this.onsiteStaff = staffData.data || staffData;
+                this.recentEvents = eventsData.data || eventsData;
+                this.isLoading = false;
+            } catch (err) {
+                console.error('Error loading dashboard:', err);
+                this.isLoading = false;
             }
+        },
+        
+        async syncData() {
+            this.isSyncing = true;
+            await this.loadDashboard();
+            setTimeout(() => this.isSyncing = false, 500);
+        },
+        
+        exportData() {
+            if (this.onsiteStaff.length === 0) { 
+                window.appUtils.showToast('No data to export', 'info'); 
+                return; 
+            }
+            let csv = "Name,Role,Clock In Time\n";
+            this.onsiteStaff.forEach(p => { 
+                csv += `"${p.name}","${p.role}","${formatTime(p.sign_in_time)}"\n`; 
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            window.appUtils.showToast('Export completed!', 'success');
         }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    }
+}
+</script>
 </body>
 </html>

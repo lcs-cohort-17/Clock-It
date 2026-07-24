@@ -1,14 +1,6 @@
 <?php
-// FRONTEND-ONLY ROUTER
-// No Composer, no vendor folder, no backend models/controllers, no PHPUnit needed.
-// This file only provides sample data so the PHP pages can display in the browser.
-
+// Main Router for Clock-It System
 declare(strict_types=1);
-
-$sessionPath = dirname(__DIR__) . '/storage/sessions';
-if (is_dir($sessionPath) && is_writable($sessionPath)) {
-    session_save_path($sessionPath);
-}
 
 session_start();
 
@@ -29,46 +21,8 @@ $path = '/' . trim($path, '/');
 $path = $path === '/' ? '/' : rtrim($path, '/');
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-$staffUser = [
-    'id' => 'staff-001',
-    'name' => 'Demo Staff',
-    'email' => 'staff@clockit.app',
-    'employeeId' => 'EMP-001',
-    'role' => 'staff',
-];
-
-$adminUser = [
-    'id' => 'admin-001',
-    'name' => 'Demo Admin',
-    'email' => 'admin@clockit.app',
-    'employeeId' => 'ADM-001',
-    'role' => 'admin',
-];
-
-$users = [
-    $staffUser,
-    ['id' => 'staff-002', 'name' => 'Anele Mokoena', 'email' => 'anele@clockit.app', 'employeeId' => 'EMP-002', 'role' => 'staff'],
-    ['id' => 'staff-003', 'name' => 'Lihle Dlamini', 'email' => 'lihle@clockit.app', 'employeeId' => 'EMP-003', 'role' => 'staff'],
-    $adminUser,
-];
-
-$events = [
-    ['userName' => 'Demo Staff', 'type' => 'clock-in', 'timestamp' => date('Y-m-d') . ' 08:00'],
-    ['userName' => 'Anele Mokoena', 'type' => 'clock-in', 'timestamp' => date('Y-m-d') . ' 08:15'],
-    ['userName' => 'Lihle Dlamini', 'type' => 'clock-out', 'timestamp' => date('Y-m-d') . ' 16:02'],
-];
-
-$stats = [
-    'currentlyOnsite' => 2,
-    'totalStaffToday' => 3,
-    'pendingSync' => 0,
-    'totalEvents' => count($events),
-];
-
-$onsiteStaff = [
-    ['name' => 'Demo Staff', 'employeeId' => 'EMP-001', 'clockedInAt' => '08:00'],
-    ['name' => 'Anele Mokoena', 'employeeId' => 'EMP-002', 'clockedInAt' => '08:15'],
-];
+// Load data functions
+require_once __DIR__ . '/../data/functions.php';
 
 function view(string $view, array $data = []): void
 {
@@ -80,7 +34,6 @@ function route_url(string $path = '/'): string
 {
     $path = '/' . trim($path, '/');
     $path = $path === '/' ? '/' : $path;
-
     return ($GLOBALS['baseUrl'] ?? '') . '/index.php' . ($path === '/' ? '' : $path);
 }
 
@@ -95,112 +48,205 @@ function redirect_to(string $path): never
     exit;
 }
 
-function login_as(array $user): void
-{
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['user_name'] = $user['name'];
-    $_SESSION['user_role'] = $user['role'];
-}
-
-// Frontend-only login simulation: no real authentication.
+// Handle login
 if ($path === '/login' && $method === 'POST') {
     $identifier = strtolower(trim((string) ($_POST['identifier'] ?? '')));
-    redirect_to(str_contains($identifier, 'admin') ? '/admin-dashboard' : '/staff-dashboard');
+    $password = $_POST['password'] ?? '';
+    
+    if (($identifier === 'admin@clockit.app' || $identifier === 'admin') && $password === 'admin123') {
+        $_SESSION['user_id'] = 'admin-001';
+        $_SESSION['user_name'] = 'Admin User';
+        $_SESSION['user_email'] = 'admin@clockit.app';
+        $_SESSION['user_role'] = 'admin';
+        $_SESSION['employee_id'] = 'ADM-001';
+        redirect_to('/admin-dashboard');
+    } elseif (($identifier === 'sarah@clockit.app' || $identifier === 'sarah') && $password === 'sarah123') {
+        $_SESSION['user_id'] = 'staff-001';
+        $_SESSION['user_name'] = 'Sarah Mthembu';
+        $_SESSION['user_email'] = 'sarah@clockit.app';
+        $_SESSION['user_role'] = 'staff';
+        $_SESSION['employee_id'] = 'S-101';
+        redirect_to('/staff-dashboard');
+    } elseif (($identifier === 'staff@clockit.app' || $identifier === 'staff') && $password === 'password123') {
+        $_SESSION['user_id'] = 'staff-002';
+        $_SESSION['user_name'] = 'Demo Staff';
+        $_SESSION['user_email'] = 'staff@clockit.app';
+        $_SESSION['user_role'] = 'staff';
+        $_SESSION['employee_id'] = 'EMP-001';
+        redirect_to('/staff-dashboard');
+    } else {
+        $_SESSION['login_error'] = 'Invalid credentials. Use admin@clockit.app/admin123 or sarah@clockit.app/sarah123';
+        redirect_to('/login');
+    }
 }
 
 if ($path === '/logout') {
-    redirect_to('/');
+    session_destroy();
+    redirect_to('/login');
 }
 
-if ($path === '/profile/password' && $method === 'POST') {
-    $_SESSION['flash'] = ['valid' => true, 'message' => 'Frontend demo: password form submitted successfully.'];
-    redirect_to('/profile');
+// API Routes
+if (str_starts_with($path, '/api/')) {
+    header('Content-Type: application/json');
+    
+    if ($path === '/api/dashboard-stats.php') {
+        echo json_encode(getDashboardStats());
+        exit;
+    }
+    if ($path === '/api/onsite-staff.php') {
+        echo json_encode(getOnsiteStaff());
+        exit;
+    }
+    if ($path === '/api/recent-activity.php') {
+        echo json_encode(getRecentActivity());
+        exit;
+    }
+    if ($path === '/api/clock-in.php') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode(handleClockIn($data));
+        exit;
+    }
+    if ($path === '/api/clock-out.php') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode(handleClockOut($data));
+        exit;
+    }
+    if ($path === '/api/user-history.php') {
+        $userId = $_GET['user_id'] ?? $_SESSION['user_id'] ?? '';
+        echo json_encode(getUserHistory($userId));
+        exit;
+    }
+    if ($path === '/api/attendance-logs.php') {
+        echo json_encode(getAllAttendanceLogs());
+        exit;
+    }
+    if ($path === '/api/users.php') {
+        echo json_encode(getAllUsers());
+        exit;
+    }
+    if ($path === '/api/qr-codes.php') {
+        echo json_encode(getQRCodes());
+        exit;
+    }
+    if ($path === '/api/generate-qr.php') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode(generateQRCode($data));
+        exit;
+    }
+    if ($path === '/api/revoke-qr.php') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode(revokeQRCode($data));
+        exit;
+    }
 }
 
+// Page Routes
 switch ($path) {
     case '/':
     case '/login':
         $title = 'Login | Clock-It';
-        view('login', compact('title'));
+        $error = $_SESSION['login_error'] ?? null;
+        unset($_SESSION['login_error']);
+        view('login', compact('title', 'error'));
         break;
 
     case '/staff-dashboard':
-    case '/dashboard.php':
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+            redirect_to('/login');
+        }
         $title = 'Staff Dashboard | Clock-It';
-        $user = $staffUser;
-        login_as($user);
-        view('staff/dashboard', compact('title', 'user', 'stats', 'events'));
+        $user = [
+            'name' => $_SESSION['user_name'],
+            'email' => $_SESSION['user_email'],
+            'employeeId' => $_SESSION['employee_id'],
+            'role' => $_SESSION['user_role']
+        ];
+        view('staff/dashboard', compact('title', 'user'));
         break;
 
     case '/scan-qr':
-    case '/scan-qr.php':
-        $title = 'Scan QR | Clock-It';
-        $user = $staffUser;
-        login_as($user);
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+            redirect_to('/login');
+        }
+        $title = 'Scan QR Code | Clock-It';
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
         view('staff/scan-qr', compact('title', 'user'));
         break;
 
     case '/history':
-    case '/history.php':
-        $title = 'History | Clock-It';
-        $user = $staffUser;
-        login_as($user);
-        view('staff/history', compact('title', 'user', 'events'));
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+            redirect_to('/login');
+        }
+        $title = 'Attendance History | Clock-It';
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
+        view('staff/history', compact('title', 'user'));
         break;
 
     case '/calendar':
-    case '/calendar.php':
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+            redirect_to('/login');
+        }
         $title = 'Calendar | Clock-It';
-        $user = $staffUser;
-        login_as($user);
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
         view('staff/calendar', compact('title', 'user'));
         break;
 
     case '/profile':
-    case '/profile.php':
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
+            redirect_to('/login');
+        }
         $title = 'Profile | Clock-It';
-        $user = $staffUser;
-        login_as($user);
+        $user = [
+            'name' => $_SESSION['user_name'],
+            'email' => $_SESSION['user_email'],
+            'employeeId' => $_SESSION['employee_id'],
+            'role' => $_SESSION['user_role']
+        ];
         view('staff/profile', compact('title', 'user'));
         break;
 
     case '/admin-dashboard':
-    case '/admin/dashboard.php':
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            redirect_to('/login');
+        }
         $title = 'Admin Dashboard | Clock-It';
-        $user = $adminUser;
-        login_as($user);
-        view('admin/dashboard', compact('title', 'user', 'stats', 'events', 'onsiteStaff'));
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
+        view('admin/dashboard', compact('title', 'user'));
         break;
 
     case '/admin-dashboard/users':
-    case '/admin/users.php':
-        $title = 'Users | Clock-It';
-        $user = $adminUser;
-        login_as($user);
-        view('admin/users', compact('title', 'user', 'users'));
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            redirect_to('/login');
+        }
+        $title = 'User Management | Clock-It';
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
+        view('admin/users', compact('title', 'user'));
         break;
 
     case '/admin-dashboard/attendance':
-    case '/admin/attendance.php':
-        $title = 'Attendance | Clock-It';
-        $user = $adminUser;
-        login_as($user);
-        view('admin/attendance', compact('title', 'user', 'events'));
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            redirect_to('/login');
+        }
+        $title = 'Attendance Logs | Clock-It';
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
+        view('admin/attendance', compact('title', 'user'));
         break;
 
     case '/admin-dashboard/qr-generator':
-    case '/admin/qr.php':
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            redirect_to('/login');
+        }
         $title = 'QR Generator | Clock-It';
-        $user = $adminUser;
-        login_as($user);
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
         view('admin/qr', compact('title', 'user'));
         break;
 
     case '/admin-dashboard/settings':
-    case '/admin/settings.php':
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            redirect_to('/login');
+        }
         $title = 'Settings | Clock-It';
-        $user = $adminUser;
-        login_as($user);
+        $user = ['name' => $_SESSION['user_name'], 'email' => $_SESSION['user_email']];
         view('admin/settings', compact('title', 'user'));
         break;
 

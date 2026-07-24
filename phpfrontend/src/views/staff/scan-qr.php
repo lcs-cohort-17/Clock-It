@@ -1,11 +1,6 @@
 <?php
-/**
- * Scan QR Code Page
- * Staff QR scanning interface
- */
-if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
-
-if (!isset($_SESSION['user_id'])) {
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'staff') {
     header('Location: ' . route_url('/login'));
     exit;
 }
@@ -15,175 +10,307 @@ if (!isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan QR Code - Clock-It</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title><?= $title ?? 'Scan QR Code' ?></title>
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.2.11/minified/html5-qrcode.min.js"></script>
-    <script src="<?= asset_url('js/utilities.js') ?>"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="<?= asset_url('js/app.js') ?>"></script>
+    <style>
+        .demo-qr-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+        .demo-qr-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--heading);
+        }
+        .demo-qr-grid {
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        .demo-qr-item {
+            max-width: 200px; /* Limit width of the card */
+            margin: 0 auto; /* Center the card */
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            aspect-ratio: 1 / 1; /* Make the card square */
+            display: flex; /* Use flex to center content vertically */
+            flex-direction: column;
+            justify-content: center;
+        }
+        .demo-qr-item p {
+            margin-top: 12px;
+            font-weight: 500;
+            color: var(--heading);
+        }
+        .camera-section {
+            margin-bottom: 24px;
+        }
+        .camera-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--sidebar-blue);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .demo-buttons {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .demo-clock-in, .demo-clock-out {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .demo-clock-in {
+            background: rgba(156, 176, 122, 0.12);
+            color: #728C47;
+        }
+        .demo-clock-out {
+            background: rgba(245, 158, 11, 0.12);
+            color: #D97706;
+        }
+        #reader {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        /* Adjust QR code size for mobile */
+        #qr-display canvas, #qr-display img {
+            width: 120px !important; /* Smaller size for mobile */
+            height: 120px !important;
+            margin: 0 auto; /* Center the QR code */
+        }
+        .manual-submit-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px 24px;
+            background: var(--olive-green);
+            color: var(--sidebar-blue);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s ease;
+        }
+        .manual-submit-btn:hover {
+            background: var(--olive-green-bright);
+        }
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
-<body x-data="{ 
-    scannerOpen: false,
-    scanResult: '',
-    scanError: '',
-    manualInput: '',
-    lastScan: null,
-    scanner: null,
-    
-    startScanner() {
-        this.scannerOpen = true;
-        this.$nextTick(() => {
-            if (!this.scanner) {
-                this.scanner = new Html5Qrcode('reader');
-            }
-            this.scanner.start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 220, height: 220 } },
-                (decodedText) => this.handleScan(decodedText),
-                () => {}
-            ).catch(() => {
-                this.scanner.start(
-                    { facingMode: 'user' },
-                    { fps: 10, qrbox: { width: 220, height: 220 } },
-                    (decodedText) => this.handleScan(decodedText),
-                    () => {}
-                );
-            });
-        });
-    },
-    
-    stopScanner() {
-        if (this.scanner) {
-            this.scanner.stop().then(() => {
-                this.scanner = null;
-                this.scannerOpen = false;
-            });
-        }
-    },
-    
-    handleScan(code) {
-        const scanType = window.qrUtils.getScanType(code);
-        if (!scanType) {
-            this.scanError = 'Invalid QR code. Use CLOCK_IN or CLOCK_OUT.';
-            return;
-        }
-        window.qrUtils.recordScan(scanType);
-        this.scanResult = code.trim().toUpperCase();
-        this.scanError = '';
-        this.lastScan = new Date().toLocaleString();
-        this.stopScanner();
-    },
-    
-    handleManualScan() {
-        if (this.manualInput) {
-            this.handleScan(this.manualInput);
-            this.manualInput = '';
-        }
-    },
-    
-    demo(code) {
-        this.handleScan(code);
-    }
-}" @init="window.themeManager.initTheme()">
-    
-    <div style="display: flex; min-height: 100vh;">
-        <!-- Sidebar -->
-        <?php include __DIR__ . '/../partials/sidebar.php'; ?>
+<body>
 
-        <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <?php include __DIR__ . '/../partials/header.php'; ?>
+<div x-data="scanApp()" x-init="init()" @keydown.escape="sidebarOpen = false" x-cloak>
+    <div class="app-layout">
+        <?php $activePage = 'scan'; include __DIR__ . '/staff-sidebar.php'; ?>
+        
+        <main class="main-content">
+            <?php if (file_exists(__DIR__ . '/../partials/top-nav.php')) include __DIR__ . '/../partials/top-nav.php'; ?>
+            
+            <div class="scan-container">
+                <h1>Scan QR Code</h1>
+                <p>Point your camera at the workplace QR code to clock in or out.</p>
 
-            <!-- Page Content -->
-            <main class="dashboard-section" style="padding: 2rem;">
-                <div class="container-fluid">
-                    <h2 class="mb-4">Scan QR Code</h2>
+                <div class="scanner-card">
+                    <div class="scanner-header">
+                        <span class="ready-badge">● Ready to scan</span>
+                        <p>Fast camera recognition. Your activity syncs instantly.</p>
+                    </div>
 
-                    <!-- Scanner View -->
-                    <div class="row">
-                        <div class="col-lg-6 mb-4">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-light">
-                                    <h5 class="mb-0">QR Scanner</h5>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Camera Feed -->
-                                    <div x-show="scannerOpen" id="reader" style="width: 100%; min-height: 300px; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1rem;"></div>
+                    <!-- Camera Section -->
+                    <div class="camera-section">
+                        <button class="camera-btn" @click="startScanner()" x-show="!scannerActive">
+                            📷 Open Camera to Scan
+                        </button>
+                        <button class="camera-btn" style="background: #ef4444;" @click="stopScanner()" x-show="scannerActive" x-cloak>
+                            Stop Camera
+                        </button>
+                        <div id="reader" x-show="scannerActive" x-cloak></div>
+                    </div>
 
-                                    <!-- Scanner Controls -->
-                                    <div class="d-flex gap-2 mb-3">
-                                        <button class="btn btn-primary flex-grow-1" @click="startScanner()" x-show="!scannerOpen" type="button">
-                                            📱 Start Scanner
-                                        </button>
-                                        <button class="btn btn-secondary flex-grow-1" @click="stopScanner()" x-show="scannerOpen" type="button">
-                                            ⏹️ Stop Scanner
-                                        </button>
-                                    </div>
-
-                                    <!-- Manual Input -->
-                                    <div class="mb-3">
-                                        <label class="form-label small">Or enter code manually:</label>
-                                        <div class="input-group">
-                                            <input 
-                                                type="text" 
-                                                class="form-control" 
-                                                placeholder="CLOCK_IN or CLOCK_OUT"
-                                                x-model="manualInput"
-                                                @keyup.enter="handleManualScan()"
-                                            >
-                                            <button class="btn btn-outline-secondary" @click="handleManualScan()" type="button">Submit</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Demo Buttons -->
-                                    <div class="d-grid gap-2">
-                                        <button class="btn btn-outline-success" @click="demo('CLOCK_IN')" type="button">
-                                            ✅ Demo Clock In
-                                        </button>
-                                        <button class="btn btn-outline-warning" @click="demo('CLOCK_OUT')" type="button">
-                                            ⏹️ Demo Clock Out
-                                        </button>
-                                    </div>
-                                </div>
+                    <!-- Demo QR Codes Section -->
+                    <div class="demo-qr-section">
+                        <div class="demo-qr-title">Demo QR Codes</div>
+                        <div class="demo-qr-grid">
+                            <div class="demo-qr-item">
+                                <div id="qr-display"></div>
+                                <p x-text="currentDemoType === 'clock-in' ? 'Clock In QR' : 'Clock Out QR'"></p>
                             </div>
                         </div>
-
-                        <div class="col-lg-6">
-                            <!-- Scan Result -->
-                            <div class="card border-0 shadow-sm" x-show="scanResult">
-                                <div class="card-header" :class="scanResult.includes('CLOCK_IN') ? 'bg-success' : 'bg-warning'" style="color: white;">
-                                    <h5 class="mb-0" x-text="scanResult.includes('CLOCK_IN') ? '✅ Clock In Recorded' : '⏹️ Clock Out Recorded'"></h5>
-                                </div>
-                                <div class="card-body text-center">
-                                    <p class="lead mb-2" x-text="scanResult"></p>
-                                    <p class="text-muted small" x-text="'Recorded at: ' + lastScan"></p>
-                                    <button class="btn btn-primary" @click="scanResult = ''; lastScan = null;" type="button">
-                                        ✅ Done
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Error Message -->
-                            <div class="alert alert-danger" x-show="scanError" x-text="scanError"></div>
-
-                            <!-- Instructions -->
-                            <div class="alert alert-info" x-show="!scanResult && !scanError">
-                                <h6 class="alert-heading">📖 Instructions</h6>
-                                <ul class="mb-0 small">
-                                    <li>Click "Start Scanner" to activate your device camera</li>
-                                    <li>Position the QR code in front of your camera</li>
-                                    <li>The scanner will automatically detect and process the code</li>
-                                    <li>Use demo buttons if you don't have a QR code available</li>
-                                </ul>
-                            </div>
+                        <div class="demo-buttons">
+                            <button class="demo-clock-in" @click="demoClockIn()">✅ Demo: Clock In</button>
+                            <button class="demo-clock-out" @click="demoClockOut()">⏹️ Demo: Clock Out</button>
                         </div>
                     </div>
-                </div>
-            </main>
-        </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                    <div class="manual-input">
+                        <p>Or enter code manually:</p>
+                        <div class="manual-row">
+                            <input type="text" x-model="manualCode" placeholder="CLOCK_IN or CLOCK_OUT">
+                        </div>
+                        <button class="manual-submit-btn" @click="manualSubmit()">Submit</button>
+                    </div>
+
+                    <div class="result-message" x-show="resultMessage" :class="resultType">
+                        <p x-text="resultMessage"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function scanApp() {
+    return {
+        sidebarOpen: false,
+        user: { id: '', name: '', email: '' },
+        manualCode: '',
+        resultMessage: '',
+        resultType: '',
+        scannerActive: false,
+        html5QrCode: null,
+        activeQRText: 'CLOCK_IN', // Default fallback
+        currentDemoType: 'clock-in',
+        
+        async init() {
+            const userData = <?php echo json_encode($user ?? ['id' => 'staff-001', 'name' => 'Staff', 'email' => 'staff@clockit.app']); ?>;
+            this.user = userData;
+            window.themeManager.initTheme();
+            
+            // Initial fetch of the active QR code from admin side
+            await this.fetchActiveQR();
+            
+            // Refresh the QR code every 30 seconds to stay in sync with admin
+            setInterval(() => this.fetchActiveQR(), 30000);
+        },
+
+        async fetchActiveQR() {
+            try {
+                const response = await fetch('api/active-qr.php');
+                const data = await response.json();
+                if (data.success && data.code) {
+                    this.activeQRText = data.code;
+                    this.renderQR();
+                }
+            } catch (err) {
+                console.error('Failed to sync QR with server:', err);
+                this.renderQR(); // Fallback to current state
+            }
+        },
+
+        renderQR() {
+            const container = document.getElementById("qr-display");
+            container.innerHTML = '';
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(container, {
+                    text: this.activeQRText,
+                    width: 120, // Adjusted for mobile view
+                    height: 120, // Adjusted for mobile view
+                    colorDark: "#093C5D",
+                    colorLight: "#ffffff"
+                });
+            }
+        },
+
+        async startScanner() {
+            this.scannerActive = true;
+            this.html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            try {
+                await this.html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    config, 
+                    (decodedText) => {
+                        this.manualCode = decodedText;
+                        this.manualSubmit();
+                        this.stopScanner();
+                    }
+                );
+            } catch (err) {
+                console.error("Camera error:", err);
+                this.scannerActive = false;
+            }
+        },
+
+        async stopScanner() {
+            if (this.html5QrCode) {
+                await this.html5QrCode.stop();
+                this.scannerActive = false;
+            }
+        },
+        
+        async demoClockIn() {
+            const result = await window.qrUtils.recordScan('clock-in', this.user.id);
+            if (result && result.success) {
+                this.activeQRText = 'CLOCK_IN';
+                this.resultMessage = `✅ Clocked in successfully at ${new Date().toLocaleTimeString()}`;
+                this.resultType = 'success';
+            } else if (result) {
+                this.resultMessage = result.message;
+                this.resultType = 'error';
+            }
+            this.currentDemoType = 'clock-in';
+            this.renderQR();
+            setTimeout(() => { this.resultMessage = ''; }, 3000);
+        },
+        
+        async demoClockOut() {
+            const result = await window.qrUtils.recordScan('clock-out', this.user.id);
+            if (result && result.success) {
+                this.activeQRText = 'CLOCK_OUT';
+                this.resultMessage = `⏹️ Clocked out successfully at ${new Date().toLocaleTimeString()}`;
+                this.resultType = 'success';
+            } else if (result) {
+                this.resultMessage = result.message;
+                this.resultType = 'error';
+            }
+            this.currentDemoType = 'clock-out';
+            this.renderQR();
+            setTimeout(() => { this.resultMessage = ''; }, 3000);
+        },
+        
+        async manualSubmit() {
+            const type = window.qrUtils.getScanType(this.manualCode);
+            if (!type) {
+                this.resultMessage = 'Invalid code. Use CLOCK_IN or CLOCK_OUT';
+                this.resultType = 'error';
+                setTimeout(() => { this.resultMessage = ''; }, 3000);
+                return;
+            }
+            const result = await window.qrUtils.recordScan(type, this.user.id);
+            if (result && result.success) {
+                this.resultMessage = `${type === 'clock-in' ? 'Clocked in' : 'Clocked out'} successfully!`;
+                this.resultType = 'success';
+            } else if (result) {
+                this.resultMessage = result.message;
+                this.resultType = 'error';
+            }
+            this.manualCode = '';
+            setTimeout(() => { this.resultMessage = ''; }, 3000);
+        }
+    }
+}
+</script>
 </body>
 </html>

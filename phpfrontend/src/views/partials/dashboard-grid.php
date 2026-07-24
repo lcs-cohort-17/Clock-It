@@ -43,7 +43,7 @@ $location = $_SESSION['attendance_location'] ?? 'OFFSITE';
     </button>
 
     <p class="qr-hint">
-      Scan the QR at your site. Works offline — syncs later.
+      Scan the QR at your site. Seamless tracking, smarter attendance.
     </p>
   </div>
 

@@ -1,10 +1,5 @@
 <?php
-/**
- * QR Code Generator Page
- * Admin page for creating and managing QR codes
- */
-if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
-
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ' . route_url('/login'));
     exit;
@@ -15,137 +10,557 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator - Clock-It</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>QR Code Generator - Admin</title>
     <link rel="stylesheet" href="<?= asset_url('css/style.css') ?>">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="<?= asset_url('js/utilities.js') ?>"></script>
-</head>
-<body x-data="{ 
-    sidebarOpen: true,
-    showCreateModal: false,
-    qrCodes: [
-        { id: 1, label: 'Main Entrance', type: 'clock-in', location: 'Front Door', status: 'active', created: '2026-01-15' },
-        { id: 2, label: 'Office Exit', type: 'clock-out', location: 'Side Entrance', status: 'active', created: '2026-01-15' }
-    ],
-    newQR: {
-        label: '',
-        type: 'clock-in',
-        location: '',
-        expiresIn: ''
-    },
-    generateQR() {
-        // Code generation logic
-        alert('QR Code generated: ' + this.newQR.label);
-        this.showCreateModal = false;
-    }
-}" @init="window.themeManager.initTheme()">
-    
-    <div style="display: flex;">
-        <!-- Sidebar -->
-        <aside class="app-sidebar" :style="{ width: sidebarOpen ? '16rem' : '0' }">
-            <div>
-                <h1>Clock-It</h1>
-                <p>Admin Panel</p>
-            </div>
-
-            <nav class="sidebar-nav">
-                <a href="<?= route_url('/admin-dashboard') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                    <span>Dashboard</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/users') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5h-12v-2c0-1.5 3.5-2.5 6-2.5s6 1 6 2.5v2z"/></svg>
-                    <span>User Management</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/attendance') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.46.37.84-1.39-.46-.37L12 13V8h-2z"/></svg>
-                    <span>Attendance Log</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/qr-generator') ?>" class="sidebar-nav-link active">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h1v4h-1v-4zm-4 4h4v1h-4v-1zm1-3h1v2h-1v-2z"/></svg>
-                    <span>QR Generator</span>
-                </a>
-
-                <a href="<?= route_url('/admin-dashboard/settings') ?>" class="sidebar-nav-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l1.72-1.35c.19-.15.24-.42.12-.64l-1.63-2.83c-.12-.22-.39-.3-.61-.22l-2.03.81c-.42-.32-.86-.58-1.35-.78L15 2.5c-.04-.25-.25-.43-.5-.43h-3.26c-.25 0-.46.18-.49.43L10.88 5.5c-.48.2-.93.47-1.35.78l-2.03-.81c-.22-.09-.49 0-.61.22L5.25 8.54c-.13.22-.07.49.12.64l1.72 1.35c-.05.3-.07.62-.07.94s.02.64.07.94l-1.72 1.35c-.19.15-.24.42-.12.64l1.63 2.83c.12.22.39.3.61.22l2.03-.81c.42.32.86.58 1.35.78l.32 2.15c.03.25.25.43.5.43h3.26c.25 0 .46-.18.49-.43l.32-2.15c.48-.2.93-.47 1.35-.78l2.03.81c.22.09.49 0 .61-.22l1.63-2.83c.13-.22.07-.49-.12-.64l-1.72-1.35zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                    <span>Settings</span>
-                </a>
-            </nav>
-
-            <button class="sidebar-logout" @click="logoutUser()" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-                <span>Sign Out</span>
-            </button>
-        </aside>
-
-        <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <!-- Header -->
-            <header class="app-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button @click="sidebarOpen = !sidebarOpen" class="btn btn-sm btn-outline-secondary" type="button">
-                        <span>☰</span>
-                    </button>
-                    <h2 style="margin: 0;">QR Code Generator</h2>
-                </div>
-                <div style="display: flex; align-items: center; gap: 1.5rem;">
-                    <?php include __DIR__ . '/../partials/theme-toggle.php'; ?>
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main class="dashboard-section" style="padding: 2rem;">
-                <div class="container-fluid">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4>Active QR Codes</h4>
-                        <button class="btn btn-success" @click="showCreateModal = true" type="button">
-                            + Create QR Code
-                        </button>
-                    </div>
-
-                    <!-- QR Codes Grid -->
-                    <div class="row">
-                        <template x-for="qr in qrCodes" :key="qr.id">
-                            <div class="col-md-6 mb-4">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h5 class="card-title" x-text="qr.label"></h5>
-                                        <p class="text-muted small mb-2">
-                                            <strong>Type:</strong> <span x-text="qr.type"></span>
-                                        </p>
-                                        <p class="text-muted small mb-2">
-                                            <strong>Location:</strong> <span x-text="qr.location"></span>
-                                        </p>
-                                        <p class="text-muted small mb-3">
-                                            <strong>Created:</strong> <span x-text="qr.created"></span>
-                                        </p>
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-sm btn-outline-secondary">📥 Download</button>
-                                            <button class="btn btn-sm btn-outline-secondary">📋 Duplicate</button>
-                                            <button class="btn btn-sm btn-outline-danger">Revoke</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <script>
-        function logoutUser() {
-            if (confirm('Are you sure you want to sign out?')) {
-                window.location.href = '<?= route_url('/logout') ?>';
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="<?= asset_url('js/app.js') ?>"></script>
+    <style>
+        .qr-generator-container {
+            padding: 10px 20px;
+        }
+        .generator-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .qr-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .qr-card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+            border-color: var(--olive-green);
+        }
+        .qr-card-header {
+            padding: 12px 16px 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .qr-card-header h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--heading);
+            margin: 0;
+        }
+        .qr-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .qr-badge.in {
+            background: var(--olive-green-soft);
+            color: var(--olive-green);
+        }
+        .qr-badge.out {
+            background: rgba(245, 158, 11, 0.12);
+            color: #D97706;
+        }
+        .qr-preview {
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(168, 201, 122, 0.05) 0%, rgba(168, 201, 122, 0.02) 100%);
+            margin: 5px 15px;
+            border-radius: 10px;
+            min-height: 160px;
+        }
+        .qr-code-wrapper {
+            background: white;
+            padding: 0;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+        }
+        body.dark-mode .qr-code-wrapper {
+            background: #0f172a;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .qr-code-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .qr-code-display canvas,
+        .qr-code-display img {
+            width: 120px !important;
+            height: 120px !important;
+            display: block;
+            margin: 0 auto;
+        }
+        .qr-code-value {
+            text-align: center;
+            margin-top: 5px;
+        }
+        .qr-code-value code {
+            background: var(--background);
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--heading);
+            display: inline-block;
+        }
+        .qr-card-body {
+            padding: 0 16px 12px 16px;
+        }
+        .form-group {
+            margin-bottom: 8px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--heading);
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--background);
+            color: var(--heading);
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--olive-green);
+            box-shadow: 0 0 0 3px rgba(168, 201, 122, 0.1);
+        }
+        .btn-generate {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: 2px solid var(--olive-green);
+            color: var(--olive-green);
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+        }
+        .btn-generate:hover {
+            background: var(--olive-green);
+            color: var(--sidebar-blue);
+        }
+        .btn-activate {
+            width: 100%;
+            padding: 8px;
+            background: var(--olive-green);
+            border: none;
+            color: var(--sidebar-blue);
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-activate:hover {
+            background: var(--olive-green-bright);
+            transform: translateY(-1px);
+        }
+        .btn-activate:active {
+            transform: translateY(0);
+        }
+        .qr-card-footer {
+            padding: 10px 16px 12px 16px;
+            border-top: 1px solid var(--border-color);
+            background: var(--background);
+        }
+        .qr-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-icon {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-icon:hover {
+            border-color: var(--olive-green);
+            color: var(--olive-green);
+            background: var(--olive-green-soft);
+        }
+        .btn-icon.revoke:hover {
+            border-color: #DC2626;
+            color: #DC2626;
+            background: rgba(220, 38, 38, 0.1);
+        }
+        /* Tablet and Mobile Views */
+        @media (max-width: 1024px) {
+            .generator-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .qr-generator-container {
+                padding: 20px;
             }
         }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        .toast-message {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: var(--card-bg);
+            color: var(--heading);
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        .toast-message.success {
+            border-left: 4px solid var(--olive-green);
+        }
+        .toast-message.error {
+            border-left: 4px solid #DC2626;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<script>window.themeManager.initTheme();</script>
+<div x-data="qrGenerator()" x-init="init()" @keydown.escape="sidebarOpen = false" x-cloak>
+    <div class="app-layout">
+        <?php $activePage = 'qr'; include __DIR__ . '/../partials/admin-sidebar.php'; ?>
+        
+        <main class="main-content">
+            <?php if (file_exists(__DIR__ . '/../partials/top-nav.php')) include __DIR__ . '/../partials/top-nav.php'; ?>
+            
+            <div class="qr-generator-container">
+                <div style="margin-bottom: 10px;">
+                    <h1 style="font-size: 24px; font-weight: 700; color: var(--heading); margin-bottom: 4px;">QR Code Generator</h1>
+                    <p style="color: var(--text); font-size: 13px;">Create unique QR codes for clock-in/clock-out points.</p>
+                </div>
+
+                <div class="generator-grid">
+                    <!-- Clock In QR Card -->
+                    <div class="qr-card">
+                        <div class="qr-card-header">
+                            <h2>Clock In QR</h2>
+                            <span class="qr-badge in">Clock In</span>
+                        </div>
+                        
+                        <div class="qr-preview">
+                            <div class="qr-code-wrapper">
+                                <div class="qr-code-display" id="qrcode-in"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="qr-code-value">
+                            <code x-text="clockIn.code"></code>
+                        </div>
+                        
+                        <div class="qr-card-body">
+                            <div class="form-group">
+                                <label>📍 Location Name</label>
+                                <input type="text" x-model="clockIn.location" placeholder="e.g., HQ Entrance">
+                            </div>
+                            
+                            <button class="btn-generate" @click="generateNewCode('in')">
+                                🔄 Generate New Code
+                            </button>
+                            <button class="btn-activate" @click="saveQR('in')">
+                                ✅ Activate QR Code
+                            </button>
+                        </div>
+                        
+                        <div class="qr-card-footer">
+                            <div class="qr-actions">
+                                <button class="btn-icon" @click="downloadQR('in')">
+                                    📥 PNG
+                                </button>
+                                <button class="btn-icon" @click="generateNewCode('in')">
+                                    🆕 New
+                                </button>
+                                <button class="btn-icon revoke" @click="revokeQR('in')">
+                                    🔴 Revoke
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clock Out QR Card -->
+                    <div class="qr-card">
+                        <div class="qr-card-header">
+                            <h2>Clock Out QR</h2>
+                            <span class="qr-badge out">Clock Out</span>
+                        </div>
+                        
+                        <div class="qr-preview">
+                            <div class="qr-code-wrapper">
+                                <div class="qr-code-display" id="qrcode-out"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="qr-code-value">
+                            <code x-text="clockOut.code"></code>
+                        </div>
+                        
+                        <div class="qr-card-body">
+                            <div class="form-group">
+                                <label>📍 Location Name</label>
+                                <input type="text" x-model="clockOut.location" placeholder="e.g., HQ Exit">
+                            </div>
+                            
+                            <button class="btn-generate" @click="generateNewCode('out')">
+                                🔄 Generate New Code
+                            </button>
+                            <button class="btn-activate" @click="saveQR('out')">
+                                ✅ Activate QR Code
+                            </button>
+                        </div>
+                        
+                        <div class="qr-card-footer">
+                            <div class="qr-actions">
+                                <button class="btn-icon" @click="downloadQR('out')">
+                                    📥 PNG
+                                </button>
+                                <button class="btn-icon" @click="generateNewCode('out')">
+                                    🆕 New
+                                </button>
+                                <button class="btn-icon revoke" @click="revokeQR('out')">
+                                    🔴 Revoke
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function qrGenerator() {
+    return {
+        sidebarOpen: false,
+        clockIn: { 
+            code: 'CLK_IN_' + Math.random().toString(36).substring(2, 10).toUpperCase(), 
+            location: 'HQ Entrance',
+            type: 'CLOCK_IN',
+            isActive: true,
+            createdAt: new Date().toISOString()
+        },
+        clockOut: { 
+            code: 'CLK_OUT_' + Math.random().toString(36).substring(2, 10).toUpperCase(), 
+            location: 'HQ Exit',
+            type: 'CLOCK_OUT',
+            isActive: true,
+            createdAt: new Date().toISOString()
+        },
+        qrIn: null,
+        qrOut: null,
+
+        init() {
+            window.themeManager.initTheme();
+            this.loadSavedQRs();
+            this.initializeQRCodes();
+        },
+        
+        loadSavedQRs() {
+            // Load saved QR codes from localStorage
+            const savedIn = localStorage.getItem('clockInQR');
+            const savedOut = localStorage.getItem('clockOutQR');
+            
+            if (savedIn) {
+                const data = JSON.parse(savedIn);
+                this.clockIn = { ...this.clockIn, ...data };
+            }
+            if (savedOut) {
+                const data = JSON.parse(savedOut);
+                this.clockOut = { ...this.clockOut, ...data };
+            }
+        },
+        
+        saveToLocalStorage() {
+            localStorage.setItem('clockInQR', JSON.stringify({
+                code: this.clockIn.code,
+                location: this.clockIn.location,
+                type: this.clockIn.type,
+                isActive: this.clockIn.isActive,
+                createdAt: this.clockIn.createdAt
+            }));
+            localStorage.setItem('clockOutQR', JSON.stringify({
+                code: this.clockOut.code,
+                location: this.clockOut.location,
+                type: this.clockOut.type,
+                isActive: this.clockOut.isActive,
+                createdAt: this.clockOut.createdAt
+            }));
+        },
+        
+        initializeQRCodes() {
+            const inContainer = document.getElementById("qrcode-in");
+            const outContainer = document.getElementById("qrcode-out");
+
+            // Clear containers to prevent duplication
+            if (inContainer) inContainer.innerHTML = '';
+            if (outContainer) outContainer.innerHTML = '';
+
+            this.qrIn = new QRCode(inContainer, {
+                text: JSON.stringify({
+                    code: this.clockIn.code,
+                    type: this.clockIn.type,
+                    location: this.clockIn.location,
+                    timestamp: new Date().toISOString()
+                }),
+                width: 130,
+                height: 130,
+                colorDark: "#093C5D",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            this.qrOut = new QRCode(outContainer, {
+                text: JSON.stringify({
+                    code: this.clockOut.code,
+                    type: this.clockOut.type,
+                    location: this.clockOut.location,
+                    timestamp: new Date().toISOString()
+                }),
+                width: 130,
+                height: 130,
+                colorDark: "#093C5D",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        },
+
+        updateCode(type) {
+            const qrData = {
+                code: type === 'in' ? this.clockIn.code : this.clockOut.code,
+                type: type === 'in' ? this.clockIn.type : this.clockOut.type,
+                location: type === 'in' ? this.clockIn.location : this.clockOut.location,
+                timestamp: new Date().toISOString()
+            };
+            
+            if (type === 'in') {
+                this.qrIn.clear();
+                this.qrIn.makeCode(JSON.stringify(qrData));
+            } else {
+                this.qrOut.clear();
+                this.qrOut.makeCode(JSON.stringify(qrData));
+            }
+        },
+        
+        generateNewCode(type) {
+            const newCode = type === 'in' 
+                ? 'CLK_IN_' + Math.random().toString(36).substring(2, 10).toUpperCase()
+                : 'CLK_OUT_' + Math.random().toString(36).substring(2, 10).toUpperCase();
+            
+            if (type === 'in') {
+                this.clockIn.code = newCode;
+                this.clockIn.createdAt = new Date().toISOString();
+                this.updateCode('in');
+            } else {
+                this.clockOut.code = newCode;
+                this.clockOut.createdAt = new Date().toISOString();
+                this.updateCode('out');
+            }
+            
+            this.saveToLocalStorage();
+            window.appUtils.showToast('New QR code generated successfully!', 'success');
+        },
+
+        async saveQR(type) {
+            const data = type === 'in' ? this.clockIn : this.clockOut;
+            
+            // Save to backend
+            try {
+                const result = await window.api.post('api/save-qr.php', {
+                    code: data.code,
+                    location: data.location,
+                    type: data.type,
+                    isActive: true,
+                    createdAt: data.createdAt
+                });
+                
+                if (result.success) {
+                    data.isActive = true;
+                    this.saveToLocalStorage();
+                    window.appUtils.showToast(`${type === 'in' ? 'Clock In' : 'Clock Out'} QR Code activated successfully!`, 'success');
+                } else {
+                    window.appUtils.showToast('Error saving QR code. Please try again.', 'error');
+                }
+            } catch (error) {
+                // Fallback to local storage if API is not available
+                data.isActive = true;
+                this.saveToLocalStorage();
+                window.appUtils.showToast(`${type === 'in' ? 'Clock In' : 'Clock Out'} QR Code saved locally!`, 'success');
+            }
+        },
+        
+        revokeQR(type) {
+            if (confirm(`Are you sure you want to revoke this ${type === 'in' ? 'Clock In' : 'Clock Out'} QR code?`)) {
+                if (type === 'in') {
+                    this.clockIn.isActive = false;
+                } else {
+                    this.clockOut.isActive = false;
+                }
+                this.saveToLocalStorage();
+                window.appUtils.showToast(`${type === 'in' ? 'Clock In' : 'Clock Out'} QR Code revoked!`, 'success');
+            }
+        },
+        
+        downloadQR(type) {
+            const qrElement = type === 'in' ? document.querySelector('#qrcode-in canvas') : document.querySelector('#qrcode-out canvas');
+            if (!qrElement) {
+                window.appUtils.showToast('QR code not ready. Please generate first.', 'error');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            const filename = type === 'in' 
+                ? `clock_in_${this.clockIn.location.replace(/\s/g, '_')}_${timestamp}.png`
+                : `clock_out_${this.clockOut.location.replace(/\s/g, '_')}_${timestamp}.png`;
+            
+            link.download = filename;
+            link.href = qrElement.toDataURL('image/png');
+            link.click();
+            
+            window.appUtils.showToast('QR code downloaded as PNG!', 'success');
+        }
+    }
+}
+</script>
 </body>
 </html>
