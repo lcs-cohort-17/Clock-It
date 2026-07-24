@@ -3,7 +3,7 @@
         'name' => 'clockit/clockit',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '09c35084c1f858a1f1bbf6b04a12606e86df0d8e',
+        'reference' => 'd1be22e180523c995f3b9f754573ee414567d58d',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'clockit/clockit' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '09c35084c1f858a1f1bbf6b04a12606e86df0d8e',
+            'reference' => 'd1be22e180523c995f3b9f754573ee414567d58d',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
